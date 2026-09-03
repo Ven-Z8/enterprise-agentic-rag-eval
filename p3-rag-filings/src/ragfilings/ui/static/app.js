@@ -1,6 +1,6 @@
 /**
  * RAGFilings Intelligence — Enterprise Light-Theme Client Controller
- * 3-Panel Agentic Multimodal Graph RAG Cockpit
+ * 3-Panel Agentic Graph RAG Cockpit (live backend: /api/*)
  */
 
 let financialChartInstance = null;
@@ -173,7 +173,7 @@ async function initHistory() {
         item.innerHTML = `
           <div class="history-query-text">${escapeHtml(s.query)}</div>
           <div class="history-meta-row">
-            <span>${(s.latency_ms / 1000).toFixed(1)}s · $${s.cost_usd.toFixed(4)}</span>
+            <span>${(s.latency_ms / 1000).toFixed(1)}s · $${(s.cost_usd || 0).toFixed(4)}</span>
             <span style="color: ${s.verified ? 'var(--accent-emerald)' : 'var(--accent-rose)'}">${s.verified ? 'Verified' : 'Refused'}</span>
           </div>
         `;
@@ -211,7 +211,7 @@ function filterAndDrawGraph() {
   let displayLinks = [];
 
   if (selectedCompanyFilter === "ALL") {
-    // Show top company hub nodes across the 25 S&P 500 filings
+    // Show top company hub nodes across the 25 SEC filings
     const companyNodes = allGraphNodes.filter(n => n.type === "Entity" && n.id.startsWith("company:")).slice(0, 15);
     const companyIds = new Set(companyNodes.map(c => c.id));
     
@@ -242,21 +242,17 @@ function drawKnowledgeGraphCanvas(nodes, links) {
   ctx.clearRect(0, 0, width, height);
 
   if (!nodes || nodes.length === 0) {
-    // Default preview fallback if empty
-    nodes = [
-      { id: "AAPL", type: "Company", label: "AAPL" },
-      { id: "MSFT", type: "Company", label: "MSFT" },
-      { id: "NVDA", type: "Company", label: "NVDA" },
-      { id: "META", type: "Company", label: "META" },
-      { id: "NetSales", type: "Metric", label: "Net Sales" },
-      { id: "GrossMargin", type: "Metric", label: "Gross Margin" },
-    ];
-    links = [
-      { source: "AAPL", target: "NetSales" },
-      { source: "MSFT", target: "NetSales" },
-      { source: "NVDA", target: "GrossMargin" },
-      { source: "META", target: "GrossMargin" },
-    ];
+    // No graph data from the backend — render nothing rather than fake nodes.
+    const canvas = document.getElementById("knowledge-graph-canvas");
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.font = "12px Inter, sans-serif";
+      ctx.fillStyle = "#94a3b8";
+      ctx.textAlign = "center";
+      ctx.fillText("Graph unavailable — build it with `ragfilings graph`", canvas.width / 2, canvas.height / 2);
+    }
+    return;
   }
 
   // Layout nodes around center
@@ -338,7 +334,8 @@ function drawKnowledgeGraphCanvas(nodes, links) {
 }
 
 // -----------------------------------------------------------------------------
-// Live Swarm Flowchart DAG Execution Controller
+// Live Pipeline-Stage Progress Indicator (timer-driven animation;
+// ground truth is the Execution Trace Log rendered from /api/query)
 // -----------------------------------------------------------------------------
 async function executeQuery(query) {
   const strategy = document.getElementById("strategy-select").value;
@@ -365,7 +362,7 @@ async function executeQuery(query) {
   thread.appendChild(typing);
   thread.scrollTop = thread.scrollHeight;
 
-  overallStatus.innerText = "Running Swarm";
+  overallStatus.innerText = "Running pipeline";
   overallStatus.className = "header-tag active";
   stepIndicator.innerText = "Step 1: Orchestrating...";
   hideEvidencePanels();
@@ -374,7 +371,7 @@ async function executeQuery(query) {
   const dagSteps = [
     { node: "node-orchestrator", state: "state-orchestrator", label: "Step 1: Orchestrator", delay: 100 },
     { node: "node-researcher", state: "state-researcher", label: "Step 2: Tri-Hybrid Search", delay: 500 },
-    { node: "node-doc-analyst", state: "state-doc-analyst", label: "Step 3: Docling Layout", delay: 900 },
+    { node: "node-doc-analyst", state: "state-doc-analyst", label: "Step 3: Table Extract", delay: 900 },
     { node: "node-data-analyst", state: "state-data-analyst", label: "Step 4: AST Math", delay: 1300 },
     { node: "node-synthesis", state: "state-synthesis", label: "Step 5: Synthesis", delay: 1700 },
     { node: "node-auditor", state: "state-auditor", label: "Step 6: Auditor Compliance", delay: 2100 },
@@ -407,7 +404,7 @@ async function executeQuery(query) {
     });
     overallStatus.innerText = "Complete";
     overallStatus.className = "header-tag";
-    stepIndicator.innerText = "All Steps Verified";
+    stepIndicator.innerText = "Done — see trace log";
 
     // Assistant chat bubble (answer or refusal/clarification)
     appendAssistantBubble(data, data.rewritten_query);
@@ -417,19 +414,25 @@ async function executeQuery(query) {
     document.getElementById("chip-cost").innerText = `Cost: $${(data.usage?.cost_usd || 0.0).toFixed(4)}`;
     document.getElementById("chip-confidence").innerText = `Confidence: ${(data.confidence * 100).toFixed(0)}%`;
 
-    // 2. Verified badge
+    // 2. Verified badge — reflects the numeric-claim verification pass,
+    // not a blanket stamp.
     const verifiedBadge = document.getElementById("verified-shield-badge");
+    const claimsChecked = data.verification && Array.isArray(data.verification.claims)
+      ? data.verification.claims.length : 0;
     if (data.refused) {
       verifiedBadge.innerText = "REFUSED / CLARIFY";
       verifiedBadge.className = "audit-badge refused";
-    } else {
+    } else if (data.verification && data.verification.verified) {
       verifiedBadge.innerHTML = `
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
         </svg>
-        <span>AUDITED &amp; VERIFIED</span>
+        <span>AUDITED &amp; VERIFIED (${claimsChecked} claims)</span>
       `;
       verifiedBadge.className = "audit-badge verified";
+    } else {
+      verifiedBadge.innerText = "ANSWERED · CLAIMS UNVERIFIED — CHECK CHUNKS";
+      verifiedBadge.className = "audit-badge refused";
     }
 
     // 3. Citations
@@ -454,9 +457,9 @@ async function executeQuery(query) {
       mathCard.style.display = "block";
     }
 
-    // 5. Docling Tables
+    // 5. Filing tables (regex table parse of retrieved chunks)
     if (data.tables && data.tables.length > 0) {
-      renderDoclingTables(data.tables);
+      renderFilingTables(data.tables);
       tablesCard.style.display = "block";
     }
 
@@ -536,7 +539,7 @@ function formatMarkdownAnswer(text) {
   return `<p>${html.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`;
 }
 
-function renderDoclingTables(tables) {
+function renderFilingTables(tables) {
   const container = document.getElementById("tables-container");
   container.innerHTML = "";
   if (!tables || tables.length === 0) return;
@@ -551,7 +554,7 @@ function renderDoclingTables(tables) {
           <span class="table-block-title">${escapeHtml(t.title || 'Extracted SEC Filing Table')}</span>
           <span class="citation-chip" onclick="focusChunk('${t.chunk_id}')">[${escapeHtml(t.chunk_id)}]</span>
         </div>
-        <table class="docling-table">
+        <table class="filing-table">
           <thead>
             <tr>
               ${t.headers.map((h, i) => `<th style="${i > 0 ? 'text-align: right;' : 'text-align: left;'}">${escapeHtml(h)}</th>`).join('')}
@@ -577,7 +580,7 @@ function renderDoclingTables(tables) {
       // Fallback for raw text
       const lines = t.text.split("\n").filter(l => l.includes("|"));
       if (lines.length > 0) {
-        let tableHtml = `<table class="docling-table">`;
+        let tableHtml = `<table class="filing-table">`;
         lines.forEach((line, idx) => {
           const cells = line.split("|").map(c => c.trim()).filter(c => c.length > 0);
           if (cells.length > 0) {

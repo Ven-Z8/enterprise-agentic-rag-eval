@@ -55,7 +55,7 @@ def _cmd_run(args: argparse.Namespace) -> None:
         skip_judge_metrics=args.skip_judge_metrics,
     )
 
-    md, png = write_scorecard(all_results, run_dir)
+    md, png = write_scorecard(all_results, run_dir, domain=args.domain)
     rows = all_results[args.strategy]["rows"]
     html, _ = generate_reports(summary_from_rows(args.strategy, rows), run_dir)
 

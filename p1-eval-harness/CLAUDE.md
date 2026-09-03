@@ -62,11 +62,13 @@ drops in unchanged — that is now the canonical data in
 Phase 0 + Phase 1 core + the financial domain pack are done. The entire
 evaluation stack moved here from P3 on 2026-08-31 (P3 is now pure RAG):
 
-- **Data** (`data/domain_a_financial/`): `golden_set_v1.jsonl` (80 audited
-  cases), `golden_set_enterprise_v1.jsonl` (45 multi-hop cases),
+- **Data** (`data/domain_a_financial/`): `golden_set_v1.jsonl` (50 cases —
+  stratified 12/10/10/8/10 trim of the audited 80, 2026-09-03),
+  `golden_set_enterprise_v1.jsonl` (45 multi-hop cases),
   `judge_calibration_v1.jsonl` (52 hand-labeled judge pairs), `audit_v1.json`
-  (provenance evidence). Golden builders stay in P3 (they need its corpus)
-  and write into this directory.
+  (provenance evidence, 95 entries: 50 v1 + 45 enterprise). Golden builders stay in P3 (they need its corpus)
+  and write into this directory. Published stage figures are frozen on v1-80
+  until the paid-model re-run.
 - **Scoring** (`src/harness/metrics/`): two-tier — deterministic numeric
   matching with variation rules + refusal/ambiguity matrix (`engine.py`),
   complemented by calibrated DeepEval G-Eval judge (`src/harness/judge.py`,

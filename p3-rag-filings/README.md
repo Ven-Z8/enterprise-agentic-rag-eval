@@ -14,7 +14,15 @@ orders that flip between companies — **measured, with the failures included.**
 > public-company questions) in reasoning-over-evidence mode — see
 > [`docs/financebench_v1.md`](docs/financebench_v1.md).
 
-## Headline (measured, 2026-08-31)
+## Headline (measured 2026-09-03, all-free models, $0.00)
+
+> **Current hiring set: v1-50** — a stratified trim of the 80-case set
+> (lookup 12 / table 10 / synthesis 10 / unanswerable 8 / ambiguous 10; all 10
+> ambiguous + every documented edge case kept). **v1-50: 96.0% (48/50)** —
+> lookup 100% · table 90% · synthesis 90% · unanswerable 100% · ambiguous 100%;
+> failures are the known fin-3003 + fin-8007 pair. Enterprise: **95.6%**
+> (43/45, failures ent-1016 + ent-1019 — both previously documented).
+> The stage-by-stage ladder below was measured on frozen v1-80.
 
 On the 80-case audited golden set (canonical copy in
 `p1-eval-harness/data/domain_a_financial/golden_set_v1.jsonl`), accuracy by
@@ -47,7 +55,8 @@ layer, scope agent, claim semantics, derivation tool). Shipped packs:
 `financial` (this README's system) and `legal` (commercial contracts — CUAD
 corpus, 102 held-out agreements, defined-term fact layer, quoted-language
 claim semantics). `eval-harness run --domain legal` measures the legal pack on
-its own 56-case golden set; first measured baseline **80.4% (45/56)** with
+its own 56-case golden set; **82.1% (46/56)** measured 2026-09-03 (first
+baseline 80.4% with
 zero domain-specific tuning (clarifications 6/6). Adding a domain never
 touches the engine.
 
@@ -92,7 +101,7 @@ contextual-precision.
 
 ## Measured ablation — retrieval strategy vs the graph
 
-Accuracy on the 80-case v1 set, all-free models, accuracy-only scoring.
+Accuracy on the frozen 80-case v1 set, all-free models, accuracy-only scoring.
 Retrieval-only runs (no graph) sit in a ~46–56% band dominated by the refusal
 problem; run-to-run variance on the free model is a few cases, so read the
 retrieval-strategy deltas as noise and the graph delta as the signal.
@@ -164,14 +173,15 @@ DeepEval G-Eval over OpenRouter.
 Canonical data lives in the sibling eval project
 ([`p1-eval-harness/data/domain_a_financial/`](../p1-eval-harness/data/domain_a_financial/)):
 
-- `golden_set_v1.jsonl` — 80 cases (lookup, table, synthesis,
-  unanswerable, ambiguous). Every answerable figure proven against filing text.
+- `golden_set_v1.jsonl` — 50 cases (lookup 12, table 10, synthesis 10,
+  unanswerable 8, ambiguous 10; stratified trim of the audited 80-case set).
+  Every answerable figure proven against filing text.
 - `golden_set_enterprise_v1.jsonl` — 45 multi-hop cases (ratios, CAGR,
   cross-company, trends, + unanswerables and ambiguities). Built by this
   project's `scripts/build_golden_enterprise_v1.py`; each derived answer's
   base figures are chunk-verified.
-- Judge calibration: 86.5% human agreement / Cohen's kappa 0.669 on 52
-  hand-labeled pairs (`judge_calibration_v1.jsonl`,
+- Judge calibration: 88.5% human agreement / Cohen's kappa 0.723 on 52
+  hand-labeled pairs after the harness port (original: 86.5% / 0.669) (`judge_calibration_v1.jsonl`,
   [`docs/judge_calibration_v1.md`](docs/judge_calibration_v1.md)).
 - Audit evidence: `audit_v1.json`; regenerate with
   `scripts/audit_golden.py`.

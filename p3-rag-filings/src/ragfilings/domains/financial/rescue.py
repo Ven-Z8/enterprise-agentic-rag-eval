@@ -39,6 +39,34 @@ from .builder import KNOWN_METRICS
 from .query import GraphQueryEngine
 
 _YEAR_RE = re.compile(r"\b(19[6-9]\d|20[0-4]\d)\b")
+# FY-prefixed years ("FY2025", "FY 2025", "FY-2025", "FY25", "FY'25"): the
+# bare _YEAR_RE cannot see these — between "Y" and the first digit there is
+# no word boundary, so "FY2025" never matches \b20\d\d\b. Users write years
+# this way constantly; every query-side year check must use _find_years().
+_FY_YEAR_RE = re.compile(r"\bfy[\s\-']*(\d{4}|\d{2})\b", re.IGNORECASE)
+
+
+def _find_years(text: str) -> list[int]:
+    """All fiscal years mentioned in query text, longhand or FY-shorthand.
+
+    Returns bare 4-digit years plus FY-prefixed 4- or 2-digit years
+    ("FY25" → 2025; 00–69 → 2000s, 70–99 → 1900s). Order of appearance,
+    duplicates kept (callers dedupe as needed).
+    """
+    years = [int(y) for y in _YEAR_RE.findall(text)]
+    for m in _FY_YEAR_RE.finditer(text):
+        tok = m.group(1)
+        if len(tok) == 4:
+            years.append(int(tok))
+        else:
+            yy = int(tok)
+            years.append(2000 + yy if yy < 70 else 1900 + yy)
+    return years
+
+
+def _strip_years(text: str) -> str:
+    """Remove all year mentions (longhand + FY-shorthand) from query text."""
+    return _FY_YEAR_RE.sub(" ", _YEAR_RE.sub(" ", text))
 _PERIOD_RE = re.compile(
     r"\bquarter(?:ly)?\b|\bq[1-4]\b|\b(?:first|second|third|fourth) quarter\b"
     r"|\b(?:three|six|nine) months\b|\bhalf[- ]?year\b",
@@ -305,13 +333,14 @@ class GraphRescue:
         if not metrics:
             return None
 
-        years = [int(y) for y in _YEAR_RE.findall(text)]
+        years = _find_years(text)
         if not years:
             return None
+        years = [int(y) for y in years]
         # trend questions span the full inclusive range between endpoints
         if "trend" in query.lower() and len(years) >= 2:
             years = list(range(min(years), max(years) + 1))
-        text = _YEAR_RE.sub(" ", text)
+        text = _strip_years(text)
 
         residual = [t for t in _TOKEN_RE.findall(text) if t not in _FILLERS]
         if residual:
@@ -376,10 +405,10 @@ class GraphRescue:
         if not tickers:
             return None
         text = re.sub(rf"\b{re.escape(_normalize(ratio_phrase))}\b", " ", text)
-        years = list(dict.fromkeys(int(y) for y in _YEAR_RE.findall(text)))
+        years = list(dict.fromkeys(_find_years(text)))
         if not years:
             return None
-        text = _YEAR_RE.sub(" ", text)
+        text = _strip_years(text)
         if [t for t in _TOKEN_RE.findall(text) if t not in _FILLERS]:
             return None
 
@@ -443,10 +472,10 @@ class GraphRescue:
         if len(metrics) != 1:
             return None
         metric = metrics[0]
-        years = sorted({int(y) for y in _YEAR_RE.findall(text)})
+        years = sorted(set(_find_years(text)))
         if len(years) < 2:
             return None
-        text = _YEAR_RE.sub(" ", text)
+        text = _strip_years(text)
         if [t for t in _TOKEN_RE.findall(text) if t not in _FILLERS]:
             return None
         y0, y1 = years[0], years[-1]
@@ -498,7 +527,7 @@ class GraphRescue:
 
     _CHANGE_INTENT_RE = re.compile(
         r"\b(change|changed|trend|grow|grew|growth|increasing|decreasing|"
-        r"increase|decrease|rise|fall|rose|fell)\b", re.IGNORECASE)
+        r"increase|decrease|rise|fall|rose|fell|cagr)\b", re.IGNORECASE)
 
     # "relative to its peers" leaves the comparison set undefined — the
     # clarification must ask for it as well as the missing fiscal year.
@@ -519,8 +548,8 @@ class GraphRescue:
         if len(tickers) != 1:
             return None
         ticker = tickers[0]
-        if _YEAR_RE.search(text):
-            return None  # a year is already pinned
+        if _find_years(text):
+            return None  # a year is already pinned (longhand or FY-shorthand)
         metric = None
         for phrase in _RESCUE_PHRASES:
             if re.search(rf"\b{re.escape(_normalize(phrase))}\b", text):
@@ -565,7 +594,7 @@ class GraphRescue:
             if re.search(rf"\b{re.escape(_normalize(phrase))}\b", norm):
                 return None  # the question anchors a specific metric
         tickers, text = self._find_tickers(query)
-        years = sorted({int(y) for y in _YEAR_RE.findall(text)})
+        years = sorted(set(_find_years(text)))
         for term, family, candidates in _VAGUE_METRIC_TERMS:
             if not re.search(rf"\b{re.escape(term)}\b", text):
                 continue
@@ -609,7 +638,7 @@ class GraphRescue:
         tickers, text = self._find_tickers(query)
         if tickers:
             return None
-        if _YEAR_RE.search(text):
+        if _find_years(text):
             return None
         metric = None
         for phrase in _RESCUE_PHRASES:

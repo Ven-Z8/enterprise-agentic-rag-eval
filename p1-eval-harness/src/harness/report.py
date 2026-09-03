@@ -11,12 +11,33 @@ from pathlib import Path
 from typing import Any
 
 CAVEAT = (
-    "Golden set v1 (2026-08-30): 80 cases rebuilt from scratch on the stage-2 "
-    "fact graph; every expected answer verified against filing text "
+    "Golden set v1 (2026-09-03): 50 cases stratified across lookup / table / "
+    "synthesis / unanswerable / ambiguous (12/10/10/8/10), trimmed from the "
+    "audited 80-case set; every expected answer verified against filing text "
     "(see data/domain_a_financial/audit_v1.json). Judge = DeepEval G-Eval over "
     "OpenRouter; judge cost below is the eval overhead, separate from "
     "per-query generation cost."
 )
+
+CAVEAT_LEGAL = (
+    "Golden set legal v1: 56 cases over 102 held-out CUAD commercial contracts "
+    "(attorney-annotated spans; unanswerables are annotation-absent pairs). "
+    "Judge = DeepEval G-Eval over OpenRouter; judge cost below is the eval "
+    "overhead, separate from per-query generation cost."
+)
+
+_DOMAIN_META = {
+    "financial": {
+        "title": "Scorecard — RAG over SEC 10-K filings",
+        "caveat": CAVEAT,
+        "corpus": "25 filings",
+    },
+    "legal": {
+        "title": "Scorecard — RAG over CUAD commercial contracts",
+        "caveat": CAVEAT_LEGAL,
+        "corpus": "102 contracts",
+    },
+}
 
 _PCT_METRICS = [
     ("accuracy", "Answer accuracy"),
@@ -42,6 +63,7 @@ def write_scorecard(
     all_results: dict[str, dict[str, Any]],
     out_dir: str | Path,
     n_filings: int = 25,
+    domain: str = "financial",
 ) -> tuple[Path, Path]:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -49,15 +71,16 @@ def write_scorecard(
     md_path = out_dir / "scorecard.md"
     png_path = out_dir / "scorecard.png"
 
+    meta = _DOMAIN_META.get(domain, _DOMAIN_META["financial"])
     first = all_results[strategies[0]]["metrics"]
     lines = [
-        "# Scorecard — RAG over SEC 10-K filings",
+        f"# {meta['title']}",
         "",
         f"*Generated {time.strftime('%Y-%m-%d %H:%M')} · {first['n']} golden "
-        f"questions · {n_filings} filings · generation model "
+        f"questions · {meta['corpus']} · generation model "
         f"`{first['model']}` · judge `{first['judge_model']}`*",
         "",
-        f"> {CAVEAT}",
+        f"> {meta['caveat']}",
         "",
         "| Metric | " + " | ".join(s.capitalize() for s in strategies) + " |",
         "|---|" + "---|" * len(strategies),

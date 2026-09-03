@@ -22,7 +22,7 @@ def test_shipped_domains_have_data_dirs():
 
 def test_financial_golden_sets_load():
     cases = load_jsonl(str(P1_ROOT / "data/domain_a_financial/golden_set_v1.jsonl"))
-    assert len(cases) == 80
+    assert len(cases) == 50
     assert all(c.domain == "financial" for c in cases)
 
 

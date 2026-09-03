@@ -76,7 +76,8 @@ published numbers.
   Run with `eval-harness run --golden-set data/domain_a_financial/golden_set_enterprise_v1.jsonl`
   from `p1-eval-harness`.
 
-- **Golden set v1**: 80 cases, every expected answer proven against filing
+- **Golden set v1**: 50 cases (stratified 12/10/10/8/10 trim of the audited
+  80, 2026-09-03), every expected answer proven against filing
   text — `../p1-eval-harness/data/domain_a_financial/golden_set_v1.jsonl`
   (audit evidence `audit_v1.json` alongside it; drafts `candidates_v1.jsonl` /
   `handcrafted_v1.jsonl` stay in `golden/` here, retired-set audit
@@ -88,8 +89,8 @@ published numbers.
   `run_meta.json` + scorecards) and diffs vs the latest baseline. Judge =
   DeepEval G-Eval (`p1-eval-harness/src/harness/judge.py`, judge model set in
   `p1-eval-harness/config.toml`).
-- **Judge calibration**: agreement 86.5% / kappa 0.669 on 52 hand-labeled
-  pairs — labels in
+- **Judge calibration**: agreement 88.5% / kappa 0.723 on 52 hand-labeled
+  pairs after the harness port (original 86.5% / 0.669) — labels in
   `../p1-eval-harness/data/domain_a_financial/judge_calibration_v1.jsonl`,
   re-measure with `p1-eval-harness/scripts/calibrate_judge.py`, write-up in
   `docs/judge_calibration_v1.md`.

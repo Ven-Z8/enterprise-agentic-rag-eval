@@ -7,7 +7,9 @@ from ragfilings.graph.rescue import (
     GraphRescue,
     RescueQuery,
     _derived_values,
+    _find_years,
     _format_fact,
+    _strip_years,
     load_excluded_facts,
 )
 from ragfilings.tools.verification import verify
@@ -529,3 +531,60 @@ def test_engine_real_answer_not_misclassified_as_refusal():
     assert not res["refused"]
     assert res["graph_rescue"]["rescued"] is True
     assert len(client.calls) == 1
+
+
+# ------------------------------------------- FY-shorthand year handling
+
+def test_find_years_sees_fy_shorthand():
+    assert _find_years("What was Apple's net sales for FY2025?") == [2025]
+    assert _find_years("from FY2023 to FY2025") == [2023, 2025]
+    # "FY 2024" matches both the bare-year and FY patterns (callers dedupe)
+    assert sorted(set(_find_years("FY 2024 vs FY25"))) == [2024, 2025]
+    assert _find_years("for fiscal year 2024") == [2024]
+    # no false positive on ordinary words ending in "fy" + a bare number
+    assert _find_years("specify the metric for 2024") == [2024]
+
+
+def test_strip_years_removes_fy_shorthand():
+    assert "fy2025" not in _strip_years("net sales fy2025").lower()
+    assert "2025" not in _strip_years("net sales for fiscal year 2025")
+
+
+def test_clarification_abstains_on_fy_shorthand_year():
+    assert _rescuer().missing_year_clarification(
+        "What was Apple's net sales for FY2025?") is None
+
+
+def test_clarification_abstains_on_fy_range_cagr():
+    assert _rescuer().missing_year_clarification(
+        "What was the CAGR of Apple net sales from FY2023 to FY2025?") is None
+
+
+def test_clarification_cagr_without_years_asks_for_period():
+    clar = _rescuer().missing_year_clarification(
+        "What was Apple's net sales CAGR?")
+    assert clar is not None
+    assert "between which fiscal years" in clar.lower()
+
+
+def test_extract_lookup_with_fy_shorthand():
+    queries = _rescuer().extract_queries(
+        "What was Apple's net sales for FY2025?")
+    assert queries is not None
+    assert (queries[0].ticker, queries[0].fiscal_year) == ("AAPL", 2025)
+
+
+def test_rescue_cagr_with_fy_shorthand():
+    out = _rescuer().rescue(
+        "What was the CAGR of Apple net sales from FY2023 to FY2025?")
+    assert out is not None
+    assert len(out.facts) == 2
+    expected = ((416161 / 383285) ** 0.5 - 1) * 100
+    assert any(abs(v - expected) < 1e-6 for v in out.derived_values)
+
+
+def test_rescue_ratio_with_fy_shorthand():
+    out = _rescuer().rescue(
+        "What was Apple's net profit margin in FY2025?")
+    assert out is not None
+    assert any(abs(v - 112010 / 416161 * 100) < 0.1 for v in out.derived_values)

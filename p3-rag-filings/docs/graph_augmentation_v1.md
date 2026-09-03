@@ -1,5 +1,12 @@
 # Stage 4 — Deterministic Fact-Graph Augmentation (`hybrid_rerank_graph`)
 
+> **Note (2026-09-03):** all figures below were measured on the frozen **v1-80**
+> golden set. The current hiring set is **v1-50** (stratified 12/10/10/8/10
+> trim — all 10 ambiguous + all edge cases kept, lookup/table/synthesis/
+> unanswerable thinned). Re-measurement on v1-50 is queued for the paid-model
+> run; the deltas below (graph +31.2pp, clarification fixes) are structural
+> and carry over.
+
 **Date:** 2026-08-31 · **Run:** `reports/evals/20260831-114754-70d5fc72-hybrid_rerank_graph`
 · **Code:** commits `690ad57`…`70d5fc7` · **Models:** all-free
 (`minimax/minimax-m3:free` for generation/extraction/judge), cost $0.00

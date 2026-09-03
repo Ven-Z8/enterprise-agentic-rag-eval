@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RAGFilings — Enterprise Agentic Multimodal Graph RAG</title>
+  <title>RAGFilings — Agentic Graph RAG over SEC 10-K Filings</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -27,15 +27,15 @@
           <span class="brand-badge">Graph RAG</span>
         </div>
       </div>
-      <span class="version-label">v0.3.0 · Enterprise</span>
+      <span class="version-label">v0.1.0</span>
     </div>
 
     <div class="header-center">
       <div class="status-indicator-pill">
         <span class="pulse-dot"></span>
-        <span class="status-text">6-Agent Swarm Online</span>
+        <span class="status-text">Agent Pipeline Online</span>
         <span class="status-sep">/</span>
-        <span class="status-meta">25 S&P 500 Filings · NetworkX Graph · SQLite Memory</span>
+        <span class="status-meta">25 SEC 10-K Filings · NetworkX Graph · SQLite Memory</span>
       </div>
     </div>
 
@@ -77,7 +77,7 @@
             <label for="strategy-select" class="label-micro">Orchestration Strategy</label>
             <select id="strategy-select" class="form-select">
               <option value="hybrid_rerank_graph" selected>Graph-Augmented RAG (recommended)</option>
-              <option value="agent_react">6-Agent Swarm (multi-agent + tools)</option>
+              <option value="agent_react">Multi-Agent Orchestrator (LangGraph)</option>
               <option value="hybrid_rerank">Hybrid + Reranker</option>
               <option value="hybrid">Dense + BM25 Hybrid</option>
               <option value="dense">Dense only</option>
@@ -102,7 +102,7 @@
         <select id="preset-select" class="form-select preset-select">
           <option value="" disabled selected>Select a financial benchmark question...</option>
         </select>
-        <div id="preset-description" class="preset-hint">Select any multi-year question above to trigger the 6-agent swarm with AST math verification.</div>
+        <div id="preset-description" class="preset-hint">Select any multi-year question above to run it through the orchestrator with AST math verification.</div>
       </div>
 
       <!-- SQLite Memory & Session History -->
@@ -189,7 +189,7 @@
               </svg>
               <span class="proof-card-title">Data Analyst · Safe Python AST Math Proof</span>
             </div>
-            <span class="tag tag-amber">0% Calculation Hallucination</span>
+            <span class="tag tag-amber">AST-Verified Math</span>
           </div>
           <div class="proof-grid">
             <div class="proof-item">
@@ -207,7 +207,7 @@
           </div>
         </div>
 
-        <!-- Docling Extracted Tables Card -->
+        <!-- Filing Tables Card (regex table parse) -->
         <div class="card tables-card" id="tables-card" style="display: none;">
           <div class="card-header-clean">
             <div class="card-title-icon-row">
@@ -218,9 +218,9 @@
                 <line x1="9" y1="3" x2="9" y2="21"></line>
                 <line x1="15" y1="3" x2="15" y2="21"></line>
               </svg>
-              <span class="proof-card-title">Document Analyst · Extracted Filing Tables</span>
+              <span class="proof-card-title">Table Extract · Filing Tables</span>
             </div>
-            <span class="tag tag-cyan">Docling TableFormer</span>
+            <span class="tag tag-cyan">Regex Table Parse</span>
           </div>
           <div id="tables-container" class="tables-view-scroll"></div>
         </div>
@@ -267,16 +267,16 @@
           <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
           </svg>
-          <h2>Swarm DAG & Graph</h2>
+          <h2>Pipeline & Graph</h2>
         </div>
         <span class="header-tag" id="swarm-overall-status">Idle</span>
       </div>
 
       <div class="right-scroll-container">
-        <!-- 6-Agent Swarm Interactive Flowchart Diagram -->
+          <!-- Pipeline Stages Diagram (progress animation; trace log is ground truth) -->
         <div class="card swarm-flow-card">
           <div class="card-header-compact">
-            <label class="label-xs">LIVE 6-AGENT SWARM WORKFLOW</label>
+            <label class="label-xs">PIPELINE STAGES</label>
             <span class="micro-status" id="swarm-step-indicator">Ready</span>
           </div>
 
@@ -316,8 +316,8 @@
               <div class="dag-node node-parallel" id="node-doc-analyst" data-step="3">
                 <div class="node-badge">3</div>
                 <div class="node-content">
-                  <div class="node-name">Document Analyst</div>
-                  <div class="node-desc">Docling Layout/Tables</div>
+                  <div class="node-name">Table Extract</div>
+                  <div class="node-desc">Filing-table parse</div>
                 </div>
                 <div class="node-state-pill" id="state-doc-analyst">IDLE</div>
               </div>

@@ -136,17 +136,17 @@ def test_ambiguous_answered_goes_through_judge():
     assert guessing["correct"] is False
 
 
-def test_loads_all_80_v1_golden_cases():
+def test_loads_all_50_v1_golden_cases():
     cases = engine.load_cases(GOLDEN_DIR / "golden_set_v1.jsonl")
-    assert len(cases) == 80
+    assert len(cases) == 50
     assert all(c["expected"]["type"] in ("exact", "contains", "judge") for c in cases)
-    assert len({c["id"] for c in cases}) == 80
+    assert len({c["id"] for c in cases}) == 50
 
 
 def test_load_cases_directory_mode_includes_enterprise_set():
     cases = engine.load_cases(GOLDEN_DIR)
     ids = {c["id"] for c in cases}
-    assert len(cases) == 125  # 80 v1 + 45 enterprise
+    assert len(cases) == 95  # 50 v1 + 45 enterprise
     assert any(i.startswith("ent-") for i in ids)
     assert any(i.startswith("fin-") for i in ids)
 

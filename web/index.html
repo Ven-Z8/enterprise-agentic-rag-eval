@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Venkat's Autonomous Agentic AI Engineering Portfolio | Master Showcase</title>
-  <meta name="description" content="Production Agentic AI Systems, Multi-Domain Evaluation Harness, Business Workflows, Browser Verification, and 75% Cost Optimization Case Study.">
+  <meta name="description" content="Graph RAG over messy SEC 10-K filings + a domain-adaptive agent eval harness. Measured results, failures included.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -22,15 +22,13 @@
         </div>
       </div>
       <nav class="nav-links">
-        <button class="nav-btn active" data-tab="p3-rag">🏢 P3: Production RAG (SEC 10-K)</button>
+        <button class="nav-btn active" data-tab="p3-rag">🏢 P3: Graph RAG (SEC 10-K)</button>
         <button class="nav-btn" data-tab="p1-harness">🧪 P1: Agent Eval Harness</button>
-        <button class="nav-btn" data-tab="p2-workflow">💼 P2: Business Workflow</button>
-        <button class="nav-btn" data-tab="p4-browser">🌐 P4: Browser Agent</button>
-        <button class="nav-btn" data-tab="p5-optimization">⚡ P5: 75% Cost Optimization</button>
+        <button class="nav-btn" data-tab="p5-optimization">🔮 P5: Cost Optimization (future scope)</button>
       </nav>
       <div class="status-pill">
         <span class="pulse-dot"></span>
-        <span class="status-label">Production Ready • All Systems Verified</span>
+        <span class="status-label">Measured • Failures Included</span>
       </div>
     </div>
   </header>
@@ -39,29 +37,33 @@
     <!-- P3 Production RAG Showcase Tab -->
     <section id="p3-rag" class="tab-content active">
       <div class="hero-banner">
-        <div class="hero-badge">Production RAG Architecture • NVIDIA AI Blueprint</div>
-        <h1 class="hero-title">Production SEC 10-K RAG Engine</h1>
+        <div class="hero-badge">Graph RAG • Typed fact graph + deterministic clarification</div>
+        <h1 class="hero-title">SEC 10-K Graph RAG Engine</h1>
         <p class="hero-subtitle">
-          Engineered to eliminate financial hallucinations across 25+ SEC 10-K filings. 
-          Combines <strong>NVIDIA CrossEncoder reranking</strong>, <strong>Query Decomposition</strong>, 
-          and a <strong>Safe Python Financial Math Tool</strong> to achieve <strong>76.1% FinanceBench accuracy</strong> and <strong>0% hallucination rate</strong>.
+          RAG over 25 genuinely messy SEC 10-K filings (nested tables, footnotes,
+          53-week fiscal years). A <strong>typed fact graph</strong> with chunk
+          provenance fixes the dominant failure mode — the generator refusing
+          figures it actually retrieved — and <strong>deterministic
+          clarification</strong> handles under-specified questions.
+          All-free models, $0.00. Measured 2026-09-03 on the current v1-50 set;
+          the stage ladder below it was measured on frozen v1-80.
         </p>
         <div class="hero-stats">
           <div class="stat-card">
-            <span class="stat-value text-gradient-blue">76.1%</span>
-            <span class="stat-label">FinanceBench Rating (SOTA Level)</span>
+            <span class="stat-value text-gradient-blue">96.0%</span>
+            <span class="stat-label">Audited golden set v1-50 (48/50)</span>
           </div>
           <div class="stat-card">
-            <span class="stat-value text-gradient-green">94.1%</span>
-            <span class="stat-label">Table-Reading Accuracy</span>
+            <span class="stat-value text-gradient-purple">95.6%</span>
+            <span class="stat-label">Enterprise multi-hop, 43/45</span>
           </div>
           <div class="stat-card">
-            <span class="stat-value text-gradient-purple">0.0%</span>
-            <span class="stat-label">Hallucination Rate (100% Refusals)</span>
+            <span class="stat-value text-gradient-purple">81.3%</span>
+            <span class="stat-label">FinanceBench evidence-mode (122/150)</span>
           </div>
           <div class="stat-card">
-            <span class="stat-value text-gradient-orange">4.1s</span>
-            <span class="stat-label">p50 Latency ($0.013 / query)</span>
+            <span class="stat-value text-gradient-orange">10/10</span>
+            <span class="stat-label">Ambiguous → clarification (v1)</span>
           </div>
         </div>
       </div>
@@ -70,14 +72,14 @@
       <div class="section-card">
         <div class="section-header">
           <div>
-            <h2 class="section-title">🎮 Interactive Live Query Playground</h2>
-            <p class="section-desc">Test real 10-K financial queries against the production pipeline and compare retrieval strategies live.</p>
+            <h2 class="section-title">🎮 Interactive Query Playground (static demo)</h2>
+            <p class="section-desc">Illustrative walkthrough with real filing figures — not a live backend. Latency/cost below are illustrative; measured accuracy lives in the scorecards further down.</p>
           </div>
           <div class="strategy-selector">
             <label>Retrieval Strategy:</label>
             <select id="strategy-select">
-              <option value="agent_react" selected>Multi-Role Agentic Orchestrator (Analyst ➔ Math ➔ Auditor ReAct Loop)</option>
-              <option value="hybrid_rerank">Hybrid + CrossEncoder Rerank (NVIDIA Blueprint)</option>
+              <option value="hybrid_rerank_graph" selected>Hybrid + Rerank + Fact-Graph (measured best)</option>
+              <option value="hybrid_rerank">Hybrid + CrossEncoder Rerank</option>
               <option value="hybrid">Hybrid (Dense + BM25 Sparse RRF)</option>
               <option value="dense">Dense-Only (bge-small-en-v1.5)</option>
             </select>
@@ -146,7 +148,7 @@
         <div class="section-header">
           <div>
             <h2 class="section-title">🔍 6-Stage Visual Pipeline Inspector</h2>
-            <p class="section-desc">Click any stage below to inspect how a financial query flows through our zero-hallucination architecture.</p>
+            <p class="section-desc">Click any stage below to inspect how a financial query flows through the graph-augmented architecture (measured failure modes included).</p>
           </div>
         </div>
 
@@ -185,7 +187,7 @@
         <div id="step-detail-card" class="step-detail-box">
           <div class="step-detail-header">
             <h3 id="step-title">Stage 1: User Query & Intent Detection</h3>
-            <span id="step-module-tag" class="module-tag">src/ragfilings/query_decompose.py</span>
+            <span id="step-module-tag" class="module-tag">src/ragfilings/domains/financial/query_decompose.py</span>
           </div>
           <p id="step-desc" class="step-description">
             The incoming question is analyzed for financial keywords (e.g. <em>growth rate, CAGR, margin delta, multi-year comparison</em>).
@@ -201,13 +203,16 @@
       <div class="section-card">
         <div class="section-header">
           <div>
-            <h2 class="section-title">📊 Hardcore Brutal 20 Benchmark Performance Chart</h2>
-            <p class="section-desc">Brutal stress-test evaluating 20 multi-year table math, disaggregated footnote, counterfactual, and cross-filing questions across all 4 strategies.</p>
+            <h2 class="section-title">📊 Measured Scorecards (frozen v1-80 runs)</h2>
+            <p class="section-desc">Stage-by-stage accuracy from <code>eval-harness run</code> — retrieval-only 53.8% → +graph 85.0% → +clarification 92.5% → post-fix 97.5% (v1) and 37.8% → 95.6% (enterprise). Sample harness HTML scorecard below (stale baseline run, shows the report format); current numbers are in the root README.</p>
           </div>
         </div>
 
         <div class="chart-display-container">
-          <img src="brutal_20_scorecard.png" alt="4-Strategy Brutal 20 Benchmark Chart" class="scorecard-chart-img" style="width: 100%; border-radius: 12px; border: 1px solid var(--border-color);">
+          <p style="margin-bottom:12px;"><a href="p1_financial_scorecard.html" target="_blank" style="color:#38bdf8;">Open sample harness scorecard (HTML) →</a></p>
+          <img src="brutal_20_scorecard.png" alt="Retired pre-rebuild benchmark chart (kept for history)" class="scorecard-chart-img" style="width: 100%; border-radius: 12px; border: 1px solid var(--border-color); opacity: 0.55;">
+          <p style="color:#94a3b8;font-size:13px;margin-top:8px;">Above: retired pre-rebuild chart, kept for history — not a current claim. The pre-rebuild headline numbers were purged after the integrity audit; see root README for measured results.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -219,24 +224,27 @@
         <h1 class="hero-title">P1: Domain-Adaptive Agent Eval Harness</h1>
         <p class="hero-subtitle">
           Positioning: <em>"Plug in any agent, any domain — get a reliability scorecard in an afternoon."</em><br>
-          Evaluates Agent & RAG systems across 4 distinct enterprise domains with deterministic, statistical, and calibrated LLM-judge metrics.
+          Two-tier scoring (deterministic ground truth + calibrated G-Eval judge,
+          88.5% human agreement / κ 0.723), full trajectory traces per case, and
+          regression diffs between runs. Two real domains wired: financial
+          (SEC 10-K) and legal (CUAD contracts).
         </p>
         <div class="hero-stats">
           <div class="stat-card">
-            <span class="stat-value text-gradient-blue">85.0%</span>
-            <span class="stat-label">Domain A: Financial Document QA</span>
+            <span class="stat-value text-gradient-blue">96.0%</span>
+            <span class="stat-label">Financial v1-50 (48/50, measured 2026-09-03)</span>
           </div>
           <div class="stat-card">
-            <span class="stat-value text-gradient-purple">88.5%</span>
-            <span class="stat-label">Domain B: Legal Contract Extraction</span>
+            <span class="stat-value text-gradient-purple">82.1%</span>
+            <span class="stat-label">Legal CUAD (46/56, measured 2026-09-03)</span>
           </div>
           <div class="stat-card">
-            <span class="stat-value text-gradient-green">91.2%</span>
-            <span class="stat-label">Domain C: Biomedical Research QA</span>
+            <span class="stat-value text-gradient-green">88.5%</span>
+            <span class="stat-label">Judge↔human agreement (κ 0.723)</span>
           </div>
           <div class="stat-card">
-            <span class="stat-value text-gradient-orange">100.0%</span>
-            <span class="stat-label">Domain D: Support Policy Compliance</span>
+            <span class="stat-value text-gradient-orange">81.3%</span>
+            <span class="stat-label">FinanceBench evidence-mode (122/150)</span>
           </div>
         </div>
       </div>
@@ -252,161 +260,70 @@
         <div class="benchmark-cards-grid">
           <div class="bm-card">
             <div class="bm-header">
-              <span class="bm-name">Domain A: Financial QA</span>
-              <span class="bm-badge badge-blue">111 Golden Cases</span>
+              <span class="bm-name">Financial QA (v1)</span>
+              <span class="bm-badge badge-blue">50 Golden Cases (v1-50)</span>
             </div>
-            <div class="bm-score">85.0%</div>
-            <p class="bm-desc">Evaluates numerical table accuracy and exact line-item lookup across 25 SEC 10-K filings.</p>
+            <div class="bm-score">96.0%</div>
+            <p class="bm-desc">Lookup, table, synthesis, unanswerable-refusal, and ambiguous-clarification cases over 25 SEC 10-K filings. Measured 2026-09-03, all-free models; failures fin-3003 + fin-8007 (both previously documented).</p>
             <div class="bm-meta">
-              <span>Refusal Correctness: 100%</span>
-              <span>Hallucination: 0.0%</span>
+              <span>Ambiguous → clarification: 10/10</span>
+              <span>Refusal safety: 8/8</span>
             </div>
           </div>
 
           <div class="bm-card">
             <div class="bm-header">
-              <span class="bm-name">Domain B: Legal Contracts</span>
-              <span class="bm-badge badge-purple">20 Golden Clauses</span>
+              <span class="bm-name">Financial multi-hop (enterprise)</span>
+              <span class="bm-badge badge-blue">45 Golden Cases</span>
             </div>
-            <div class="bm-score">88.5%</div>
-            <p class="bm-desc">Extracts governing law, indemnification caps, NDA survival rules, and non-solicit provisions from SEC contract exhibits.</p>
+            <div class="bm-score">95.6%</div>
+            <p class="bm-desc">Ratios, CAGR, cross-company comparisons — answers in no single chunk. Retrieval-only: 37.8%; the fact graph does the joining.</p>
             <div class="bm-meta">
-              <span>Citation Grounding: 95.0%</span>
-              <span>Hallucination: 0.0%</span>
+              <span>Graph delta: +46.6pp</span>
+              <span>No-graph control: 37.8%</span>
             </div>
           </div>
 
           <div class="bm-card">
             <div class="bm-header">
-              <span class="bm-name">Domain C: Biomedical QA</span>
-              <span class="bm-badge badge-green">15 Golden PubMed/CT</span>
+              <span class="bm-name">Legal Contracts (CUAD)</span>
+              <span class="bm-badge badge-purple">56 Golden Cases</span>
             </div>
-            <div class="bm-score">91.2%</div>
-            <p class="bm-desc">Evaluates primary outcome endpoint extraction, ClinicalTrials NCT eligibility criteria, and OpenFDA adverse events.</p>
+            <div class="bm-score">82.1%</div>
+            <p class="bm-desc">Attorney-annotated clause spans across 102 held-out commercial contracts. Measured 2026-09-03, all-free models; clarifications 6/6. Failures: clause-extraction misses (7) + unanswerable hallucinations (2).</p>
             <div class="bm-meta">
-              <span>NCT Match: 100%</span>
-              <span>Medical Refusal: 100%</span>
+              <span>Same engine, new skill pack</span>
+              <span>Failures: clause misses + 3 hallucinations</span>
             </div>
           </div>
 
           <div class="bm-card">
             <div class="bm-header">
-              <span class="bm-name">Domain D: Customer Support</span>
-              <span class="bm-badge badge-orange">15 Policy Scenarios</span>
+              <span class="bm-name">FinanceBench (external)</span>
+              <span class="bm-badge badge-orange">150 Questions</span>
             </div>
-            <div class="bm-score">100.0%</div>
-            <p class="bm-desc">Strict policy enforcement testing refund caps ($100 limit), mandatory security escalation, and forbidden PII leaks.</p>
+            <div class="bm-score">81.3%</div>
+            <p class="bm-desc">Patronus AI benchmark, reasoning-over-evidence mode: system grounds, verifies, and computes over official evidence excerpts.</p>
             <div class="bm-meta">
-              <span>Forbidden Action: 0.0%</span>
-              <span>Escalation Acc: 100%</span>
+              <span>122/150</span>
+              <span>Full-retrieval run queued</span>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- P2 Multi-Agent Business Workflow Tab -->
-    <section id="p2-workflow" class="tab-content">
-      <div class="hero-banner">
-        <div class="hero-badge badge-blue">Enterprise Pipeline • Production Ready</div>
-        <h1 class="hero-title">P2: Autonomous Multi-Agent Business Workflow</h1>
-        <p class="hero-subtitle">
-          Positioning: <em>"An agent team that runs a real revenue process end-to-end — with approval gates, failure recovery, and a cost meter."</em>
-        </p>
-        <div class="hero-stats">
-          <div class="stat-card">
-            <span class="stat-value text-gradient-blue">6 Agents</span>
-            <span class="stat-label">Pipeline Sub-Agent Roles</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value text-gradient-green">SQLite</span>
-            <span class="stat-label">Durable State Persistence</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value text-gradient-purple">$0.045</span>
-            <span class="stat-label">Cost / Lead Processed</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value text-gradient-orange">0.0%</span>
-            <span class="stat-label">Unapproved Outbound Send Rate</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-card">
-        <div class="section-header">
-          <div>
-            <h2 class="section-title">⚙️ End-to-End Pipeline Stage Architecture</h2>
-            <p class="section-desc">Automated lead ingestion, research enrichment, ICP qualification, grounded email drafting, and mandatory human safety approval gate.</p>
-          </div>
-        </div>
-
-        <div class="pipeline-stepper">
-          <div class="step-btn active"><span class="step-num">1</span> Intake Agent</div>
-          <div class="step-line"></div>
-          <div class="step-btn active"><span class="step-num">2</span> Research Agent</div>
-          <div class="step-line"></div>
-          <div class="step-btn active"><span class="step-num">3</span> Qualification Agent</div>
-          <div class="step-line"></div>
-          <div class="step-btn active"><span class="step-num">4</span> Outreach Drafter</div>
-          <div class="step-line"></div>
-          <div class="step-btn active"><span class="step-num">5</span> Human Approval Gate</div>
-          <div class="step-line"></div>
-          <div class="step-btn active"><span class="step-num">6</span> Execution Agent</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- P4 Autonomous Browser Agent Tab -->
-    <section id="p4-browser" class="tab-content">
-      <div class="hero-banner">
-        <div class="hero-badge badge-purple">Viral Demo Asset • Anti-Fragile</div>
-        <h1 class="hero-title">P4: Autonomous Browser Verification Agent</h1>
-        <p class="hero-subtitle">
-          Positioning: <em>"An agent that operates a real browser through a 20+ step task — and knows when it's failing."</em>
-        </p>
-        <div class="hero-stats">
-          <div class="stat-card">
-            <span class="stat-value text-gradient-purple">98.5%</span>
-            <span class="stat-label">Extraction Accuracy</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value text-gradient-blue">State Loop</span>
-            <span class="stat-label">Post-Action DOM Assertion</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value text-gradient-green">100.0%</span>
-            <span class="stat-label">Self-Awareness Metric</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value text-gradient-orange">280 ms</span>
-            <span class="stat-label">Mean Step Latency</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-card">
-        <div class="section-header">
-          <div>
-            <h2 class="section-title">🌐 Competitor Price & Availability Monitor</h2>
-            <p class="section-desc">Automated navigation across SaaS pricing pages with self-healing selector fallback and evidence screenshot captures.</p>
-          </div>
-        </div>
-
-        <div class="bm-card">
-          <h3>Self-Healing Anti-Fragility Catalog</h3>
-          <p>When A/B layout variations obscure CSS selectors, the agent detects the state mismatch, re-plans, and successfully executes XPath fallback routes.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- P5 Cost Optimization Study Tab -->
+    <!-- P5 Cost Optimization Study Tab (FUTURE SCOPE — prototype, not evaluated) -->
     <section id="p5-optimization" class="tab-content">
       <div class="hero-banner">
-        <div class="hero-badge badge-orange">Case Study • Buyer Magnet</div>
-        <h1 class="hero-title">P5: The Optimization Case Study: Same Quality, 75% Cheaper</h1>
+        <div class="hero-badge badge-orange">🔮 Future scope • Prototype, not evaluated</div>
+        <h1 class="hero-title">P5: Cost Optimization (roadmap)</h1>
         <p class="hero-subtitle">
-          Positioning: <em>"I cut this agent system's cost 75% and its latency 60% — eval scores unchanged. Here's exactly how."</em>
+          Planned experiment ladder: apply model routing, prompt caching,
+          parallel execution, and selective escalation to the P3 pipeline and
+          measure each step through the P1 harness. <strong>The table below
+          shows targets, not results — no experiment artifacts exist
+          yet.</strong> Work starts after the paid-model re-measurement.
         </p>
         <div class="hero-stats">
           <div class="stat-card">
@@ -431,8 +348,8 @@
       <div class="section-card">
         <div class="section-header">
           <div>
-            <h2 class="section-title">📈 Step-by-Step Optimization Attribution Table</h2>
-            <p class="section-desc">Measured cost and latency deltas for each optimization technique evaluated against the P1 Eval Harness referee.</p>
+            <h2 class="section-title">📈 Planned Optimization Ladder (targets, not results)</h2>
+            <p class="section-desc">Each row will be measured against the P1 harness referee; the run has not happened yet.</p>
           </div>
         </div>
 
@@ -490,10 +407,10 @@
 
   <footer class="footer">
     <div class="footer-container">
-      <div>Venkat's Autonomous AI Engineer Portfolio • Built with Vanilla Web Standards & NVIDIA AI Blueprint Architecture</div>
+      <div>Venkat's Agentic AI Engineering Portfolio • Graph RAG + Eval Harness — measured, failures included</div>
       <div class="footer-links">
         <a href="https://github.com/Ven-Z8/FreeLance-Potfolio" target="_blank">GitHub Repository</a>
-        <a href="TRACKER.md">Project Progress Tracker</a>
+        <a href="p1_financial_scorecard.html" target="_blank">Sample Scorecard</a>
       </div>
     </div>
   </footer>

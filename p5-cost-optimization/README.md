@@ -1,4 +1,14 @@
-# Agent System Optimization Case Study: Same Quality, 75% Cheaper
+# Agent System Optimization — 🔮 FUTURE SCOPE (prototype, not evaluated)
+
+> **Status:** parked. This is a ~110 LOC prototype stub, not a measured case
+> study. The optimization table below describes the **planned** experiment
+> ladder (techniques to apply to the P3 pipeline, measured through the P1
+> harness) — the figures are **targets, not results**. No experiment
+> artifacts exist yet; nothing here is claimed as measured. It stays in the
+> repo as a roadmap item and is **not part of the hiring story** (see root
+> README). Work starts after the paid-model re-measurement of P3+P1.
+
+# Agent System Optimization Case Study: Same Quality, 75% Cheaper (TARGET)
 
 Public, rigorous optimization case study demonstrating a **75% cost reduction** and **63% latency reduction** across agent pipelines, with evaluation quality scores held flat at 85.0% accuracy.
 

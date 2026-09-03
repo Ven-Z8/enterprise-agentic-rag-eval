@@ -14,7 +14,12 @@ per case, and regression diffs between runs.
 
 ## Headline results (measuring p3-rag-filings, all-free models)
 
-**80-case audited golden set** (`data/domain_a_financial/golden_set_v1.jsonl`):
+> **Current hiring set: v1-50** (stratified 12/10/10/8/10 trim of the 80-case
+> set — all ambiguous + edge cases kept). **Measured on v1-50 (2026-09-03):
+> 96.0% (48/50)**; enterprise 95.6% (43/45, reproduced 2026-09-03). The
+> stage ladder below was measured on frozen v1-80.
+
+**50-case audited golden set** (`data/domain_a_financial/golden_set_v1.jsonl`, trimmed 2026-09-03 from the audited 80):
 
 | System configuration | Accuracy |
 |---|---|
@@ -125,6 +130,5 @@ p1-eval-harness/
 - **Golden data is audited**: every answerable figure in the v1 and
   enterprise sets is proven against filing text (`audit_v1.json`, regenerate
   from P3 with `p3-rag-filings/scripts/audit_golden.py`).
-- **One adapter is wired** (financial → ragfilings). Legal / biomedical /
-  support domain adapters exist from the scaffold phase but are not part of
-  the v1 CLI.
+- **Two adapters are wired** (financial + legal → ragfilings, `--domain
+  financial|legal`). The legal pack runs the CUAD corpus on the same engine.

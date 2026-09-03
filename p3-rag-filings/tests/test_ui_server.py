@@ -11,7 +11,7 @@ def test_ui_index_endpoint():
     res = client.get("/")
     assert res.status_code == 200
     assert "RAGFILINGS" in res.text
-    assert "6-AGENT SWARM" in res.text
+    assert "PIPELINE STAGES" in res.text
 
 
 def test_ui_presets_endpoint():

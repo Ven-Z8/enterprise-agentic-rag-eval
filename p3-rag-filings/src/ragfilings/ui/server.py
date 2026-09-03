@@ -1,4 +1,4 @@
-"""FastAPI backend service for Agentic Multimodal Graph RAG Platform."""
+"""FastAPI backend service for the RAGFilings agentic Graph RAG platform."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 STATIC_DIR = Path(__file__).parent / "static"
 
-app = FastAPI(title="RAGFilings Agentic Graph RAG API", version="0.3.0")
+app = FastAPI(title="RAGFilings Agentic Graph RAG API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,

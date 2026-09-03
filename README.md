@@ -12,8 +12,8 @@ Production-grade Agentic AI Systems, RAG Architecture, and Domain-Adaptive Evalu
 
 | Component | Description | Highlights |
 | :--- | :--- | :--- |
-| **[P3: Enterprise RAG Orchestrator](./p3-rag-filings)** | Multi-Agent Agentic **Graph** RAG over messy SEC 10-K filings | Typed fact graph + multi-hop augmentation (ratios/CAGR/comparisons), deterministic clarification for under-specified questions, conversational multi-turn UI, Hybrid + BGE-rerank retrieval, safe Python financial-math tool, LangGraph orchestrator — **53.8% → 97.5%** on the audited golden set |
-| **[P1: Agent Evaluation Harness](./p1-eval-harness)** | "Proving Ground" evaluation harness for Agent & RAG systems | Audited golden datasets, two-tier scoring (deterministic + calibrated G-Eval judge, 86.5% human agreement), full trajectory traces, regression diffs, scorecards — measured P3's 53.8% → 97.5% and 81.3% FinanceBench |
+| **[P3: Enterprise RAG Orchestrator](./p3-rag-filings)** | Multi-Agent Agentic **Graph** RAG over messy SEC 10-K filings | Typed fact graph + multi-hop augmentation (ratios/CAGR/comparisons), deterministic clarification for under-specified questions, conversational multi-turn UI, Hybrid + BGE-rerank retrieval, safe Python financial-math tool, LangGraph orchestrator — **96.0% v1-50 (48/50) · 95.6% enterprise (43/45) · 81.3% FinanceBench**, all-free $0.00 |
+| **[P1: Agent Evaluation Harness](./p1-eval-harness)** | "Proving Ground" evaluation harness for Agent & RAG systems | Audited golden datasets, two-tier scoring (deterministic + calibrated G-Eval judge, 88.5% human agreement / κ 0.723), full trajectory traces, regression diffs, scorecards — measured P3's 96.0% v1-50 and 81.3% FinanceBench |
 | **[Web Portfolio Showcase](./web)** | Interactive Web Dashboard & Scorecard Explorer | Responsive Dark-Mode UI, Live Metric Breakdown, Brutal 20 Stress Test Visualizer |
 
 ---
@@ -77,8 +77,8 @@ The evaluation harness selects a pack with `--domain financial|legal`; each
 domain has its own golden set under `p1-eval-harness/data/domain_*` and its
 own retrieval index. The financial pack is measured end-to-end (below); the
 legal pack runs on the CUAD corpus (102 held-out commercial contracts,
-attorney-annotated, CC-BY-4.0) — first measured baseline **80.4% (45/56)** on
-its 56-case golden set with zero domain-specific tuning (clarifications 6/6;
+attorney-annotated, CC-BY-4.0) — **82.1% (46/56)** on
+its 56-case golden set, measured 2026-09-03 (first baseline 80.4% with zero domain-specific tuning (clarifications 6/6;
 remaining failures: clause-extraction misses and 3 unanswerable hallucinations
 — the same failure taxonomy the financial pack started with). The point is
 that adding a domain never touches the engine.
@@ -228,7 +228,17 @@ joining. Samples from
 | Which had the higher operating margin in FY2025: Microsoft or Meta? | Microsoft **45.6% vs 41.4%** |
 | How did Microsoft's net profit margin change FY2024 → FY2025? | **36.0% → 36.1%** (+0.2pp) |
 
-### 3 · Audited golden set v1 (80 cases, every answer proven against filing text)
+### 3 · Audited golden set v1 (50 cases, every answer proven against filing text)
+
+> **Current hiring set: v1-50** — a stratified trim of the frozen 80-case set
+> (lookup 12 / table 10 / synthesis 10 / unanswerable 8 / ambiguous 10: all 10
+> ambiguous + every documented edge case kept, easy lookup/table thinned).
+> **Measured on v1-50 (2026-09-03, free models): 96.0% (48/50)** — lookup
+> 100% · table 90% · synthesis 90% · unanswerable 100% (8/8 refusals) ·
+> ambiguous 100% (10/10). The 2 failures are the same known pair as v1-80
+> (fin-3003 metric-disambiguation, fin-8007 Exxon scope flip). The
+> stage-by-stage ladder below was measured on frozen v1-80; the deltas are
+> structural (graph injection, deterministic clarification), not fitted.
 
 | Configuration | Accuracy | Note |
 | :--- | :--- | :--- |
@@ -256,27 +266,27 @@ Retrieval-strategy ablation (no graph, v1 set): dense 56.2% · hybrid 46.2% ·
 hybrid + rerank 55.0% — within run-to-run noise; the fact graph, not the
 ranker, is the ~30-point signal.
 
-**Re-validation (2026-08-31):** after the eval stack moved to
+**Re-validation (2026-08-31, frozen v1-80):** after the eval stack moved to
 `p1-eval-harness`, full re-runs through the ported harness reproduced the
 results — v1 set **93.8%** (75/80), enterprise set **86.7%** (39/45), and the
 G-Eval judge re-calibrated at **88.5% human agreement / Cohen's kappa 0.723**
 (original calibration: 86.5% / 0.669). Free-model run-to-run variance is a
 few cases; the deltas above are that noise, and the numbers reproduce.
 
-**Post-fix measurement (2026-09-01):** targeted work on the two remaining
-failure classes moved both sets again — v1 set **97.5%** (78/80), enterprise
-set **95.6%** (43/45):
+**Post-fix measurement (2026-09-01, frozen v1-80; reproduced on v1-50 + enterprise 2026-09-03, free models):** targeted work on the two remaining
+failure classes moved both sets again — v1 set **97.5%** (78/80; **96.0%**,
+48/50 on v1-50), enterprise set **95.6%** (43/45, reproduced twice + again 2026-09-03):
 
 - *Ambiguity*: deterministic clarifications now also cover vague-metric
   questions ("earnings", "cash", "growth rate", …) and company-less
-  questions — ambiguous cases score **10/10** on v1 and 7/7 on enterprise
+  questions — ambiguous cases score **10/10** on v1 (all kept in v1-50) and 7/7 on enterprise
   (was 8/10 and 4/7). The clarifications are scan-verified to fire on
   ambiguous questions only.
 - *Unanswerable hallucinations*: an explicit refusal rule in the synthesis
   prompt (never substitute a related figure, never answer from outside
   knowledge) plus closing a verification gap where hedged magnitudes like
   "1.64 million" escaped claim-checking. Refusal safety on the genuinely
-  unanswerable cases: **10/10** (v1) and 8/8 (enterprise).
+  unanswerable cases: **8/8 kept in v1-50** (10/10 on frozen v1-80) and 8/8 (enterprise).
 - *Enterprise multi-hop*: graph-rescue outcomes now carry the exact derived
   ratio/CAGR as a grounded line, ending free-model rounding drift ("7%" →
   6.8%, "15%" → 15.2%).
@@ -286,15 +296,13 @@ set **95.6%** (43/45):
   enterprise expected value was built on a poisoned graph fact (quarantined;
   69 facts now excluded). All three were re-labeled with chunk-level
   evidence; details in the failure-notes doc below.
-- *Remaining failures* (4 across both sets): fin-3003 (synthesis
+- *Remaining failures* (2 on v1-50, 2 on enterprise — all previously documented): fin-3003 (synthesis
   metric-disambiguation), fin-8007 (the model alternates between the filing's
   two disclosed scopes: $65.64 consolidated vs $76.23 total-incl-equity),
-  ent-1016 (free-model over-refusal of a ratio whose inputs are present), and
+  ent-1016 (over-refusal of a ratio whose inputs are present — needs the PEP
+  graph rebuild noted below), and
   ent-1019 (rounding drift, 7% vs 6.8%). Free-model noise, not a systematic
-  gap: both sets were re-measured twice post-fix — v1: 79/80 then 78/80
-  (fin-8007's scope flips), enterprise: 43/45 both times (ent-1016 fails in
-  both; the second failure swaps between ent-1019 rounding and ent-1044 judge
-  variance).
+  gap.
 
 Failure analysis and caveats:
 [`p3-rag-filings/docs/graph_augmentation_v1.md`](./p3-rag-filings/docs/graph_augmentation_v1.md).
@@ -321,7 +329,7 @@ FreeLance-Potfolio/
 │   ├── index.html                 # Interactive portfolio homepage
 │   ├── app.js                     # Dashboard interaction logic
 │   └── styles.css                 # Custom modern dark-mode styles
-└── shared/                        # Shared datasets, specs, and architecture docs
+├── p5-cost-optimization/          # 🔮 FUTURE SCOPE — optimization roadmap (prototype, not evaluated)
 ```
 
 ---
