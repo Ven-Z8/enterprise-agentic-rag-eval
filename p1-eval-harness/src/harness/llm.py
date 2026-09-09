@@ -71,11 +71,12 @@ class OpenRouterClient:
         max_tokens: int = 1500,
         temperature: float = 0.0,
     ) -> tuple[str, dict[str, Any]]:
+        sampling = {} if model == "openai/gpt-5.6-luna" else {"temperature": temperature}
         resp = self._get_client().chat.completions.create(
             model=model,
             messages=messages,
             max_tokens=max_tokens,
-            temperature=temperature,
+            **sampling,
             extra_body={"usage": {"include": True}},
         )
         if not getattr(resp, "choices", None):

@@ -195,9 +195,14 @@ def build_workflow() -> StateGraph:
                             {"deterministic": checked["verified"], "llm": llm_ok,
                              "problems": problems})],
         }
-        if not all_ok and state.get("retries_left", 0) > 0:
-            update["feedback"] = "; ".join(problems) or "audit failed"
-            update["retries_left"] = state.get("retries_left", 0) - 1
+        if not all_ok:
+            if state.get("retries_left", 0) > 0:
+                update["feedback"] = "; ".join(problems) or "audit failed"
+                update["retries_left"] = state.get("retries_left", 0) - 1
+            else:
+                update["refused"] = True
+                update["refusal_reason"] = f"audit failed: {'; '.join(problems) or 'unverified claims'}"
+                update["verified"] = False
         return update
 
     def route_after_audit(state: OrchestratorState) -> str:
@@ -286,10 +291,10 @@ class MultiAgentOrchestrator:
             "session_id": session_id,
             "refused": final_state.get("refused", False),
             "refusal_reason": final_state.get("refusal_reason"),
-            "answer": final_state.get("answer"),
-            "citations": final_state.get("citations", []),
+            "answer": final_state.get("answer") if not final_state.get("refused") else None,
+            "citations": final_state.get("citations", []) if not final_state.get("refused") else [],
             "invalid_citations": final_state.get("invalid_citations", []),
-            "verified": final_state.get("verified", False),
+            "verified": bool(final_state.get("verified", False) and not final_state.get("refused", False)),
             "verification": final_state.get("verification", {}),
             "audit": final_state.get("audit"),
             "confidence": confidence(final_state.get("hits", [])),

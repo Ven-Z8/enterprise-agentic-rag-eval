@@ -23,6 +23,7 @@ from ..retrieval import load_index
 
 logger = logging.getLogger(__name__)
 
+P3_ROOT = Path(__file__).resolve().parents[3]
 STATIC_DIR = Path(__file__).parent / "static"
 
 app = FastAPI(title="RAGFilings Agentic Graph RAG API", version="0.1.0")
@@ -125,19 +126,21 @@ PRESET_QUESTIONS = [
 def get_system_components():
     global _cfg, _index, _graph_engine
     if _cfg is None:
-        cfg_path = Path(__file__).resolve().parents[3] / "config.toml"
+        cfg_path = P3_ROOT / "config.toml"
         _cfg = load_cfg(str(cfg_path)) if cfg_path.exists() else {}
 
     if _index is None and _cfg:
         index_dir = _cfg.get("embedding", {}).get("index_dir", "corpus/index")
         model = _cfg.get("embedding", {}).get("model", "BAAI/bge-small-en-v1.5")
+        if not Path(index_dir).is_absolute():
+            index_dir = str(P3_ROOT / index_dir)
         try:
             _index = load_index(index_dir, model)
         except Exception as e:
             logger.warning(f"Index load warning: {e}")
 
     if _graph_engine is None:
-        graph_path = Path("corpus/graph/financial_graph.json")
+        graph_path = P3_ROOT / "corpus/graph/financial_graph.json"
         if graph_path.exists():
             builder = FinancialGraphBuilder.load(graph_path)
             _graph_engine = GraphQueryEngine(builder=builder)
@@ -253,12 +256,16 @@ async def execute_query(req: QueryRequest):
         index=index,
         strategy=req.strategy,
         domain=req.domain,
+        top_k=req.top_k,
+        memory=_memory,
     )
 
     # The orchestrator (agent_react) has its own session id for trajectories;
     # it is distinct from the conversational session_id kept above.
     orch_session_id = res.get("session_id")
     trajectory = _memory.get_trajectory(orch_session_id) if orch_session_id else []
+    if not trajectory and res.get("agent_history"):
+        trajectory = res["agent_history"]
 
     # Parse and filter discrete structured tables from retrieved chunks
     tables = []
@@ -331,14 +338,34 @@ async def execute_query(req: QueryRequest):
     # Prepare chart metrics dynamically from graph facts, query, or retrieved tables
     chart_data = None
     if graph_engine:
-        # 1. Detect target ticker from query or top hits
+        # 1. Detect target ticker from query or top hits with word boundaries
         q_upper = req.query.upper()
         detected_ticker = None
         known_tickers = ["META", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "TSLA", "JPM", "BAC", "GS", "WMT", "COST", "JNJ", "PFE", "UNH", "XOM", "CVX", "KO", "PEP", "PG", "DIS", "NFLX", "BA", "CAT", "HD"]
         for t in known_tickers:
-            if t in q_upper or (t == "META" and "FACEBOOK" in q_upper) or (t == "GOOGL" and "GOOGLE" in q_upper) or (t == "AAPL" and "APPLE" in q_upper) or (t == "TSLA" and "TESLA" in q_upper):
+            if re.search(rf"\b{re.escape(t)}\b", q_upper):
                 detected_ticker = t
                 break
+
+        if not detected_ticker:
+            name_map = {
+                "META": r"\b(FACEBOOK|META)\b",
+                "GOOGL": r"\b(GOOGLE|ALPHABET)\b",
+                "AAPL": r"\bAPPLE\b",
+                "TSLA": r"\bTESLA\b",
+                "MSFT": r"\bMICROSOFT\b",
+                "AMZN": r"\bAMAZON\b",
+                "NVDA": r"\bNVIDIA\b",
+                "JPM": r"\bJPMORGAN\b",
+                "WMT": r"\bWALMART\b",
+                "HD": r"\bHOME\s+DEPOT\b",
+                "CAT": r"\bCATERPILLAR\b",
+                "BA": r"\bBOEING\b",
+            }
+            for ticker, pat in name_map.items():
+                if re.search(pat, q_upper):
+                    detected_ticker = ticker
+                    break
 
         if not detected_ticker and res.get("hits"):
             detected_ticker = res["hits"][0].get("chunk", {}).get("ticker")
@@ -361,9 +388,13 @@ async def execute_query(req: QueryRequest):
 
         if detected_ticker:
             metric_history = graph_engine.get_metric_history(detected_ticker, detected_metric)
+            chart_metric_title = detected_metric
             if not metric_history and detected_metric != "Total Revenue":
-                # Try fallback to Total Revenue or Net Sales
-                metric_history = graph_engine.get_metric_history(detected_ticker, "Total Revenue") or graph_engine.get_metric_history(detected_ticker, "Net Sales")
+                # Try fallback to Total Revenue or Net Sales, labeling explicitly
+                fallback_hist = graph_engine.get_metric_history(detected_ticker, "Total Revenue") or graph_engine.get_metric_history(detected_ticker, "Net Sales")
+                if fallback_hist:
+                    metric_history = fallback_hist
+                    chart_metric_title = f"Total Revenue (Alternative History, {detected_metric} unavailable)"
 
             if metric_history:
                 # Deduplicate by fiscal_year to guarantee distinct years
@@ -377,8 +408,8 @@ async def execute_query(req: QueryRequest):
                 if len(sorted_hist) >= 2:
                     chart_data = {
                         "ticker": detected_ticker,
-                        "metric": detected_metric,
-                        "title": f"{detected_ticker} · {detected_metric} Trajectory ($ Millions)",
+                        "metric": chart_metric_title,
+                        "title": f"{detected_ticker} · {chart_metric_title} Trajectory ($ Millions)",
                         "labels": [f"FY{m['fiscal_year']}" for m in sorted_hist],
                         "values": [m["value"] for m in sorted_hist],
                         "unit": "USD_M",
@@ -402,6 +433,7 @@ async def execute_query(req: QueryRequest):
         "confidence": res.get("confidence", 0.0),
         "latency_ms": res.get("latency_ms", 0.0),
         "usage": res.get("usage", {}),
+        "verified": res.get("verified", False),
         "verification": res.get("verification", {}),
         "math_result": res.get("math_result"),
         "graph_facts": res.get("graph_facts", []),

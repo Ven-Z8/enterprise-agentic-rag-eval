@@ -588,3 +588,15 @@ def test_rescue_ratio_with_fy_shorthand():
         "What was Apple's net profit margin in FY2025?")
     assert out is not None
     assert any(abs(v - 112010 / 416161 * 100) < 0.1 for v in out.derived_values)
+
+
+def test_missing_year_clarification_recognizes_revenue():
+    clar = _rescuer().missing_year_clarification("How much did Apple revenue grow?")
+    assert clar is not None
+    assert "between which fiscal years" in clar.lower()
+
+
+def test_no_company_clarification_recognizes_operating_profit():
+    clar = _rescuer().no_company_clarification("What was operating profit?")
+    assert clar is not None
+    assert "which company" in clar.lower()

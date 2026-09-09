@@ -556,10 +556,23 @@ class GraphRescue:
                 metric = KNOWN_METRICS[phrase]
                 break
         if metric is None:
+            for phrase in ("total revenue", "net revenue", "revenue", "operating profit", "operating income", "net sales", "net income", "r&d"):
+                if phrase in KNOWN_METRICS and re.search(rf"\b{re.escape(phrase)}\b", text):
+                    metric = KNOWN_METRICS[phrase]
+                    break
+        if metric is None:
             return None
         hist = self.engine.get_metric_history(ticker, metric)
         years = sorted({int(h["fiscal_year"]) for h in hist
                         if str(h.get("fiscal_year", "")).isdigit()})
+        if len(years) < 2 and metric in ("Total Revenue", "Net Sales"):
+            alt = "Net Sales" if metric == "Total Revenue" else "Total Revenue"
+            hist_alt = self.engine.get_metric_history(ticker, alt)
+            years_alt = sorted({int(h["fiscal_year"]) for h in hist_alt
+                               if str(h.get("fiscal_year", "")).isdigit()})
+            if len(years_alt) >= 2:
+                metric = alt
+                years = years_alt
         if len(years) < 2:
             return None
         name = self.company_names.get(ticker, ticker)
@@ -645,6 +658,11 @@ class GraphRescue:
             if re.search(rf"\b{re.escape(_normalize(phrase))}\b", text):
                 metric = KNOWN_METRICS[phrase]
                 break
+        if metric is None:
+            for phrase in ("total revenue", "net revenue", "revenue", "operating profit", "operating income", "net sales", "net income", "gross profit", "r&d"):
+                if phrase in KNOWN_METRICS and re.search(rf"\b{re.escape(phrase)}\b", text):
+                    metric = KNOWN_METRICS[phrase]
+                    break
         if metric is None:
             return None
         n = len(self.company_names)

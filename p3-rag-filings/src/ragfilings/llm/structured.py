@@ -49,14 +49,19 @@ def complete_structured(
 
     usage = {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0, "calls": 0}
 
+    extra_body = {"usage": {"include": True}}
+    # Alibaba rejects forced tool_choice while Qwen thinking mode is enabled.
+    if model_slug == "qwen/qwen3.8-flash":
+        extra_body["reasoning"] = {"enabled": False}
+    sampling = {} if model_slug == "openai/gpt-5.6-luna" else {"temperature": temperature}
     instance, raw = patched.chat.completions.create_with_completion(
         model=model_slug,
         messages=messages,
         response_model=response_model,
         max_tokens=tokens,
-        temperature=temperature,
+        **sampling,
         max_retries=max_retries,
-        extra_body={"usage": {"include": True}},
+        extra_body=extra_body,
     )
     u = parse_usage(getattr(raw, "usage", None))
     usage["input_tokens"] += u.input_tokens

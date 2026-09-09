@@ -82,10 +82,26 @@ def run_eval(
         trace_dir.mkdir(parents=True, exist_ok=True)
         rows = []
         results_path = out_dir / f"results_{strategy}.jsonl"
+        existing_rows: list[dict[str, Any]] = []
+        if results_path.exists():
+            try:
+                for line in results_path.read_text(encoding="utf-8").splitlines():
+                    if line.strip():
+                        existing_rows.append(json.loads(line))
+            except Exception:
+                existing_rows = []
 
-        with results_path.open("w", encoding="utf-8") as results_f:
+        seen_completed_ids = {r["case_id"] for r in existing_rows}
+        rows = list(existing_rows)
+
+        with results_path.open("a" if existing_rows else "w", encoding="utf-8") as results_f:
             consecutive_errors = 0
             for i, case in enumerate(cases, 1):
+                if case["id"] in seen_completed_ids:
+                    continue
+
+                t0 = time.perf_counter()
+                result = None
                 try:
                     result = adapter.run_case(
                         case, strategy=strategy, refusal_log=out_dir / "refusals.jsonl"
@@ -94,8 +110,9 @@ def run_eval(
                         case, result, cfg, scorer=scorer,
                         include_deepeval_metrics=not skip_judge_metrics,
                     )
+                    consecutive_errors = 0
                 except Exception as e:
-                    # one failed case must not kill a long run; record it
+                    elapsed_ms = (time.perf_counter() - t0) * 1000.0
                     scored = {
                         "case_id": case["id"],
                         "category": case["failure_category"],
@@ -111,21 +128,14 @@ def run_eval(
                         "error": f"{type(e).__name__}: {e}"[:400],
                     }
                     result = {
-                        "latency_ms": 0.0,
-                        "usage": {"cost_usd": 0.0},
+                        "latency_ms": result.get("latency_ms", elapsed_ms) if result else elapsed_ms,
+                        "usage": result.get("usage", {"cost_usd": None}) if result else {"cost_usd": None},
                         "verification": {"verified": False},
-                        "answer": None,
+                        "answer": result.get("answer") if result else None,
                         "refusal_reason": None,
-                        "citations": [],
+                        "citations": result.get("citations", []) if result else [],
                     }
                     consecutive_errors += 1
-                    if consecutive_errors >= 5:
-                        raise RuntimeError(
-                            "5 consecutive case failures — aborting run "
-                            f"(last error: {scored.get('error')})"
-                        )
-                else:
-                    consecutive_errors = 0
 
                 trace = build_trace(case, result)
                 (trace_dir / f"{case['id']}.json").write_text(
@@ -136,8 +146,8 @@ def run_eval(
                     **scored,
                     "input": case["input"],
                     "latency_ms": result.get("latency_ms", 0.0),
-                    "cost_usd": result.get("usage", {}).get("cost_usd", 0.0),
-                    "verified": result.get("verification", {}).get("verified", True),
+                    "cost_usd": result.get("usage", {}).get("cost_usd"),
+                    "verified": bool(result.get("verified", result.get("verification", {}).get("verified", False))),
                     "answer": result.get("answer"),
                     "refusal_reason": result.get("refusal_reason"),
                     "citations": result.get("citations", []),
@@ -145,8 +155,28 @@ def run_eval(
                 }
                 rows.append(row)
                 results_f.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
+                results_f.flush()
+
+                # Flush partial-run manifest
+                manifest = {
+                    "strategy": strategy,
+                    "total_cases": len(cases),
+                    "completed": [r["case_id"] for r in rows if r.get("outcome") != "error"],
+                    "failed": [r["case_id"] for r in rows if r.get("outcome") == "error"],
+                    "unattempted": [c["id"] for c in cases if c["id"] not in {r["case_id"] for r in rows}],
+                    "consecutive_errors": consecutive_errors,
+                    "status": "aborted" if consecutive_errors >= 5 else ("completed" if len(rows) == len(cases) else "in_progress"),
+                }
+                (out_dir / f"manifest_{strategy}.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
                 mark = "+" if scored["correct"] else "-"
                 print(f"[{strategy} {i:>2}/{len(cases)}] {mark} {case['id']} {scored['outcome']}", flush=True)
+
+                if consecutive_errors >= 5:
+                    raise RuntimeError(
+                        "5 consecutive case failures — aborting run "
+                        f"(last error: {scored.get('error')})"
+                    )
 
         metrics = aggregate(rows)
         metrics.update(scorer.judge.ledger.to_dict())

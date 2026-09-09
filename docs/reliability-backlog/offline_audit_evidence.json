@@ -1,0 +1,17 @@
+{
+  "multi_claim_false_positive": true,
+  "citation_prefix_collision": true,
+  "wrong_company_numeric_verification": {
+    "verified": true,
+    "claims": [
+      {
+        "raw": "$123 million",
+        "value": 123000000.0,
+        "is_pct": false,
+        "found": true
+      }
+    ]
+  },
+  "runtime_loader_accepts_invalid_enums_and_duplicate_ids": 2,
+  "exported_loader_rejects_same_file": "1 (audit-example): expected.type 'invalid' not in ('exact', 'contains', 'judge')"
+}

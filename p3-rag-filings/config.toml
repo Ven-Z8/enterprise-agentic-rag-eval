@@ -30,28 +30,27 @@ index_dir = "corpus/index"
 # the guard rails.
 strategy = "hybrid_rerank"
 top_k = 8
-reranker = "BAAI/bge-reranker-base"
+reranker = "BAAI/bge-reranker-v2-m3"
 rerank_candidates = 25
 
 [generation]
-# Model slug for generation, served via OpenRouter.
-# 2026-08-31: no OpenRouter credits — running all-free (minimax-m3). The run
-# snapshot records this; re-run on a frontier model when credits allow.
-model = "minimax/minimax-m3:free"
+# New profile: historical scores predate this configuration.
+model = "google/gemini-3.8-flash"
 max_tokens = 1500
-# One corrective retry when a numerical claim fails verification.
 verify_retries = 1
 
+[planning]
+model = "openai/gpt-5.6-luna"
+
+[runtime]
+model = "qwen/qwen3.8-flash"
+
 [extraction]
-# Cheaper model for high-volume structured extraction (graph building,
-# query planning). Kept separate so cost optimization is measurable.
-model = "minimax/minimax-m3:free"
+model = "qwen/qwen3.8-flash"
 
 [eval]
-# Judge model for scoring; may differ from generation. Free tier to keep
-# eval overhead off the paid balance; its agreement rate is measured by the
-# calibration step (scripts/calibrate_judge.py) rather than assumed.
-judge_model = "minimax/minimax-m3:free"
+# Keep aligned with ../p1-eval-harness/config.toml. Recalibrate before scoring.
+judge_model = "openai/gpt-5.6-luna"
 
 [verification]
 # Refuse to answer below this retrieval confidence (top dense cosine).

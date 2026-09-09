@@ -59,7 +59,8 @@ def test_pack_math_compute_delegates(monkeypatch):
     chunks = [{"id": "c0", "text": "Revenue | $100 | $80"}]
     cfg = {"generation": {"model": "test/model", "max_tokens": 256}}
 
-    def fake_complete(messages, cfg_, model=None, client=None):
+    def fake_complete(messages, cfg_, model=None, client=None, role="generation"):
+        assert role == "runtime"
         return ("{\"explanation\": \"growth\", \"expression\": \"(100-80)/80*100\", "
                 "\"result_value\": 25.0, \"formatted\": \"25.0%\"}"), {"calls": 1}
 

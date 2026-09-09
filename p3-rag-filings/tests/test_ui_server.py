@@ -79,3 +79,80 @@ def test_ui_query_endpoint(monkeypatch):
     assert "tables" in data
     assert len(data["tables"]) > 0
     assert data["tables"][0]["headers"] == ["Total revenue", "2025", "2024", "2023"]
+
+
+def test_ui_query_ticker_word_boundaries_no_false_match(monkeypatch):
+    """Ensure words like 'balance' and 'category' do not false-trigger BA or CAT tickers."""
+    from ragfilings.ui import server
+
+    recorded_args = {}
+
+    def mock_ask(*args, **kwargs):
+        recorded_args.update(kwargs)
+        return {
+            "session_id": "sess_boundary_test",
+            "answer": "Answer without ticker match.",
+            "refused": False,
+            "citations": [],
+            "confidence": 0.9,
+            "latency_ms": 50.0,
+            "usage": {},
+            "hits": [],
+        }
+
+    monkeypatch.setattr(server, "ask", mock_ask)
+
+    res = client.post(
+        "/api/query",
+        json={"query": "Explain balance sheet category classifications in general accounting.", "top_k": 12},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert recorded_args.get("top_k") == 12
+    assert recorded_args.get("memory") is not None
+    # No chart_data should be produced for BA or CAT from substring collision
+    assert data.get("chart_data") is None
+
+
+def test_ui_query_honest_fallback_metric_label(monkeypatch):
+    """Ensure falling back to Revenue is honestly labeled in chart title, never masquerading."""
+    from ragfilings.ui import server
+
+    def mock_ask(*args, **kwargs):
+        return {
+            "session_id": "sess_chart_test",
+            "answer": "Apple operating income discussion.",
+            "refused": False,
+            "citations": [],
+            "confidence": 0.95,
+            "latency_ms": 80.0,
+            "usage": {},
+            "hits": [],
+        }
+
+    class MockGraphEngine:
+        def get_metric_history(self, ticker, metric):
+            if metric == "Operating Income":
+                return []
+            if metric in ("Total Revenue", "Net Sales"):
+                return [
+                    {"fiscal_year": 2024, "value": 383285},
+                    {"fiscal_year": 2025, "value": 391035},
+                ]
+            return []
+
+    monkeypatch.setattr(server, "ask", mock_ask)
+    monkeypatch.setattr(server, "_graph_engine", MockGraphEngine())
+
+    res = client.post(
+        "/api/query",
+        json={"query": "What was Apple's operating income trend over the last two years?"},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    chart = data.get("chart_data")
+    assert chart is not None
+    assert chart["ticker"] == "AAPL"
+    assert "Alternative History, Operating Income unavailable" in chart["title"]
+    assert "Alternative History, Operating Income unavailable" in chart["metric"]
+

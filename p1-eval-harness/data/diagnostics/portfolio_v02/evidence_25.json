@@ -1,0 +1,486 @@
+{
+  "authorship": "Assistant-authored diagnostic; source-inspected, not human-calibrated or independently held-out.",
+  "corpus_index_sha256": "43a350732f99a2555fe3cf0dd2a66d18e87ede158cbe3b430d831a33b622c3bd",
+  "question_set_sha256": "321588e81e4b1f4077ad98f785793f0757fa8d408fcaab6e2f4c593fe20bfa28",
+  "cases": [
+    {
+      "case_id": "v02-25-001",
+      "rubric": "Require both labels and both percentages; do not swap channels.",
+      "calculation": null,
+      "evidence": [
+        {
+          "chunk_id": "AAPL_2025_10K:Item1:c002",
+          "doc_id": "AAPL_2025_10K",
+          "source_file": "AAPL_2025-10-31_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
+          "text": "The Company manages its business primarily on a geographic basis. The Company’s reportable segments consist of the Americas, Europe, Greater China, Japan and Rest of Asia Pacific. Americas includes both North and South America. Europe includes European countries, as well as India, the Middle East and Africa. Greater China includes China mainland, Hong Kong and Taiwan. Rest of Asia Pacific includes Australia, New Zealand and those Asian countries not included in the Company’s other reportable segments. Although the reportable segments provide similar hardware and software products and similar services, each one is managed separately to better align with the location of the Company’s customers and distribution partners and the unique market dynamics of each geographic region.\nMarkets and Distribution\nThe Company’s customers are primarily in the consumer, small and mid-sized business, education, enterprise and government markets. The Company sells its products and resells third-party products in most of its major markets directly to customers through its retail and online stores and its direct sales force. The Company sells its services in the same markets through its various service platforms. The Company also employs a variety of indirect distribution channels, such as third-party cellular network carriers and other resellers, for the sale of its products and certain of its services. During 2025, the Company’s net sales through its direct and indirect distribution channels accounted for 40% and 60%, respectively, of total net sales.\nCompetition",
+          "chunk_text_sha256": "da16abdd2a00b1e9560c52ef5ada18a9dc0678af48420a54aea959e399517b8b"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "fin-2018",
+        "input": "In its 10-K, what did Costco report as cash and cash equivalents for fiscal year 2025?",
+        "lexical_similarity": 0.386
+      }
+    },
+    {
+      "case_id": "v02-25-002",
+      "rubric": "Require 36% and constituent shares; invented customer names fail.",
+      "calculation": "22 + 14 = 36 percent",
+      "evidence": [
+        {
+          "chunk_id": "NVDA_2026_10K:Item1A:c036",
+          "doc_id": "NVDA_2026_10K",
+          "source_file": "NVDA_2026-02-25_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm",
+          "text": "We have experienced periods where we receive a significant amount of our revenue from a limited number of customers, and this trend may continue. For fiscal year 2026, sales to one direct customer represented 22% of total revenue and sales to another direct customer represented 14% of total revenue, all of which were primarily attributable to the Compute & Networking segment. With several of these partners, we are selling multiple products and systems in our portfolio through their channels. Our operating results depend on sales to our partner network, as well as the ability of these partners to sell products that incorporate our technologies. We have a small number of partners that are involved in system integration with our key customers. As our system design becomes increasingly complex, system integrators may be unable to meet specifications of our key customers. Changes in our partners' or customers' business models or their ownership can reduce the number of partners available to us and harm our ability to sell our advanced data center systems to customers. In the future, these partners may decide to purchase fewer products, not to incorporate our products into their ecosystem, or to alter their purchasing patterns in some other way. Because most of our sales are made on a purchase order basis, our customers can generally cancel, change, or delay product purchase commitments with little notice to us and without penalty. Our partners or customers may develop their own solutions; our customers may purchase products from our competitors; and our partners may discontinue sales or lose market share in the markets for which they purchase our products, all of which may alter partners’ or customers’ purchasing patterns. Many of our indirect customers often do not purchase directly from us but through multiple OEMs, ODMs, system integrators, distributors, and other channel partners. We generate a significant amount of our revenue from a limited number of indirect customers, and we estimate some individually representing 10% or more of our revenue. If end demand increases or our finished goods supply availability is concentrated near a quarter end, the system integrators, distributors, and channel partners may have limited ability to increase their credit, which could impact the timing and amount of our revenue. The loss of any of our large customers, a significant reduction in purchases by them, our inability to sell to a customer due to U.S. or other countries’ trade restrictions, or any difficulties in collecting accounts receivable would likely harm our financial condition and results of operations.",
+          "chunk_text_sha256": "3ed594927ce926ed0cea1597f25c76d74e964cacb34776ccc25d2b22c0f3a0f8"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "ent-1023",
+        "input": "What was the compound annual growth rate (CAGR) of Meta's total revenue from fiscal year 2023 to fiscal year 2025?",
+        "lexical_similarity": 0.37
+      }
+    },
+    {
+      "case_id": "v02-25-003",
+      "rubric": "Require absolute and relative change. Accept 10% as filing-rounded growth if figures and $495M are correct.",
+      "calculation": "5323-4828=495; 495/4828*100=10.2526926263%",
+      "evidence": [
+        {
+          "chunk_id": "COST_2025_10K:Item7:c008",
+          "doc_id": "COST_2025_10K",
+          "source_file": "COST_2025-10-08_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/909832/000090983225000101/cost-20250831.htm",
+          "text": "Net sales increased $20,287 or 8% during 2025. The improvement was primarily attributable to an increase in comparable sales of $14,788 or 6%. Comparable sales were positively impacted by increases of 5% in shopping frequency and approximately 1% in average ticket. The remaining increase in net sales was driven by sales at the 24 net new warehouses opened since the end of 2024.\nSales increased $19,086 or 10% in core merchandise categories, increasing in all categories. Sales in warehouse ancillary and other businesses increased $1,201, or 2%.\nLower gasoline prices negatively impacted net sales by $2,329, or 93 basis points, with an 8% decrease in the average price per gallon. The volume of gasoline sold increased approximately 2%, positively impacting net sales by $440, or 18 basis points.\nChanges in foreign currencies relative to the U.S. dollar negatively impacted net sales by approximately $1,943, or 78 basis points, attributable to our Other International and Canadian operations.\nMembership Fees\n2025 | 2024 | 2023\nMembership fees | $5,323 | $4,828 | $4,580\nMembership fee revenue increased 10% in 2025, driven by new member sign-ups and membership fee increases. At the end of 2025, our member renewal rates were 92.3% in the U.S. and Canada and 89.8% worldwide. Renewal rates were negatively impacted by a higher number of memberships sold online,\n26\nTable of Contents\nincluding through digital promotions, entering the renewal rate calculation. These members renew at a slightly lower rate on average.",
+          "chunk_text_sha256": "f3012f54d66c54627d74c76df7517e9807671ede354159bc88693c8f23bb9a69"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "fin-3002",
+        "input": "How did Coca-Cola's operating income change from fiscal year 2024 to fiscal year 2025?",
+        "lexical_similarity": 0.49
+      }
+    },
+    {
+      "case_id": "v02-25-004",
+      "rubric": "Require both rates and 2.5 percentage points, not a 2.5% relative increase.",
+      "calculation": "92.3-89.8=2.5 percentage points",
+      "evidence": [
+        {
+          "chunk_id": "COST_2025_10K:Item7:c008",
+          "doc_id": "COST_2025_10K",
+          "source_file": "COST_2025-10-08_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/909832/000090983225000101/cost-20250831.htm",
+          "text": "Net sales increased $20,287 or 8% during 2025. The improvement was primarily attributable to an increase in comparable sales of $14,788 or 6%. Comparable sales were positively impacted by increases of 5% in shopping frequency and approximately 1% in average ticket. The remaining increase in net sales was driven by sales at the 24 net new warehouses opened since the end of 2024.\nSales increased $19,086 or 10% in core merchandise categories, increasing in all categories. Sales in warehouse ancillary and other businesses increased $1,201, or 2%.\nLower gasoline prices negatively impacted net sales by $2,329, or 93 basis points, with an 8% decrease in the average price per gallon. The volume of gasoline sold increased approximately 2%, positively impacting net sales by $440, or 18 basis points.\nChanges in foreign currencies relative to the U.S. dollar negatively impacted net sales by approximately $1,943, or 78 basis points, attributable to our Other International and Canadian operations.\nMembership Fees\n2025 | 2024 | 2023\nMembership fees | $5,323 | $4,828 | $4,580\nMembership fee revenue increased 10% in 2025, driven by new member sign-ups and membership fee increases. At the end of 2025, our member renewal rates were 92.3% in the U.S. and Canada and 89.8% worldwide. Renewal rates were negatively impacted by a higher number of memberships sold online,\n26\nTable of Contents\nincluding through digital promotions, entering the renewal rate calculation. These members renew at a slightly lower rate on average.",
+          "chunk_text_sha256": "f3012f54d66c54627d74c76df7517e9807671ede354159bc88693c8f23bb9a69"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "fin-2014",
+        "input": "In its 10-K, what did Goldman Sachs report as diluted earnings per share for fiscal year 2024?",
+        "lexical_similarity": 0.361
+      }
+    },
+    {
+      "case_id": "v02-25-005",
+      "rubric": "Require segment, operating-income numerator and consolidated denominator. Accept share within 0.1 percentage point.",
+      "calculation": "69773/128528*100=54.2862255695%",
+      "evidence": [
+        {
+          "chunk_id": "MSFT_2025_10K:Item7:c009",
+          "doc_id": "MSFT_2025_10K",
+          "source_file": "MSFT_2025-07-30_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/789019/000095017025100235/msft-20250630.htm",
+          "text": "Operating expenses increased $3.8 billion or 6% driven by investments in cloud and AI engineering and Gaming, including the impact of the Activision Blizzard acquisition.\nOperating income increased $19.1 billion or 17% with growth across each of our segments.\n38\nPART II\nItem 7\nSEGMENT RESULTS OF OPERATIONS\n(In millions, except percentages) | 2025 | 2024 | Percentage Change\nProductivity and Business Processes\nRevenue | $120,810 | $106,820 | 13%\nCost of revenue | 22,422 | 19,611 | 14%\nOperating expenses | 28,615 | 27,548 | 4%\nOperating Income | $69,773 | $59,661 | 17%\nIntelligent Cloud\nRevenue | $106,265 | $87,464 | 21%\nCost of revenue | 40,171 | 29,611 | 36%\nOperating expenses | 21,505 | 20,040 | 7%\nOperating Income | $44,589 | $37,813 | 18%\nMore Personal Computing\nRevenue | $54,649 | $50,838 | 7%\nCost of revenue | 25,238 | 24,892 | 1%\nOperating expenses | 15,245 | 13,987 | 9%\nOperating Income | $14,166 | $11,959 | 18%\nTotal\nRevenue | $281,724 | $245,122 | 15%\nCost of revenue | 87,831 | 74,114 | 19%\nOperating expenses | 65,365 | 61,575 | 6%\nOperating Income | $128,528 | $109,433 | 17%\nReportable Segments\nFiscal Year 2025 Compared with Fiscal Year 2024\nProductivity and Business Processes\nRevenue increased $14.0 billion or 13%.\n•\nMicrosoft 365 Commercial products and cloud services revenue increased $10.8 billion or 14%. Microsoft 365 Commercial cloud revenue grew 15% with Microsoft 365 Commercial seat growth of 6% driven by small and medium businesses and frontline worker offerings, as well as growth in revenue per user. Microsoft 365 Commercial products revenue grew 7% driven by the Windows Commercial on-premises components of Microsoft 365 suite sales and an increase in Office transactional purchasing with the launch of Office 2024.\n•",
+          "chunk_text_sha256": "e30cf7811cb386780387df0d3668c3070525dcb5b8831365fa42e1f1e333a406"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "fin-4001",
+        "input": "Which company reported higher operating income in fiscal year 2024: Microsoft or Tesla? By how much?",
+        "lexical_similarity": 0.446
+      }
+    },
+    {
+      "case_id": "v02-25-006",
+      "rubric": "Require combined value and share. Denominator must be Google advertising, not consolidated revenue.",
+      "calculation": "224532+40367=264899; 264899/294691*100=89.8904276004%",
+      "evidence": [
+        {
+          "chunk_id": "GOOGL_2025_10K:Item7:c014",
+          "doc_id": "GOOGL_2025_10K",
+          "source_file": "GOOGL_2026-02-05_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000018/goog-20251231.htm",
+          "text": "2024 | 2025\nGoogle Search & other | $198,084 | $224,532\nYouTube ads | 36,147 | 40,367\nGoogle Network | 30,359 | 29,792\nGoogle advertising | 264,590 | 294,691\nGoogle subscriptions, platforms, and devices | 40,340 | 48,030\nGoogle Services total | 304,930 | 342,721\nGoogle Cloud | 43,229 | 58,705\nOther Bets | 1,648 | 1,537\nHedging gains (losses) | 211 | (127)\nTotal revenues | $350,018 | $402,836",
+          "chunk_text_sha256": "25e11d99a4bc27399dcdbd764df0c786ee62df42d847c060799ce25b5cc8bbee"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "ent-1003",
+        "input": "What was Alphabet's R&D intensity (research and development expense as a percentage of revenue) in fiscal year 2025?",
+        "lexical_similarity": 0.389
+      }
+    },
+    {
+      "case_id": "v02-25-007",
+      "rubric": "Require all three figures and subtract the loss. Treating the loss as positive income fails.",
+      "calculation": "102469-19193=83276 million USD",
+      "evidence": [
+        {
+          "chunk_id": "META_2025_10K:Item7:c002",
+          "doc_id": "META_2025_10K",
+          "source_file": "META_2026-01-29_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/1326801/000162828026003942/meta-20251231.htm",
+          "text": "Consolidated and Segment Results\nWe report our financial results for our two reportable segments: Family of Apps (FoA) and Reality Labs (RL). FoA includes Facebook, Instagram, Messenger, WhatsApp, and other services. RL includes our virtual and augmented reality related consumer hardware, software, and content.\nFamily of Apps | Reality Labs | Total\nYear Ended December 31, | Year Ended December 31, | Year Ended December 31,\n2025 | 2024 | % change | 2025 | 2024 | % change | 2025 | 2024 | % change\n(in millions, except percentages)\nRevenue | $198,759 | $162,355 | 22% | $2,207 | $2,146 | 3% | $200,966 | $164,501 | 22%\nCosts and expenses | 96,290 | 75,246 | 28% | 21,400 | 19,875 | 8% | 117,690 | 95,121 | 24%\nIncome (loss) from operations | $102,469 | $87,109 | 18% | $(19,193) | $(17,729) | (8)% | $83,276 | $69,380 | 20%\nOperating margin | 52 | % | 54 | % | (870) | % | (826) | % | 41 | % | 42 | %\n•\nNet income was $60.46 billion, with diluted earnings per share (EPS) of $23.49 for the year ended December 31, 2025.\n•\nCapital expenditures, including principal payments on finance leases, were $72.22 billion for the year ended December 31, 2025.\n•\nShare repurchases of our Class A common stock were $26.26 billion and total dividend and dividend equivalent payments were $5.32 billion for the year ended December 31, 2025.\n•\nCash, cash equivalents, and marketable securities were $81.59 billion as of December 31, 2025.\n•\nLong-term debt was $58.74 billion as of December 31, 2025.\n•",
+          "chunk_text_sha256": "8ea793b3e73ae2e230cab7fc7a5061e6f736c3a7eef1c4c27f23912ef85517a0"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "fin-1001",
+        "input": "What was Coca-Cola's operating income for fiscal year 2025?",
+        "lexical_similarity": 0.393
+      }
+    },
+    {
+      "case_id": "v02-25-008",
+      "rubric": "Require negative conclusion and correctly aligned operating profit and margin for both years. Do not substitute net profit.",
+      "calculation": null,
+      "evidence": [
+        {
+          "chunk_id": "PEP_2025_10K:Item7:c023",
+          "doc_id": "PEP_2025_10K",
+          "source_file": "PEP_2026-02-03_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/77476/000007747626000007/pep-20251227.htm",
+          "text": "2025 | 2024 | Change\nNet revenue | $93,925 | $91,854 | 2 | %\nOperating profit | $11,498 | $12,887 | (11) | %\nOperating margin | 12.2 | % | 14.0 | % | (1.8)",
+          "chunk_text_sha256": "b62de665cd87a12b07178ccd92b51223d836f19eb9cc3492657b43b1314c57ed"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "fin-3002",
+        "input": "How did Coca-Cola's operating income change from fiscal year 2024 to fiscal year 2025?",
+        "lexical_similarity": 0.329
+      }
+    },
+    {
+      "case_id": "v02-25-009",
+      "rubric": "Require both dates with correct fiscal-year mapping; do not infer calendar-year endings.",
+      "calculation": null,
+      "evidence": [
+        {
+          "chunk_id": "WMT_2026_10K:Item7:c000",
+          "doc_id": "WMT_2026_10K",
+          "source_file": "WMT_2026-03-13_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/104169/000010416926000055/wmt-20260131.htm",
+          "text": "ITEM 7.\nMANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS\nOverview\nThis discussion, which presents our results for the fiscal years ended January 31, 2026 (\"fiscal 2026\"), January 31, 2025 (\"fiscal 2025\") and January 31, 2024 (\"fiscal 2024\"), should be read in conjunction with our Consolidated Financial Statements and the accompanying notes. We intend for this discussion to provide the reader with information that will assist in understanding our financial statements, the changes in certain key items in those financial statements from period to period and the primary factors that accounted for those changes. We also discuss certain performance metrics that management uses to assess the Company's performance. Additionally, the discussion provides information about the financial results of each of the three segments of our business to provide a better understanding of how each of those segments and its results of operations affect the financial condition and results of operations of the Company as a whole.\nThroughout this Item 7, we discuss segment operating income, comparable store and club sales and other measures. Management measures the results of the Company's segments using each segment's operating income, including certain corporate overhead allocations, as well as other measures. From time to time, we revise the measurement of each segment's operating income and other measures as determined by the information regularly reviewed by our chief operating decision maker.",
+          "chunk_text_sha256": "1b6af5734dbe440f9a4fbdafa92ac225c72c763c5e1953f9faedca7cef5f7c35"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "ent-1012",
+        "input": "What was Walmart's operating margin in fiscal year 2026?",
+        "lexical_similarity": 0.496
+      }
+    },
+    {
+      "case_id": "v02-25-010",
+      "rubric": "Require both current segments. Adding Consumer Health as a current segment fails.",
+      "calculation": null,
+      "evidence": [
+        {
+          "chunk_id": "JNJ_2025_10K:Item1:c000",
+          "doc_id": "JNJ_2025_10K",
+          "source_file": "JNJ_2026-02-11_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/200406/000020040626000016/jnj-20251228.htm",
+          "text": "Item 1. Business\nGeneral\nJohnson & Johnson and its subsidiaries (the Company) have approximately 138,200 employees worldwide engaged in the research and development, manufacture and sale of a broad range of products in the healthcare field. Johnson & Johnson is a holding company, with operating companies conducting business in virtually all countries of the world. The Company’s primary focus is products related to human health and well-being. Johnson & Johnson was incorporated in the State of New Jersey in 1887.\nThe Chief Operating Decision Maker (CODM) is the Company's Chief Executive Officer (Principal Executive Officer). The Executive Committee is Johnson & Johnson’s senior leadership team responsible for setting the strategy and priorities of the Company and driving accountability at all levels. Within the strategic parameters provided by the Executive Committee, senior management groups at U.S. and international operating companies are each responsible for their own strategic plans and the day-to-day operations of those companies.\nSegments of business\nThe Company is organized into two business segments: Innovative Medicine and MedTech. Additional information required by this item is incorporated herein by reference to the narrative and tabular descriptions of segments and operating results under: Item 7. Management’s discussion and analysis of results of operations and financial condition of this Report; and Note 17 Segments of business and geographic areas of the notes to consolidated financial statements included in Item 8 of this Report.\nInnovative Medicine",
+          "chunk_text_sha256": "1bdf069f95c682da2a6dfded1486a4227e49be3a1df9de9f47370a86b95da3a0"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "ent-1016",
+        "input": "What was PepsiCo's gross margin in fiscal year 2025?",
+        "lexical_similarity": 0.492
+      }
+    },
+    {
+      "case_id": "v02-25-011",
+      "rubric": "Require Europe, Middle East and Africa. Rest of Asia Pacific is incorrect for India.",
+      "calculation": null,
+      "evidence": [
+        {
+          "chunk_id": "AAPL_2025_10K:Item1:c002",
+          "doc_id": "AAPL_2025_10K",
+          "source_file": "AAPL_2025-10-31_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
+          "text": "The Company manages its business primarily on a geographic basis. The Company’s reportable segments consist of the Americas, Europe, Greater China, Japan and Rest of Asia Pacific. Americas includes both North and South America. Europe includes European countries, as well as India, the Middle East and Africa. Greater China includes China mainland, Hong Kong and Taiwan. Rest of Asia Pacific includes Australia, New Zealand and those Asian countries not included in the Company’s other reportable segments. Although the reportable segments provide similar hardware and software products and similar services, each one is managed separately to better align with the location of the Company’s customers and distribution partners and the unique market dynamics of each geographic region.\nMarkets and Distribution\nThe Company’s customers are primarily in the consumer, small and mid-sized business, education, enterprise and government markets. The Company sells its products and resells third-party products in most of its major markets directly to customers through its retail and online stores and its direct sales force. The Company sells its services in the same markets through its various service platforms. The Company also employs a variety of indirect distribution channels, such as third-party cellular network carriers and other resellers, for the sale of its products and certain of its services. During 2025, the Company’s net sales through its direct and indirect distribution channels accounted for 40% and 60%, respectively, of total net sales.\nCompetition",
+          "chunk_text_sha256": "da16abdd2a00b1e9560c52ef5ada18a9dc0678af48420a54aea959e399517b8b"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "fin-2018",
+        "input": "In its 10-K, what did Costco report as cash and cash equivalents for fiscal year 2025?",
+        "lexical_similarity": 0.325
+      }
+    },
+    {
+      "case_id": "v02-25-012",
+      "rubric": "Require 69%, direction of change, AI infrastructure scaling and Azure efficiency offset.",
+      "calculation": null,
+      "evidence": [
+        {
+          "chunk_id": "MSFT_2025_10K:Item7:c008",
+          "doc_id": "MSFT_2025_10K",
+          "source_file": "MSFT_2025-07-30_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/789019/000095017025100235/msft-20250630.htm",
+          "text": "Revenue from sales of Windows Pro and non-Pro licenses sold through the OEM channel and sales of first-party Devices, including Surface and PC accessories\nXbox content and services revenue growth\nRevenue from Xbox content and services, comprising first- and third-party content (including games and in-game content), Xbox Game Pass and other subscriptions, Xbox Cloud Gaming, advertising, and other cloud services\nSearch and news advertising revenue (ex TAC) growth\nRevenue from search and news advertising excluding traffic acquisition costs (“TAC”) paid to Bing Ads network publishers and news partners\nSUMMARY RESULTS OF OPERATIONS\n(In millions, except percentages and per share amounts) | 2025 | 2024 | Percentage Change\nRevenue | $281,724 | $245,122 | 15%\nGross margin | 193,893 | 171,008 | 13%\nOperating income | 128,528 | 109,433 | 17%\nNet income | 101,832 | 88,136 | 16%\nDiluted earnings per share | 13.64 | 11.80 | 16%\nFiscal Year 2025 Compared with Fiscal Year 2024\nRevenue increased $36.6 billion or 15% with growth across each of our segments. Intelligent Cloud revenue increased driven by Azure. Productivity and Business Processes revenue increased driven by Microsoft 365 Commercial cloud. More Personal Computing revenue increased driven by Gaming and Search and news advertising.\nCost of revenue increased $13.7 billion or 19% driven by growth in Microsoft Cloud.\nGross margin increased $22.9 billion or 13% with growth across each of our segments.\n•\nGross margin percentage decreased slightly driven by Intelligent Cloud, offset in part by More Personal Computing.\n•\nMicrosoft Cloud gross margin percentage decreased to 69% driven by the impact of scaling our AI infrastructure, offset in part by efficiency gains in Azure.",
+          "chunk_text_sha256": "9b0967268ed7ee070dae9bd25e6db1e8c0d15cc334a37e1bb4d7af1bd2d5ba60"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "ent-1001",
+        "input": "What was Microsoft's net profit margin in fiscal year 2025?",
+        "lexical_similarity": 0.425
+      }
+    },
+    {
+      "case_id": "v02-25-013",
+      "rubric": "Require both the renewal explanation and ratable deferred recognition. Cite both supporting passages; this is cross-chunk synthesis.",
+      "calculation": null,
+      "evidence": [
+        {
+          "chunk_id": "COST_2025_10K:Item7:c008",
+          "doc_id": "COST_2025_10K",
+          "source_file": "COST_2025-10-08_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/909832/000090983225000101/cost-20250831.htm",
+          "text": "Net sales increased $20,287 or 8% during 2025. The improvement was primarily attributable to an increase in comparable sales of $14,788 or 6%. Comparable sales were positively impacted by increases of 5% in shopping frequency and approximately 1% in average ticket. The remaining increase in net sales was driven by sales at the 24 net new warehouses opened since the end of 2024.\nSales increased $19,086 or 10% in core merchandise categories, increasing in all categories. Sales in warehouse ancillary and other businesses increased $1,201, or 2%.\nLower gasoline prices negatively impacted net sales by $2,329, or 93 basis points, with an 8% decrease in the average price per gallon. The volume of gasoline sold increased approximately 2%, positively impacting net sales by $440, or 18 basis points.\nChanges in foreign currencies relative to the U.S. dollar negatively impacted net sales by approximately $1,943, or 78 basis points, attributable to our Other International and Canadian operations.\nMembership Fees\n2025 | 2024 | 2023\nMembership fees | $5,323 | $4,828 | $4,580\nMembership fee revenue increased 10% in 2025, driven by new member sign-ups and membership fee increases. At the end of 2025, our member renewal rates were 92.3% in the U.S. and Canada and 89.8% worldwide. Renewal rates were negatively impacted by a higher number of memberships sold online,\n26\nTable of Contents\nincluding through digital promotions, entering the renewal rate calculation. These members renew at a slightly lower rate on average.",
+          "chunk_text_sha256": "f3012f54d66c54627d74c76df7517e9807671ede354159bc88693c8f23bb9a69"
+        },
+        {
+          "chunk_id": "COST_2025_10K:Item7:c009",
+          "doc_id": "COST_2025_10K",
+          "source_file": "COST_2025-10-08_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/909832/000090983225000101/cost-20250831.htm",
+          "text": "As previously reported, we increased our annual membership fees in the U.S. and Canada, effective September 1, 2024. We account for membership fee revenue on a deferred basis, recognized ratably over the one-year membership period. The fee income increase accounted for approximately 40% of membership income growth during 2025.\nGross Margin\n2025 | 2024 | 2023\nNet sales | $269,912 | $249,625 | $237,710\nLess merchandise costs | 239,886 | 222,358 | 212,586\nGross margin | $30,026 | $27,267 | $25,124\nGross margin percentage | 11.12 | % | 10.92 | % | 10.57 | %\nGross margin percentage increased 20 basis points. Excluding the impact of gasoline price deflation on net sales, gross margin percentage was 11.03%, an increase of 11 basis points. This increase was positively impacted by 19 basis points in our core merchandise categories, primarily due to fresh foods and our co-branded credit card program. Gross margin percentage was negatively impacted by seven basis points due to a LIFO charge in 2025 for higher merchandise costs and one basis point in warehouse ancillary and other businesses. Changes in foreign currencies relative to the U.S. dollar negatively impacted gross margin by approximately $224, attributable to our Other International and Canadian operations.\nThe gross margin in core merchandise categories, when expressed as a percentage of core merchandise sales (rather than total net sales), increased 16 basis points. The increase was primarily due to fresh foods and foods and sundries, partially offset by non-foods. This measure eliminates the impact of changes in sales penetration and gross margin from our warehouse ancillary and other businesses.",
+          "chunk_text_sha256": "bb299f2194631e3f8b15104f0c39ae0e2d81d9ebf10d20126a5a3963013fdb99"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "fin-2018",
+        "input": "In its 10-K, what did Costco report as cash and cash equivalents for fiscal year 2025?",
+        "lexical_similarity": 0.394
+      }
+    },
+    {
+      "case_id": "v02-25-014",
+      "rubric": "Require approximate 20,000 and explicit rounding caveat. Claiming exactly 20,000 fails.",
+      "calculation": "(1.66-1.64)*1000000 ≈ 20000 vehicles; inputs approximate",
+      "evidence": [
+        {
+          "chunk_id": "TSLA_2025_10K:Item7:c001",
+          "doc_id": "TSLA_2025_10K",
+          "source_file": "TSLA_2026-01-29_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/1318605/000162828026003952/tsla-20251231.htm",
+          "text": "As a result of rapidly evolving trade and fiscal policy, uncertainty in the automotive and energy markets continues, posing risks to our global supply chain and cost structure which could have a meaningfully adverse impact on demand for our products and our profitability. The current tariff regime will have a relatively larger impact on our energy generation and storage business compared to our automotive business. While we prepare for near-term challenges to our business under current policies, we are focused on long-term growth opportunities as we continue to make prudent investments.\nIn 2025, we produced approximately 1.66 million consumer vehicles and delivered approximately 1.64 million consumer vehicles. We are focused on profitable growth via a differentiated and efficiently managed product portfolio that leverages our existing factories and production lines, further improving and deploying our FSD (Supervised) capabilities, including future autonomous capabilities through our purpose-built Robotaxi product, Cybercab, reducing costs, increasing vehicle production, utilized capacity and delivery capabilities, improving and developing our vehicles, battery and AI compute technologies, vertically integrating and localizing our supply chain, and expanding our global infrastructure, including our service and charging infrastructure. We have continued to expand and refine our Robotaxi service after its June 2025 launch, capitalizing on our AI investments and scalable mobility infrastructure to advance a service-driven business model.",
+          "chunk_text_sha256": "58165232650564a59673f3cfd2ba654871077e213f5d2af09ba2b158a44796c0"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "fin-8012",
+        "input": "How many vehicles did Tesla deliver in fiscal year 2025?",
+        "lexical_similarity": 0.415
+      }
+    },
+    {
+      "case_id": "v02-25-015",
+      "rubric": "Require both delta and growth with the 2024 denominator.",
+      "calculation": "58705-43229=15476; 15476/43229*100=35.8000416387%",
+      "evidence": [
+        {
+          "chunk_id": "GOOGL_2025_10K:Item7:c014",
+          "doc_id": "GOOGL_2025_10K",
+          "source_file": "GOOGL_2026-02-05_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000018/goog-20251231.htm",
+          "text": "2024 | 2025\nGoogle Search & other | $198,084 | $224,532\nYouTube ads | 36,147 | 40,367\nGoogle Network | 30,359 | 29,792\nGoogle advertising | 264,590 | 294,691\nGoogle subscriptions, platforms, and devices | 40,340 | 48,030\nGoogle Services total | 304,930 | 342,721\nGoogle Cloud | 43,229 | 58,705\nOther Bets | 1,648 | 1,537\nHedging gains (losses) | 211 | (127)\nTotal revenues | $350,018 | $402,836",
+          "chunk_text_sha256": "25e11d99a4bc27399dcdbd764df0c786ee62df42d847c060799ce25b5cc8bbee"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "ent-1030",
+        "input": "What was the trend in Meta's total revenue from fiscal year 2023 to fiscal year 2025?",
+        "lexical_similarity": 0.503
+      }
+    },
+    {
+      "case_id": "v02-25-016",
+      "rubric": "Require both increases and difference; fiscal-period caveat welcome. Compare increases, not total revenue.",
+      "calculation": "(402836-350018)-(281724-245122)=16216 million USD",
+      "evidence": [
+        {
+          "chunk_id": "GOOGL_2025_10K:Item7:c011",
+          "doc_id": "GOOGL_2025_10K",
+          "source_file": "GOOGL_2026-02-05_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000018/goog-20251231.htm",
+          "text": "2024 | 2025 | $ Change | % Change\nConsolidated revenues | $350,018 | $402,836 | $52,818 | 15 | %\nCost of revenues | $146,306 | $162,535 | $16,229 | 11 | %\nOperating expenses | $91,322 | $111,262 | $19,940 | 22 | %\nOperating income | $112,390 | $129,039 | $16,649 | 15 | %\nOperating margin | 32 | % | 32 | % | 0 | %\nOther income (expense), net | $7,425 | $29,787 | $22,362 | 301 | %\nNet income | $100,118 | $132,170 | $32,052 | 32 | %\nDiluted net income per share (1) | $8.04 | $10.81 | $2.77 | 34 | %",
+          "chunk_text_sha256": "8222a2570848eb2fc91bd245c9a1d586346c009204a9876e8df56e4d2010a922"
+        },
+        {
+          "chunk_id": "MSFT_2025_10K:Item7:c008",
+          "doc_id": "MSFT_2025_10K",
+          "source_file": "MSFT_2025-07-30_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/789019/000095017025100235/msft-20250630.htm",
+          "text": "Revenue from sales of Windows Pro and non-Pro licenses sold through the OEM channel and sales of first-party Devices, including Surface and PC accessories\nXbox content and services revenue growth\nRevenue from Xbox content and services, comprising first- and third-party content (including games and in-game content), Xbox Game Pass and other subscriptions, Xbox Cloud Gaming, advertising, and other cloud services\nSearch and news advertising revenue (ex TAC) growth\nRevenue from search and news advertising excluding traffic acquisition costs (“TAC”) paid to Bing Ads network publishers and news partners\nSUMMARY RESULTS OF OPERATIONS\n(In millions, except percentages and per share amounts) | 2025 | 2024 | Percentage Change\nRevenue | $281,724 | $245,122 | 15%\nGross margin | 193,893 | 171,008 | 13%\nOperating income | 128,528 | 109,433 | 17%\nNet income | 101,832 | 88,136 | 16%\nDiluted earnings per share | 13.64 | 11.80 | 16%\nFiscal Year 2025 Compared with Fiscal Year 2024\nRevenue increased $36.6 billion or 15% with growth across each of our segments. Intelligent Cloud revenue increased driven by Azure. Productivity and Business Processes revenue increased driven by Microsoft 365 Commercial cloud. More Personal Computing revenue increased driven by Gaming and Search and news advertising.\nCost of revenue increased $13.7 billion or 19% driven by growth in Microsoft Cloud.\nGross margin increased $22.9 billion or 13% with growth across each of our segments.\n•\nGross margin percentage decreased slightly driven by Intelligent Cloud, offset in part by More Personal Computing.\n•\nMicrosoft Cloud gross margin percentage decreased to 69% driven by the impact of scaling our AI infrastructure, offset in part by efficiency gains in Azure.",
+          "chunk_text_sha256": "9b0967268ed7ee070dae9bd25e6db1e8c0d15cc334a37e1bb4d7af1bd2d5ba60"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "fin-4004",
+        "input": "Which company reported higher net income in fiscal year 2025: Alphabet or Boeing? By how much?",
+        "lexical_similarity": 0.511
+      }
+    },
+    {
+      "case_id": "v02-25-017",
+      "rubric": "Require both gross margins and approximately 43.02–43.03 percentage-point gap. Do not compare operating margins or infer investment quality.",
+      "calculation": "50859/93925*100=54.1485227575193; 30026/269912*100=11.124366460179616; gap=43.02415629733969 percentage points",
+      "evidence": [
+        {
+          "chunk_id": "PEP_2025_10K:Item8:c000",
+          "doc_id": "PEP_2025_10K",
+          "source_file": "PEP_2026-02-03_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/77476/000007747626000007/pep-20251227.htm",
+          "text": "Item 8. Financial Statements and Supplementary Data.\nSee “Item 15. Exhibits and Financial Statement Schedules.”\nConsolidated Statement of Income\nPepsiCo, Inc. and Subsidiaries\nFiscal years ended December 27, 2025, December 28, 2024 and December 30, 2023\n(in millions except per share amounts)\n2025 | 2024 | 2023\nNet Revenue | $93,925 | $91,854 | $91,471\nCost of sales | 43,066 | 41,744 | 41,881\nGross profit | 50,859 | 50,110 | 49,590\nSelling, general and administrative expenses | 37,368 | 37,190 | 36,677\nImpairment of intangible assets (see Notes 1 and 4) | 1,993 | 33 | 927\nOperating Profit | 11,498 | 12,887 | 11,986\nOther pension and retiree medical benefits (expense)/income | ( 133 ) | ( 22 ) | 250\nNet interest expense and other | ( 1,121 ) | ( 919 ) | ( 819 )\nIncome before income taxes | 10,244 | 11,946 | 11,417\nProvision for income taxes | 1,949 | 2,320 | 2,262\nNet income | 8,295 | 9,626 | 9,155\nLess: Net income attributable to noncontrolling interests | 55 | 48 | 81\nNet Income Attributable to PepsiCo | $8,240 | $9,578 | $9,074\nNet Income Attributable to PepsiCo per Common Share\nBasic | $6.02 | $6.97 | $6.59\nDiluted | $6.00 | $6.95 | $6.56\nWeighted-average common shares outstanding\nBasic | 1,369 | 1,373 | 1,376\nDiluted | 1,373 | 1,378 | 1,383\nSee accompanying notes to the consolidated financial statements.\n57\nTable of Contents\nConsolidated Statement of Comprehensive Income\nPepsiCo, Inc. and Subsidiaries\nFiscal years ended December 27, 2025, December 28, 2024 and December 30, 2023\n(in millions)\n2025 | 2024 | 2023\nNet income | $8,295 | $9,626 | $9,155\nOther comprehensive income/(loss), net of taxes:",
+          "chunk_text_sha256": "3d52ef8dd2a36b396fa2920ebdef5a23e471458211199af82fa4e0216781dcff"
+        },
+        {
+          "chunk_id": "COST_2025_10K:Item7:c009",
+          "doc_id": "COST_2025_10K",
+          "source_file": "COST_2025-10-08_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/909832/000090983225000101/cost-20250831.htm",
+          "text": "As previously reported, we increased our annual membership fees in the U.S. and Canada, effective September 1, 2024. We account for membership fee revenue on a deferred basis, recognized ratably over the one-year membership period. The fee income increase accounted for approximately 40% of membership income growth during 2025.\nGross Margin\n2025 | 2024 | 2023\nNet sales | $269,912 | $249,625 | $237,710\nLess merchandise costs | 239,886 | 222,358 | 212,586\nGross margin | $30,026 | $27,267 | $25,124\nGross margin percentage | 11.12 | % | 10.92 | % | 10.57 | %\nGross margin percentage increased 20 basis points. Excluding the impact of gasoline price deflation on net sales, gross margin percentage was 11.03%, an increase of 11 basis points. This increase was positively impacted by 19 basis points in our core merchandise categories, primarily due to fresh foods and our co-branded credit card program. Gross margin percentage was negatively impacted by seven basis points due to a LIFO charge in 2025 for higher merchandise costs and one basis point in warehouse ancillary and other businesses. Changes in foreign currencies relative to the U.S. dollar negatively impacted gross margin by approximately $224, attributable to our Other International and Canadian operations.\nThe gross margin in core merchandise categories, when expressed as a percentage of core merchandise sales (rather than total net sales), increased 16 basis points. The increase was primarily due to fresh foods and foods and sundries, partially offset by non-foods. This measure eliminates the impact of changes in sales penetration and gross margin from our warehouse ancillary and other businesses.",
+          "chunk_text_sha256": "bb299f2194631e3f8b15104f0c39ae0e2d81d9ebf10d20126a5a3963013fdb99"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "fin-3007",
+        "input": "How did NVIDIA's operating income change from fiscal year 2025 to fiscal year 2026?",
+        "lexical_similarity": 0.075
+      }
+    },
+    {
+      "case_id": "v02-25-018",
+      "rubric": "Require about 98.9% and the correct segment/consolidated denominator.",
+      "calculation": "198759/200966*100=98.9018042853%",
+      "evidence": [
+        {
+          "chunk_id": "META_2025_10K:Item7:c002",
+          "doc_id": "META_2025_10K",
+          "source_file": "META_2026-01-29_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/1326801/000162828026003942/meta-20251231.htm",
+          "text": "Consolidated and Segment Results\nWe report our financial results for our two reportable segments: Family of Apps (FoA) and Reality Labs (RL). FoA includes Facebook, Instagram, Messenger, WhatsApp, and other services. RL includes our virtual and augmented reality related consumer hardware, software, and content.\nFamily of Apps | Reality Labs | Total\nYear Ended December 31, | Year Ended December 31, | Year Ended December 31,\n2025 | 2024 | % change | 2025 | 2024 | % change | 2025 | 2024 | % change\n(in millions, except percentages)\nRevenue | $198,759 | $162,355 | 22% | $2,207 | $2,146 | 3% | $200,966 | $164,501 | 22%\nCosts and expenses | 96,290 | 75,246 | 28% | 21,400 | 19,875 | 8% | 117,690 | 95,121 | 24%\nIncome (loss) from operations | $102,469 | $87,109 | 18% | $(19,193) | $(17,729) | (8)% | $83,276 | $69,380 | 20%\nOperating margin | 52 | % | 54 | % | (870) | % | (826) | % | 41 | % | 42 | %\n•\nNet income was $60.46 billion, with diluted earnings per share (EPS) of $23.49 for the year ended December 31, 2025.\n•\nCapital expenditures, including principal payments on finance leases, were $72.22 billion for the year ended December 31, 2025.\n•\nShare repurchases of our Class A common stock were $26.26 billion and total dividend and dividend equivalent payments were $5.32 billion for the year ended December 31, 2025.\n•\nCash, cash equivalents, and marketable securities were $81.59 billion as of December 31, 2025.\n•\nLong-term debt was $58.74 billion as of December 31, 2025.\n•",
+          "chunk_text_sha256": "8ea793b3e73ae2e230cab7fc7a5061e6f736c3a7eef1c4c27f23912ef85517a0"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "ent-1017",
+        "input": "What was Meta's free cash flow margin in fiscal year 2025?",
+        "lexical_similarity": 0.432
+      }
+    },
+    {
+      "case_id": "v02-25-019",
+      "rubric": "Require all three segments. Product categories are not operating segments.",
+      "calculation": null,
+      "evidence": [
+        {
+          "chunk_id": "AMZN_2025_10K:Item1:c000",
+          "doc_id": "AMZN_2025_10K",
+          "source_file": "AMZN_2026-02-06_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000004/amzn-20251231.htm",
+          "text": "Item 1.\nBusiness\nThis Annual Report on Form 10-K and the documents incorporated herein by reference contain forward-looking statements based on expectations, estimates, and projections as of the date of this filing. Actual results and outcomes may differ materially from those expressed in forward-looking statements. See Item 1A of Part I — “Risk Factors.” As used herein, “Amazon.com,” “we,” “our,” and similar terms include Amazon.com, Inc. and its subsidiaries, unless the context indicates otherwise.\nGeneral\nWe seek to be Earth’s most customer-centric company. We are guided by four principles: customer obsession rather than competitor focus, passion for invention, commitment to operational excellence, and long-term thinking. In each of our segments, we serve our primary customer sets, consisting of consumers, sellers, developers, enterprises, content creators, advertisers, and employees.\nWe have organized our operations into three segments: North America, International, and Amazon Web Services (“AWS”). These segments reflect the way the Company evaluates its business performance and manages its operations. Information on our net sales is contained in Item 8 of Part II, “Financial Statements and Supplementary Data — Note 10 — Segment Information.”\nConsumers",
+          "chunk_text_sha256": "8a1132bd9930dc76a86164e6dbab68c18f48af73a04508ad23023fd06a9b4f78"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "ent-1011",
+        "input": "What was Tesla's operating margin in fiscal year 2025?",
+        "lexical_similarity": 0.48
+      }
+    },
+    {
+      "case_id": "v02-25-020",
+      "rubric": "Require cancellation/change/delay flexibility and little notice/no penalty. Do not invent contractual guarantees.",
+      "calculation": null,
+      "evidence": [
+        {
+          "chunk_id": "NVDA_2026_10K:Item1A:c036",
+          "doc_id": "NVDA_2026_10K",
+          "source_file": "NVDA_2026-02-25_10K.htm",
+          "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm",
+          "text": "We have experienced periods where we receive a significant amount of our revenue from a limited number of customers, and this trend may continue. For fiscal year 2026, sales to one direct customer represented 22% of total revenue and sales to another direct customer represented 14% of total revenue, all of which were primarily attributable to the Compute & Networking segment. With several of these partners, we are selling multiple products and systems in our portfolio through their channels. Our operating results depend on sales to our partner network, as well as the ability of these partners to sell products that incorporate our technologies. We have a small number of partners that are involved in system integration with our key customers. As our system design becomes increasingly complex, system integrators may be unable to meet specifications of our key customers. Changes in our partners' or customers' business models or their ownership can reduce the number of partners available to us and harm our ability to sell our advanced data center systems to customers. In the future, these partners may decide to purchase fewer products, not to incorporate our products into their ecosystem, or to alter their purchasing patterns in some other way. Because most of our sales are made on a purchase order basis, our customers can generally cancel, change, or delay product purchase commitments with little notice to us and without penalty. Our partners or customers may develop their own solutions; our customers may purchase products from our competitors; and our partners may discontinue sales or lose market share in the markets for which they purchase our products, all of which may alter partners’ or customers’ purchasing patterns. Many of our indirect customers often do not purchase directly from us but through multiple OEMs, ODMs, system integrators, distributors, and other channel partners. We generate a significant amount of our revenue from a limited number of indirect customers, and we estimate some individually representing 10% or more of our revenue. If end demand increases or our finished goods supply availability is concentrated near a quarter end, the system integrators, distributors, and channel partners may have limited ability to increase their credit, which could impact the timing and amount of our revenue. The loss of any of our large customers, a significant reduction in purchases by them, our inability to sell to a customer due to U.S. or other countries’ trade restrictions, or any difficulties in collecting accounts receivable would likely harm our financial condition and results of operations.",
+          "chunk_text_sha256": "3ed594927ce926ed0cea1597f25c76d74e964cacb34776ccc25d2b22c0f3a0f8"
+        }
+      ],
+      "nearest_existing_case": {
+        "id": "ent-1034",
+        "input": "What was NVIDIA's net income for fiscal year 2028?",
+        "lexical_similarity": 0.394
+      }
+    },
+    {
+      "case_id": "v02-25-021",
+      "rubric": "Refuse as out of corpus: no Adobe filing exists in the 25-document active financial index. Do not use the separate FinanceBench index or model memory.",
+      "calculation": null,
+      "evidence": [],
+      "nearest_existing_case": {
+        "id": "fin-1013",
+        "input": "What was Alphabet's total revenue for fiscal year 2025?",
+        "lexical_similarity": 0.578
+      }
+    },
+    {
+      "case_id": "v02-25-022",
+      "rubric": "Refuse: FY2030 is outside the available Tesla FY2025 filing; do not substitute forecasts or another year.",
+      "calculation": null,
+      "evidence": [],
+      "nearest_existing_case": {
+        "id": "fin-9004",
+        "input": "What was Tesla's total revenue?",
+        "lexical_similarity": 0.716
+      }
+    },
+    {
+      "case_id": "v02-25-023",
+      "rubric": "Refuse: requested market price/date is outside the annual-filing corpus. Do not substitute the 2025 market-value disclosure.",
+      "calculation": null,
+      "evidence": [],
+      "nearest_existing_case": {
+        "id": "fin-8011",
+        "input": "What was Apple's market capitalization as of September 27, 2025?",
+        "lexical_similarity": 0.573
+      }
+    },
+    {
+      "case_id": "v02-25-024",
+      "rubric": "Ask which company and fiscal period; do not invent scope. Generic refusal is not sufficient for the manual rubric.",
+      "calculation": null,
+      "evidence": [],
+      "nearest_existing_case": {
+        "id": "fin-9010",
+        "input": "What was Home Depot's gross profit?",
+        "lexical_similarity": 0.689
+      }
+    },
+    {
+      "case_id": "v02-25-025",
+      "rubric": "Ask for the comparison fiscal years/periods, and optionally dollars versus percent. Do not silently choose FY2024–FY2025.",
+      "calculation": null,
+      "evidence": [],
+      "nearest_existing_case": {
+        "id": "fin-9003",
+        "input": "What was Microsoft's total revenue?",
+        "lexical_similarity": 0.658
+      }
+    }
+  ]
+}

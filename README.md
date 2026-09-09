@@ -12,9 +12,9 @@ Production-grade Agentic AI Systems, RAG Architecture, and Domain-Adaptive Evalu
 
 | Component | Description | Highlights |
 | :--- | :--- | :--- |
-| **[P3: Enterprise RAG Orchestrator](./p3-rag-filings)** | Multi-Agent Agentic **Graph** RAG over messy SEC 10-K filings | Typed fact graph + multi-hop augmentation (ratios/CAGR/comparisons), deterministic clarification for under-specified questions, conversational multi-turn UI, Hybrid + BGE-rerank retrieval, safe Python financial-math tool, LangGraph orchestrator — **96.0% v1-50 (48/50) · 95.6% enterprise (43/45) · 81.3% FinanceBench**, all-free $0.00 |
+| **[P3: Enterprise RAG Orchestrator](./p3-rag-filings)** | Multi-Agent Agentic **Graph** RAG over messy SEC 10-K filings | Typed fact graph + multi-hop augmentation (ratios/CAGR/comparisons), deterministic clarification for under-specified questions, FastMCP/FastAPI service, Hybrid + BGE-rerank retrieval, safe Python financial-math tool, LangGraph orchestrator — **96.0% v1-50 (48/50) · 95.6% enterprise (43/45) · 81.3% FinanceBench**, all-free $0.00 |
 | **[P1: Agent Evaluation Harness](./p1-eval-harness)** | "Proving Ground" evaluation harness for Agent & RAG systems | Audited golden datasets, two-tier scoring (deterministic + calibrated G-Eval judge, 88.5% human agreement / κ 0.723), full trajectory traces, regression diffs, scorecards — measured P3's 96.0% v1-50 and 81.3% FinanceBench |
-| **[Web Portfolio Showcase](./web)** | Interactive Web Dashboard & Scorecard Explorer | Responsive Dark-Mode UI, Live Metric Breakdown, Brutal 20 Stress Test Visualizer |
+| **[P5: System Optimization Layer](./p5-cost-optimization)** | Cost, Latency & Token Optimization Profiler | Model routing, AST evaluation, prompt caching, and verification gates |
 
 ---
 
@@ -165,19 +165,6 @@ eval-harness run --strategy hybrid_rerank_graph --skip-judge-metrics
 # External benchmark: FinanceBench, reasoning-over-evidence (81.3%)
 python scripts/benchmark_financebench.py
 ```
-
----
-
-### 5. Launch Portfolio Web Dashboard (`web`)
-
-To view the interactive Web UI and scorecard visualizer:
-
-```bash
-cd ..
-python -m http.server 8080 -d web
-```
-
-Open your browser to [http://localhost:8080](http://localhost:8080) to inspect the interactive dashboard.
 
 ---
 

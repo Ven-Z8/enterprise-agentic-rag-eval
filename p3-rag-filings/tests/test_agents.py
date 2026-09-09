@@ -260,3 +260,47 @@ def test_audit_answer_flags_nonexistent_citations(monkeypatch):
     assert res.verified is True
     assert "GHOST:c999" in seen["user"]
     assert usage["cost_usd"] == 0.001
+
+
+def test_researcher_routes_runtime_and_reranker_on_both_searches(monkeypatch):
+    from ragfilings.llm.factory import get_model_for_role
+
+    class RerankerIndex(FakeIndex):
+        def search(self, query, strategy, top_k, reranker_name=None, **kwargs):
+            assert reranker_name == 'test/reranker'
+            self.calls.append(kwargs)
+            return []
+
+    index = RerankerIndex([CHUNK_AAPL])
+    chat = _scripted_researcher(monkeypatch, [
+        _resp(tool_calls=[_tc('search_filings', '{"query":"sales","ticker":"AAPL"}')]),
+        _resp(content='no evidence'),
+    ], index)
+    monkeypatch.setattr(researcher_mod, 'get_model_for_role', get_model_for_role)
+    cfg = {**CFG, 'runtime': {'model': 'test/runtime'},
+           'retrieval': {**CFG['retrieval'], 'reranker': 'test/reranker'}}
+    researcher_mod.run_researcher('sales', QueryPlan(intent='lookup'), index, cfg,
+                                 {'input_tokens': 0, 'output_tokens': 0, 'cost_usd': 0, 'calls': 0})
+    assert len(index.calls) == 2
+    assert all(request['model'] == 'test/runtime' for request in chat.requests)
+
+
+def test_orchestrator_audit_exhaustion_marks_refused_and_unverified(monkeypatch):
+    from ragfilings.pipeline.orchestrator import MultiAgentOrchestrator
+    from ragfilings.schemas import AuditResult, AuditClaim, SynthesizedAnswer
+
+    monkeypatch.setattr("ragfilings.pipeline.orchestrator.plan_query",
+                        lambda *args, **kwargs: (QueryPlan(intent="lookup", ticker="AAPL"), {"calls": 1}))
+    monkeypatch.setattr("ragfilings.pipeline.orchestrator.run_researcher",
+                        lambda *args, **kwargs: {"hits": [{"chunk": CHUNK_AAPL, "score": 0.9, "dense_sim": 0.8}], "queries_run": [], "events": [], "notes": ""})
+    monkeypatch.setattr("ragfilings.pipeline.orchestrator.synthesize",
+                        lambda *args, **kwargs: SynthesizedAnswer(answer="$999B fake revenue", citations=["AAPL_2025_10K:Item8:c007"]))
+    monkeypatch.setattr("ragfilings.pipeline.orchestrator.audit_answer",
+                        lambda *args, **kwargs: AuditResult(verified=False, audit_claims=[AuditClaim(figure="999B", status="UNVERIFIED")]))
+
+    orch = MultiAgentOrchestrator({**CFG, "generation": {"verify_retries": 0}})
+    res = orch.run("what was sales?", FakeIndex([CHUNK_AAPL]))
+    assert res["verified"] is False
+    assert res["refused"] is True
+    assert res["answer"] is None
+    assert "audit failed" in res["refusal_reason"].lower()

@@ -65,6 +65,32 @@ def test_trace_roundtrips():
     assert restored == t
 
 
+def test_goldencase_pydantic_validation():
+    import pytest
+    from pydantic import ValidationError
+    from harness.schema import GoldenCase, ExpectedOutcome
+
+    # Bad enum difficulty
+    with pytest.raises(ValidationError):
+        GoldenCase(id="c1", input="q", expected=ExpectedOutcome(type="exact", answer="1"), difficulty="ultra", failure_category="lookup", domain="financial")
+
+    # Bad failure category
+    with pytest.raises(ValidationError):
+        GoldenCase(id="c1", input="q", expected=ExpectedOutcome(type="exact", answer="1"), difficulty="easy", failure_category="invalid_cat", domain="financial")
+
+    # Unanswerable with non-null answer
+    with pytest.raises(ValidationError):
+        GoldenCase(id="c1", input="q", expected=ExpectedOutcome(type="exact", answer="42"), difficulty="easy", failure_category="unanswerable", domain="financial")
+
+    # Ambiguous with non-null answer
+    with pytest.raises(ValidationError):
+        GoldenCase(id="c1", input="q", expected=ExpectedOutcome(type="judge", answer="42"), difficulty="easy", failure_category="ambiguous", domain="financial")
+
+    # Exact with null answer for lookup
+    with pytest.raises(ValidationError):
+        GoldenCase(id="c1", input="q", expected=ExpectedOutcome(type="exact", answer=None), difficulty="easy", failure_category="lookup", domain="financial")
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):

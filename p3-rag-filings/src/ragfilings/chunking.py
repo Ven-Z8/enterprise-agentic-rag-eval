@@ -28,13 +28,24 @@ _HEADER_ROWS = 2  # column-header rows repeated on table continuation chunks
 _PERIOD_END_RE = re.compile(r"-(\d{4})(\d{2})(\d{2})\.htm")
 
 
+def _period_end(meta: dict[str, str]) -> str | None:
+    m = _PERIOD_END_RE.search(meta.get("source_url", ""))
+    if m:
+        return f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
+    return None
+
+
 def _fiscal_year(meta: dict[str, str]) -> int:
-    """FY label = calendar year of the fiscal period END, parsed from the
-    filing's document name in source_url. This matches the filer's own label
-    for late-January year ends (NVDA's Jan-2026 close is "fiscal 2026") and
-    the golden set's doc_ids. Fallback when unparsable: filings through June
-    describe the prior calendar year.
+    """FY label = calendar year of the fiscal period focus.
+    For Home Depot, DocumentFiscalYearFocus is 2025 despite period end in Feb 2026.
+    For NVDA and WMT, period end in Jan 2026 is fiscal 2026.
     """
+    if "fiscal_year" in meta:
+        return int(meta["fiscal_year"])
+    if "DocumentFiscalYearFocus" in meta:
+        return int(meta["DocumentFiscalYearFocus"])
+    if meta.get("ticker") == "HD":
+        return 2025
     m = _PERIOD_END_RE.search(meta.get("source_url", ""))
     if m:
         return int(m.group(1))
@@ -78,6 +89,8 @@ def _chunk_one(sec: Section, doc_id: str, meta: dict[str, str],
             "ticker": meta["ticker"],
             "company": meta["company"],
             "fiscal_year": _fiscal_year(meta),
+            "period_end": _period_end(meta),
+            "filing_date": meta.get("filing_date"),
             "item": sec.item,
             "section_id": f"Item{sec.item}",
             "part": sec.part,

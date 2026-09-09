@@ -70,3 +70,50 @@ def test_load_rows_reads_all_results_files(tmp_path):
     (d / "results_hybrid.jsonl").write_text(json.dumps(_row("b", False)) + "\n")
     rows = regress.load_rows(d)
     assert {r["case_id"] for r in rows} == {"a", "b"}
+
+
+def test_runner_durability_preserves_failed_cases_and_manifest(tmp_path):
+    import pytest
+    from harness.runner import run_eval
+
+    golden_file = tmp_path / "golden.jsonl"
+    cases = [
+        {"id": f"c-{i}", "input": f"q{i}", "expected": {"answer": "a", "citations": [], "type": "exact"}, "difficulty": "easy", "failure_category": "lookup", "domain": "financial"}
+        for i in range(1, 7)
+    ]
+    golden_file.write_text("\n".join(json.dumps(c) for c in cases) + "\n", encoding="utf-8")
+
+    class FailingAdapter:
+        name = "failing"
+        model_name = "test"
+        cfg = {}
+
+        def run_case(self, case, **kwargs):
+            import time
+            time.sleep(0.005)
+            raise RuntimeError(f"boom on {case['id']}")
+
+    out_dir = tmp_path / "out"
+    with pytest.raises(RuntimeError, match="5 consecutive case failures"):
+        run_eval(
+            cfg={"eval": {"judge_model": "test"}},
+            adapter=FailingAdapter(),
+            golden_path=golden_file,
+            strategies=["dense"],
+            out_dir=out_dir,
+            skip_judge_metrics=True,
+        )
+
+    results_f = out_dir / "results_dense.jsonl"
+    assert results_f.exists()
+    lines = [json.loads(l) for l in results_f.read_text(encoding="utf-8").splitlines() if l.strip()]
+    assert len(lines) == 5
+    assert [r["case_id"] for r in lines] == [f"c-{i}" for i in range(1, 6)]
+    assert all(r["latency_ms"] > 0.0 for r in lines)
+
+    manifest_f = out_dir / "manifest_dense.json"
+    assert manifest_f.exists()
+    manifest = json.loads(manifest_f.read_text(encoding="utf-8"))
+    assert manifest["status"] == "aborted"
+    assert len(manifest["failed"]) == 5
+    assert manifest["unattempted"] == ["c-6"]

@@ -806,6 +806,12 @@ body.light-theme {
   background: #ffffff;
 }
 
+.dag-node.active-error {
+  border-color: var(--accent-rose);
+  background: var(--accent-rose-light);
+  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.15);
+}
+
 .node-badge {
   width: 18px;
   height: 18px;
@@ -847,6 +853,8 @@ body.light-theme {
 .node-state-pill.idle { background: var(--bg-subtle); color: var(--text-light); }
 .node-state-pill.running { background: var(--accent-indigo-light); color: var(--accent-indigo); }
 .node-state-pill.done { background: var(--accent-emerald-light); color: var(--accent-emerald); }
+.node-state-pill.error { background: var(--accent-rose-light); color: var(--accent-rose); }
+.node-state-pill.skipped { background: var(--bg-subtle); color: var(--text-light); opacity: 0.7; }
 
 /* DAG Parallel Split Row */
 .dag-parallel-row {

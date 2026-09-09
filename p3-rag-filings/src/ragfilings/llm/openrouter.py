@@ -90,6 +90,9 @@ class OpenRouterClient(BaseLLMClient):
             "temperature": temperature,
             "extra_body": {"usage": {"include": True}},
         }
+        # Luna does not advertise temperature support in the OpenRouter catalog.
+        if target_model == "openai/gpt-5.6-luna":
+            request_kwargs.pop("temperature", None)
         request_kwargs.update(kwargs)
 
         resp = client.chat.completions.create(**request_kwargs)

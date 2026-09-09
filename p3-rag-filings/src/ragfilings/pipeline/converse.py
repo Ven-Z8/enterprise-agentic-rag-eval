@@ -50,7 +50,7 @@ def rewrite_followup(query: str, history: list[dict[str, Any]],
                      f"Rewritten self-contained question:")},
     ]
     try:
-        text, _ = complete_with_resilience(messages, cfg)
+        text, _ = complete_with_resilience(messages, cfg, role="planning")
         rewritten = text.strip().strip('"').strip()
         # Drop any accidental multi-line output / preamble: keep the first line.
         rewritten = rewritten.splitlines()[0].strip() if rewritten else ""

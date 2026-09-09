@@ -39,7 +39,7 @@ def plan_query(
         {"role": "system", "content": system},
         {"role": "user", "content": query},
     ]
-    plan, usage = complete_structured(messages, QueryPlan, cfg, role="extraction")
+    plan, usage = complete_structured(messages, QueryPlan, cfg, role="planning")
 
     known_tickers = {line.split()[0] for line in inventory}
     known_years: set[int] = set()

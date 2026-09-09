@@ -1,0 +1,165 @@
+{
+  "status": "selected, not executed",
+  "source_file": "p1-eval-harness/data/domain_a_financial/golden_set_enterprise_v1.jsonl",
+  "source_sha256": "19d92a305e8aedc832ab1a80771c3b90312070f4458abc9e358c54a3607bf275",
+  "core_sha256": "321588e81e4b1f4077ad98f785793f0757fa8d408fcaab6e2f4c593fe20bfa28",
+  "subset_sha256": "f945765594f35e6fe04a23e767fee2f81693b75a34044b419e6a2aa7bd932a09",
+  "combined_sha256": "4e5a3d316c78a559bd72f9e6dfc6070d559f8ff0ab613d161c785acc748adc1c",
+  "selected_ids": [
+    "ent-1002",
+    "ent-1003",
+    "ent-1004",
+    "ent-1005",
+    "ent-1007",
+    "ent-1008",
+    "ent-1011",
+    "ent-1012",
+    "ent-1016",
+    "ent-1017",
+    "ent-1019",
+    "ent-1020",
+    "ent-1021",
+    "ent-1024",
+    "ent-1025",
+    "ent-1026",
+    "ent-1027",
+    "ent-1028",
+    "ent-1029",
+    "ent-1031",
+    "ent-1033",
+    "ent-1035",
+    "ent-1039",
+    "ent-1043",
+    "ent-1044"
+  ],
+  "subset_categories": {
+    "synthesis": 19,
+    "unanswerable": 3,
+    "ambiguous": 3
+  },
+  "combined_categories": {
+    "table": 1,
+    "synthesis": 34,
+    "lookup": 4,
+    "unanswerable": 6,
+    "ambiguous": 5
+  },
+  "exact_prompt_duplicates": 0,
+  "original_records_preserved": true,
+  "citation_prefix_resolution_counts": {
+    "ent-1002": {
+      "AAPL_2025_10K:Item8": 57
+    },
+    "ent-1003": {
+      "GOOGL_2025_10K:Item7": 34,
+      "GOOGL_2025_10K:Item8": 105
+    },
+    "ent-1004": {
+      "META_2025_10K:Item8": 109,
+      "MSFT_2025_10K:Item8": 86
+    },
+    "ent-1005": {
+      "MSFT_2025_10K:Item8": 86
+    },
+    "ent-1007": {
+      "AMZN_2025_10K:Item8": 92
+    },
+    "ent-1008": {
+      "NVDA_2026_10K:Item8": 78
+    },
+    "ent-1011": {
+      "TSLA_2025_10K:Item8": 132
+    },
+    "ent-1012": {
+      "WMT_2026_10K:Item8": 84
+    },
+    "ent-1016": {
+      "PEP_2025_10K:Item7": 65,
+      "PEP_2025_10K:Item8": 118
+    },
+    "ent-1017": {
+      "META_2025_10K:Item7": 43,
+      "META_2025_10K:Item8": 109
+    },
+    "ent-1019": {
+      "TSLA_2025_10K:Item8": 132
+    },
+    "ent-1020": {
+      "MSFT_2025_10K:Item8": 86
+    },
+    "ent-1021": {
+      "NVDA_2026_10K:Item8": 78
+    },
+    "ent-1024": {
+      "COST_2025_10K:Item8": 67
+    },
+    "ent-1025": {
+      "GOOGL_2025_10K:Item8": 105,
+      "MSFT_2025_10K:Item8": 86
+    },
+    "ent-1026": {
+      "AMZN_2025_10K:Item7": 36,
+      "AMZN_2025_10K:Item8": 92,
+      "META_2025_10K:Item7": 43,
+      "META_2025_10K:Item8": 109
+    },
+    "ent-1027": {
+      "META_2025_10K:Item8": 109
+    },
+    "ent-1028": {
+      "MSFT_2025_10K:Item8": 86
+    },
+    "ent-1029": {
+      "AMZN_2025_10K:Item8": 92
+    },
+    "ent-1031": {},
+    "ent-1033": {},
+    "ent-1035": {},
+    "ent-1039": {},
+    "ent-1043": {},
+    "ent-1044": {}
+  },
+  "selection_rationales": {
+    "ent-1002": "Two-year CAGR with annualization.",
+    "ent-1003": "R&D expense divided by consolidated revenue.",
+    "ent-1004": "Cross-company operating-margin comparison.",
+    "ent-1005": "Multi-year ratio change with percentage-point calculation from unrounded inputs.",
+    "ent-1007": "Amazon net margin and consolidated scope.",
+    "ent-1008": "NVIDIA net margin with FY2026 scope.",
+    "ent-1011": "Low operating margin; avoid substituting gross margin.",
+    "ent-1012": "Retail operating margin with FY2026 scope.",
+    "ent-1016": "Known poisoned-graph-fact regression; deliberate partial overlap with core question 017.",
+    "ent-1017": "Free-cash-flow margin with a disclosed non-GAAP numerator.",
+    "ent-1019": "Known R&D-intensity rounding failure.",
+    "ent-1020": "Microsoft two-year CAGR.",
+    "ent-1021": "NVIDIA high-growth CAGR across FY2024\u2013FY2026.",
+    "ent-1024": "Costco net-sales CAGR; avoid membership-inclusive denominator drift.",
+    "ent-1025": "Cross-company net-profit-margin comparison.",
+    "ent-1026": "Cross-company free-cash-flow margins with four supporting quantities.",
+    "ent-1027": "Multi-year operating-margin change; percentage points versus relative growth.",
+    "ent-1028": "Three-year revenue series with complete year mapping.",
+    "ent-1029": "Three-year Amazon sales series.",
+    "ent-1031": "Out-of-corpus company.",
+    "ent-1033": "Unavailable historical period.",
+    "ent-1035": "Unavailable quarterly net income; annual-only corpus does not itself prove absence, inspect filing evidence.",
+    "ent-1039": "Missing margin definition.",
+    "ent-1043": "Undefined profitability measure and period.",
+    "ent-1044": "Missing peer group and fiscal period."
+  },
+  "review_notes": [
+    "Selected before any new paid run. Existing known failures deliberately retained; not a random or independent holdout.",
+    "Source prompts, IDs, expected answers, scoring types and notes preserved. Source references remain section-level; prefix resolution alone does not validate all answer claims.",
+    "Existing scorer defects require rubric/manual review; do not treat exact first-number matches or generic refusals as sufficient.",
+    "ent-1005 and ent-1027: compute percentage-point deltas from unrounded ratios; rounded displayed endpoints may differ.",
+    "ent-1016 partially overlaps the core PEP/COST margin comparison, deliberately for isolated fault diagnosis.",
+    "ent-1035 requires checking whether quarterly net income is actually disclosed; never infer absence solely from 10-K document type."
+  ],
+  "not_selected_special_reasons": {
+    "ent-1009": "Home Depot fiscal identity/citation migration unresolved.",
+    "ent-1013": "Home Depot fiscal identity/citation migration unresolved.",
+    "ent-1018": "Chevron denominator is Total Revenues and Other Income; clarify intended revenue definition before scoring.",
+    "ent-1036": "Non-GAAP metric absence needs explicit corpus evidence; GAAP statements alone do not establish absence."
+  },
+  "excluded_execution_file": "p1-eval-harness/data/domain_a_financial/golden_set_v1.jsonl (50 hiring cases)",
+  "budget": "Existing $2 ceiling remains; 50 questions per strategy means 100 application runs for graph+agent, plus judging/probes. Do not raise the ceiling automatically."
+}

@@ -1,0 +1,347 @@
+[
+  {
+    "key": "verdict",
+    "priority": "P0",
+    "title": "[P0] Preserve the final audit verdict through API, harness and UI",
+    "problem": "An agent can finish with an answer and refused=false after its combined audit fails. Consumers then read the numerical sub-check instead of the combined verdict, so an unsuccessful audit can look verified.",
+    "evidence": [
+      "p3-rag-filings/src/ragfilings/pipeline/orchestrator.py:187-212 computes all_ok, stores the combined result separately, and can reach END on audit exhaustion without refusing.",
+      "p3-rag-filings/src/ragfilings/ui/server.py:392-408 returns verification but omits the top-level verified verdict.",
+      "p1-eval-harness/src/harness/runner.py:140 reads verification.verified with a True default.",
+      "Offline verification probe: Microsoft revenue was $123 million passes against an Apple passage containing $123 million. Numerical membership alone is not semantic verification."
+    ],
+    "acceptance": [
+      "Introduce one authoritative final answer status and verification verdict across the result contract.",
+      "Audit exhaustion, invalid citations, missing verification and disagreement between numerical/semantic checks cannot produce a successful verified answer.",
+      "Keep numerical checks labeled separately; an answer with zero numeric claims is not automatically semantically verified.",
+      "Add offline tests covering numerical-pass/semantic-fail, missing verdict and audit exhaustion through orchestrator, API and harness."
+    ],
+    "depends": "None",
+    "order": 1,
+    "body_file": "/Volumes/VeN/FreeLance-Potfolio/docs/reliability-backlog/01-verdict.md",
+    "url": "https://github.com/Ven-Z8/FreeLance-Potfolio/issues/1",
+    "number": 1
+  },
+  {
+    "key": "reporting",
+    "priority": "P0",
+    "title": "[P0] Report the executed dataset and metric coverage truthfully",
+    "problem": "The new 25-case run produces a scorecard paragraph claiming the old 50-case dataset, while metric averages omit failed measurements without visible coverage.",
+    "evidence": [
+      "p1-eval-harness/src/harness/report.py:13-20 hardcodes Golden set v1 / 50 cases.",
+      "p1-eval-harness/src/harness/traces/build.py:105 hardcodes golden_verification=v1 proven.",
+      "September 6 graph diagnostic: faithfulness=1.0 on only 5 valid outputs, with 8 invalid-JSON errors. This is not 100% faithfulness across 25 cases.",
+      "The scorecard calls citation-prefix matching Citation faithfulness, which overstates what is measured."
+    ],
+    "acceptance": [
+      "Derive dataset name, case count, hash and provenance from the actual run.",
+      "Every metric displays successful, failed, skipped and eligible counts alongside its average.",
+      "Rename citation matching metrics accurately; keep semantic support distinct.",
+      "Offline report fixtures for a 25-case run and missing metrics contain no inherited 50-case/v1 claims."
+    ],
+    "depends": "None",
+    "order": 2,
+    "body_file": "/Volumes/VeN/FreeLance-Potfolio/docs/reliability-backlog/02-reporting.md",
+    "url": "https://github.com/Ven-Z8/FreeLance-Potfolio/issues/2",
+    "number": 2
+  },
+  {
+    "key": "scoring",
+    "priority": "P0",
+    "title": "[P0] Score every required claim and enforce citation boundaries",
+    "problem": "The deterministic scorer can accept an incorrect multi-part answer after matching the first expected number; citation prefix collisions also count as hits.",
+    "evidence": [
+      "p1-eval-harness/src/harness/metrics/engine.py:_figures_match only checks exp_claims[0].",
+      "Offline reproduction: expected Direct 40%; indirect 60% versus actual Direct 40%; indirect 99% returns True.",
+      "Offline reproduction: citation AAPL_2025_10K:Item1:c0019 matches expected AAPL_2025_10K:Item1:c001.",
+      "Correctness is separate from required-source coverage; answered-case rubrics in notes are not consistently passed to the judge."
+    ],
+    "acceptance": [
+      "Require all material claims with company, fiscal period, units and labels; swapped labels or missing second claims fail.",
+      "Allow documented section-level citations using delimiter-aware matching; chunk IDs match exactly.",
+      "Pass each case rubric to semantic scoring and record claim-level reasons.",
+      "Regression fixtures include first-number-only, swapped columns, wrong units, zero values, prefix collisions and missing second source."
+    ],
+    "depends": "reporting",
+    "order": 3,
+    "body_file": "/Volumes/VeN/FreeLance-Potfolio/docs/reliability-backlog/03-scoring.md",
+    "url": "https://github.com/Ven-Z8/FreeLance-Potfolio/issues/3",
+    "number": 3
+  },
+  {
+    "key": "schema",
+    "priority": "P1",
+    "title": "[P1] Unify dataset validation and reject duplicate or invalid cases before running",
+    "problem": "Two exported dataset schemas enforce different rules. The runtime loader accepts malformed labels and duplicate IDs that the public dataclass loader rejects.",
+    "evidence": [
+      "p1-eval-harness/src/harness/schema.py:GoldenCase uses unconstrained strings for type, difficulty and category.",
+      "p1-eval-harness/src/harness/metrics/engine.py:load_cases appends cases without duplicate-ID checks.",
+      "p1-eval-harness/src/harness/datasets/schema.py:load_jsonl and validate enforce enums and duplicates.",
+      "Offline reproduction: runtime loader accepts 2 identical invalid-enum cases; exported loader rejects the same file."
+    ],
+    "acceptance": [
+      "Choose one canonical validated dataset contract shared by CLI, scripts and exported loaders.",
+      "Reject duplicate IDs across all input files, invalid enums and invalid refusal/answer combinations before any paid request.",
+      "Preserve documented compatibility or provide an explicit migration for existing datasets.",
+      "Both loader entry points produce equivalent results/errors on valid and invalid fixtures."
+    ],
+    "depends": "None",
+    "order": 4,
+    "body_file": "/Volumes/VeN/FreeLance-Potfolio/docs/reliability-backlog/04-schema.md",
+    "url": "https://github.com/Ven-Z8/FreeLance-Potfolio/issues/4",
+    "number": 4
+  },
+  {
+    "key": "accounting",
+    "priority": "P0",
+    "title": "[P0] Enforce request budgets and account for every retry and failed attempt",
+    "problem": "Cost accounting and retries are fragmented. Permanent request errors may be retried, native tool calls lack an output cap, and failed or auxiliary calls can disappear from totals.",
+    "evidence": [
+      "p3-rag-filings/src/ragfilings/llm/factory.py:complete_with_resilience catches all exceptions; SDK retries add another layer.",
+      "p3-rag-filings/src/ragfilings/agents/tool_loop.py sends no max_tokens cap.",
+      "p3-rag-filings/src/ragfilings/llm/openrouter.py:parse_usage converts absent usage/cost to zero.",
+      "pipeline/converse.py discards usage; financial/query_decompose.py and math_tool.py swallow failures.",
+      "Agent attempt on September 7 hit repeated upstream Qwen 429s. Its temporary observer directory had vanished; optional PYTHONPATH silently failed to load it, leaving unknown spend."
+    ],
+    "acceptance": [
+      "Put verified request logging and budget enforcement in a shared application transport; fail closed if required accounting is absent.",
+      "Log model/role/attempt before every request; enforce output, query and run budgets with atomic reservations.",
+      "Retry only classified transient failures with bounded backoff; invalid parameters/credit exhaustion fail fast and SDK retries cannot bypass the budget.",
+      "Unknown cost stays null; retain all attempts and auxiliary calls and reconcile totals without double counting.",
+      "Offline transport tests cover 400, 402, 429, 5xx, timeout, validation retry and budget exhaustion; announce any later real LLM calls."
+    ],
+    "depends": "None",
+    "order": 5,
+    "body_file": "/Volumes/VeN/FreeLance-Potfolio/docs/reliability-backlog/05-accounting.md",
+    "url": "https://github.com/Ven-Z8/FreeLance-Potfolio/issues/5",
+    "number": 5
+  },
+  {
+    "key": "durability",
+    "priority": "P1",
+    "title": "[P1] Persist each evaluation result and retain partial runs on failure",
+    "problem": "Error rows replace elapsed time and incurred cost with zero, result output is buffered, and the fifth consecutive failure raises before persisting that case.",
+    "evidence": [
+      "p1-eval-harness/src/harness/runner.py:97-129 replaces result usage/latency after errors and raises at the fifth failure.",
+      "September 7 agent run: 3 recorded errors, fourth case interrupted, 21 unattempted. The saved zeros do not reflect billing or elapsed time."
+    ],
+    "acceptance": [
+      "Persist/flush each completed case and its attempts before advancing or evaluating the circuit breaker.",
+      "Write a partial-run manifest with completed, failed, interrupted and unattempted IDs.",
+      "Retain measured latency and incurred/unknown cost when generation or scoring fails.",
+      "Tests interrupt after a successful request, after judge failure and on the fifth consecutive error; all prior evidence survives.",
+      "Resume only uncompleted cases with configuration/dataset hash checks and no silent re-execution."
+    ],
+    "depends": "accounting",
+    "order": 6,
+    "body_file": "/Volumes/VeN/FreeLance-Potfolio/docs/reliability-backlog/06-durability.md",
+    "url": "https://github.com/Ven-Z8/FreeLance-Potfolio/issues/6",
+    "number": 6
+  },
+  {
+    "key": "math",
+    "priority": "P1",
+    "title": "[P1] Derive requested financial calculations from typed, cited inputs",
+    "problem": "The graph diagnostic refused seven answerable questions. Several responses explicitly contained the inputs but refused because the derived value was not printed in the filing.",
+    "evidence": [
+      "New diagnostic failures: 002 NVIDIA 22%+14%; 003 Costco membership fee delta; 005 Microsoft segment share; 006 Alphabet advertising share; 016 cross-company revenue deltas; 017 gross-margin comparison; 018 Meta segment share.",
+      "financial/math_tool.py reads only chunks[:4], extracts one expression, guesses percent formatting from query keywords, and swallows exceptions.",
+      "financial/prompts/synthesis.prompt permits derivation but also insists on exact copying and refusal when the requested figure cannot be pointed to verbatim.",
+      "Case 017 reports missing Costco context; diagnose candidate coverage rather than treating every failure as arithmetic."
+    ],
+    "acceptance": [
+      "Represent each operation with cited inputs, company/period, units, output units and deterministic result.",
+      "Support multiple outputs, percentage-point versus relative change, signs and rounded inputs.",
+      "Route calculation intent explicitly; remove contradictory prompt behavior and expose structured calculation failures.",
+      "Reject ungrounded constants/non-finite results and bound expression complexity.",
+      "Reproduce the seven failures individually, distinguishing retrieval and calculation causes; keep expected answers frozen."
+    ],
+    "depends": "verdict",
+    "order": 7,
+    "body_file": "/Volumes/VeN/FreeLance-Potfolio/docs/reliability-backlog/07-math.md",
+    "url": "https://github.com/Ven-Z8/FreeLance-Potfolio/issues/7",
+    "number": 7
+  },
+  {
+    "key": "clarification",
+    "priority": "P1",
+    "title": "[P1] Ask for missing scope instead of refusing or guessing fiscal years",
+    "problem": "Ambiguous requests are not handled as a separate outcome, and the harness gives a generic refusal credit for clarification.",
+    "evidence": [
+      "Diagnostic 024 What was operating profit? identified missing company/year but did not ask for them; harness passed it, explicit rubric failed it.",
+      "Diagnostic 025 How much did Microsoft revenue grow? silently selected FY2024\u2013FY2025.",
+      "agents/planner.py replaces an empty subquestion list with the original query, undermining the orchestrator branch that expects an empty not_in_corpus plan."
+    ],
+    "acceptance": [
+      "Return clarification_needed with an actionable question for missing company/period; preserve known conversation scope.",
+      "Do not fabricate comparison periods or route unresolved scope through unnecessary retrieval/synthesis.",
+      "Score clarification separately from insufficient_evidence; generic refusal does not pass an ask-for-scope rubric.",
+      "Offline tests cover first-turn ambiguity, resolved follow-up scope and out-of-corpus short-circuiting."
+    ],
+    "depends": "verdict, scoring",
+    "order": 8,
+    "body_file": "/Volumes/VeN/FreeLance-Potfolio/docs/reliability-backlog/08-clarification.md",
+    "url": "https://github.com/Ven-Z8/FreeLance-Potfolio/issues/8",
+    "number": 8
+  },
+  {
+    "key": "trajectory",
+    "priority": "P1",
+    "title": "[P1] Replace simulated pipeline progress with real execution events",
+    "problem": "The UI uses elapsed timers to animate all six stages and marks all of them done regardless of the selected strategy or skipped steps. Agent history also is not connected to the UI memory reader.",
+    "evidence": [
+      "p3-rag-filings/src/ragfilings/ui/static/app.js:371-407 schedules fixed 100\u20132100 ms stage timers and marks every stage done after a response.",
+      "pipeline/engine.py:351 constructs MultiAgentOrchestrator(cfg) without memory; UI reads a separate memory manager for its trajectory.",
+      "Initial UI displays AUDITED before a query has run."
+    ],
+    "acceptance": [
+      "Show only observed stage events; use an honest generic in-progress indicator until event streaming exists.",
+      "Represent skipped, failed and completed stages distinctly for each strategy and cancel stale timers/events on errors/new requests.",
+      "Persist a shared query/trajectory identity and show non-empty real agent history after successful agent execution.",
+      "UI tests use delayed/skipped/failed stage fixtures and prove no fabricated completion or verified badge."
+    ],
+    "depends": "verdict",
+    "order": 9,
+    "body_file": "/Volumes/VeN/FreeLance-Potfolio/docs/reliability-backlog/09-trajectory.md",
+    "url": "https://github.com/Ven-Z8/FreeLance-Potfolio/issues/9",
+    "number": 9
+  },
+  {
+    "key": "charts",
+    "priority": "P1",
+    "title": "[P1] Prevent charts from substituting the wrong metric or company",
+    "problem": "Chart construction can fall back from the requested metric to revenue while keeping the original metric title. Ticker substring matching can also select unrelated companies.",
+    "evidence": [
+      "p3-rag-filings/src/ragfilings/ui/server.py:331-386: if requested history is absent, loads Total Revenue/Net Sales but preserves detected_metric in chart_data/title.",
+      "The same block tests ticker with `t in q_upper`; short symbols can match ordinary words.",
+      "The chart unit is always USD_M even when metric semantics differ."
+    ],
+    "acceptance": [
+      "Resolve chart company/metric/period from the same typed scope and sourced facts as the answer.",
+      "Never label revenue as operating income or gross margin; omit unavailable charts or explicitly offer a correctly labeled alternative.",
+      "Use exact entity resolution, validated units and source provenance for plotted points.",
+      "Offline API fixtures with missing operating-income history but available revenue, incidental ticker substrings and percent metrics produce no misleading chart."
+    ],
+    "depends": "None",
+    "order": 10,
+    "body_file": "/Volumes/VeN/FreeLance-Potfolio/docs/reliability-backlog/10-charts.md",
+    "url": "https://github.com/Ven-Z8/FreeLance-Potfolio/issues/10",
+    "number": 10
+  },
+  {
+    "key": "api",
+    "priority": "P1",
+    "title": "[P1] Make local API configuration and request execution predictable",
+    "problem": "The server relies on working-directory-relative index/graph paths, ignores requested top_k, and performs synchronous inference inside an async handler while keeping unbounded shared conversation state.",
+    "evidence": [
+      "p3-rag-filings/src/ragfilings/ui/server.py:get_system_components uses relative index/graph paths.",
+      "QueryRequest exposes top_k, but execute_query calls ask without propagating it.",
+      "execute_query directly invokes blocking rewrite_followup/ask; _CONVERSATIONS has no lifecycle bound.",
+      "Assessment tests passed from P3 cwd; a root-cwd startup exposed index loading failures."
+    ],
+    "acceptance": [
+      "Resolve resource paths from explicit configuration/project roots and verify readiness before accepting paid work.",
+      "Validate supported strategy/domain/top_k and honor accepted parameters or reject them explicitly.",
+      "Keep blocking inference off the event loop and protect shared inference/session state with explicit concurrency limits.",
+      "Define bounded session retention and cleanup.",
+      "Offline API tests cover root/P3 startup, invalid input, top_k propagation and two concurrent independent sessions."
+    ],
+    "depends": "accounting, trajectory",
+    "order": 11,
+    "body_file": "/Volumes/VeN/FreeLance-Potfolio/docs/reliability-backlog/11-api.md",
+    "url": "https://github.com/Ven-Z8/FreeLance-Potfolio/issues/11",
+    "number": 11
+  },
+  {
+    "key": "fiscal",
+    "priority": "P1",
+    "title": "[P1] Reconcile Home Depot fiscal identity with versioned citation migration",
+    "problem": "The active index labels Home Depot as FY2026 even though the filing inline-XBRL fiscal-year focus is 2025.",
+    "evidence": [
+      "Local corpus inventory: HD_2026_10K is derived from HD_2026-03-18_10K.htm; DocumentFiscalYearFocus is 2025.",
+      "Evidence is saved in p1-eval-harness/data/diagnostics/portfolio_v02/corpus_inventory.json.",
+      "Calendar filing/period-end year must not be assumed to be the fiscal label; Walmart/NVIDIA fiscal 2026 cases are distinct."
+    ],
+    "acceptance": [
+      "Track fiscal year, period end and filing date as separate fields validated against source metadata.",
+      "Inventory impacted chunks, graph facts and golden references before rebuilding.",
+      "Publish old-to-new citation mapping plus parser/index versions; preserve historical run artifacts.",
+      "All active filings have reconciled fiscal identities and references resolve after the migration."
+    ],
+    "depends": "None",
+    "order": 12,
+    "body_file": "/Volumes/VeN/FreeLance-Potfolio/docs/reliability-backlog/12-fiscal.md",
+    "url": "https://github.com/Ven-Z8/FreeLance-Potfolio/issues/12",
+    "number": 12
+  },
+  {
+    "key": "cleanup",
+    "priority": "P2",
+    "title": "[P2] Remove verified dead scaffolding and consolidate overlapping contracts",
+    "problem": "The repository contains redundant or apparently unconsumed scaffolding. Cleanup must be based on consumers, not a blanket deletion of compatibility modules.",
+    "evidence": [
+      "No in-repository consumers found for MetricScore/CaseEvalResult/AgentRunTrace beyond their own definitions in p1-eval-harness/src/harness/schema.py; GoldenCase is actively used.",
+      "No references found for root math_specialist.prompt, analyst.prompt or auditor_verify.prompt; root synthesis.prompt is shadowed by the domain-first registry in the default profile.",
+      "P3 declares langchain and langchain-openai but no imports were found in repository Python; langchain-core may remain transitively necessary for LangGraph.",
+      "tools/* and graph/* shims are still used. pymupdf has a real PDF ingestion consumer; load_prompt is publicly exported and tested.",
+      "Ruff F checks pass across P1/P3 source: there are no flagged unused-import/undefined-name findings to justify cosmetic churn."
+    ],
+    "acceptance": [
+      "Build a consumer map including CLI entry points, exports, tests, scripts, package data and dynamic prompt loading.",
+      "Remove or explicitly deprecate only confirmed unused contracts/templates/dependencies; record public API decisions.",
+      "Do not delete used shims or the active PDF path based on static-name scans alone.",
+      "Regenerate dependency locks after justified dependency changes and verify fresh environment installation plus offline suites.",
+      "Consolidate dataset schema only after its dedicated validation issue, preserving compatibility tests."
+    ],
+    "depends": "schema",
+    "order": 13,
+    "body_file": "/Volumes/VeN/FreeLance-Potfolio/docs/reliability-backlog/13-cleanup.md",
+    "url": "https://github.com/Ven-Z8/FreeLance-Potfolio/issues/13",
+    "number": 13
+  },
+  {
+    "key": "prototype",
+    "priority": "P2",
+    "title": "[P2] Make the parked P5 optimization stub unmistakably illustrative",
+    "problem": "P5 returns constant example measurements from a method named run_full_benchmark; its test only asserts those same constants. The README already warns that this is a parked prototype, but code/docstrings and later result headings remain misleading in isolation.",
+    "evidence": [
+      "p5-cost-optimization/src/optimization/optimizer.py hardcodes accuracy 85%, 75% cost reduction and 63.1% latency reduction without running a system.",
+      "p5-cost-optimization/tests/test_optimization.py asserts hardcoded reduction/quality fields.",
+      "p5-cost-optimization/README.md explicitly says FUTURE SCOPE / targets, but later describes a rigorous case study and Optimization Results Summary."
+    ],
+    "acceptance": [
+      "Keep P5 parked outside v0.2 hiring claims; rename/move its example data so no executable API suggests measured benchmarking.",
+      "Remove contradictory measured-results language from module docstrings and README sections.",
+      "Replace circular benchmark assertions with fixture/schema tests if illustrative assets are retained.",
+      "Any future performance claim must be computed from versioned before/after harness runs; do not implement a new optimization platform as part of this cleanup."
+    ],
+    "depends": "None",
+    "order": 14,
+    "body_file": "/Volumes/VeN/FreeLance-Potfolio/docs/reliability-backlog/14-prototype.md",
+    "url": "https://github.com/Ven-Z8/FreeLance-Potfolio/issues/14",
+    "number": 14
+  },
+  {
+    "key": "reranker",
+    "priority": "P2",
+    "title": "[P2] Measure reranker value on identical candidate pools",
+    "problem": "The configured v2-m3 reranker now reaches standard and agent retrieval paths, but loading it and passing routing tests do not establish a quality improvement over the previous model.",
+    "evidence": [
+      "Local model loading/inference and routing tests passed.",
+      "Graph diagnostic annotated-source coverage: any source 17/20; all sources 16/20. These are exact annotated-ID coverage measures, not exhaustive relevance judgments.",
+      "No controlled base-versus-v2-m3 comparison has been completed."
+    ],
+    "acceptance": [
+      "Freeze index, embedding, queries and candidate pools; compare BGE base versus v2-m3 with no generation changes.",
+      "Report any/all required-source coverage, ranking metrics only where labels support them, and cold/warm reranking latency.",
+      "Inspect alternative supporting chunks before classifying exact-ID misses as retrieval failures.",
+      "Publish regressions and retain the model supported by the measured tradeoff; do not declare v2 superior in advance.",
+      "Use the 25-case diagnostic, not the excluded 50 hiring cases. Retrieval-only evaluation needs no paid LLM calls."
+    ],
+    "depends": "reporting",
+    "order": 15,
+    "body_file": "/Volumes/VeN/FreeLance-Potfolio/docs/reliability-backlog/15-reranker.md",
+    "url": "https://github.com/Ven-Z8/FreeLance-Potfolio/issues/15",
+    "number": 15
+  }
+]

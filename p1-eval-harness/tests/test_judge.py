@@ -170,3 +170,26 @@ def test_score_with_deepeval_reports_metric_errors_as_none(patched_llm):
     )
     assert out["faithfulness"] is None
     assert "no retrieval context" in out["faithfulness_error"]
+
+
+def test_luna_transport_omits_temperature():
+    from types import SimpleNamespace
+    from harness.llm import OpenRouterClient
+    requests = []
+
+    def complete(**kwargs):
+        requests.append(kwargs)
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='ok'))],
+                               usage=None)
+
+    client = OpenRouterClient(api_key='sk-or-test')
+    client._client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=complete)))
+    client.complete([{'role': 'user', 'content': 'grade'}], 'openai/gpt-5.6-luna', max_tokens=128)
+    assert 'temperature' not in requests[0]
+    assert requests[0]['max_tokens'] == 128
+
+
+def test_correctness_steps_uses_unified_ten_point_scale():
+    last_step = dj.CORRECTNESS_STEPS[-1]
+    assert "0 to 10" in last_step
+    assert "between 0 and 1" not in last_step

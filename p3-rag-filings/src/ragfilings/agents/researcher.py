@@ -187,12 +187,14 @@ def run_researcher(
         hits = index.search(
             str(args.get("query", query)), strat, top_k,
             filters=filters or None, rerank_candidates=rerank_candidates,
+            reranker_name=cfg.get("retrieval", {}).get("reranker"),
         )
         if not hits and filters:
             # Filtered search found nothing: retry unfiltered so the agent
             # sees evidence (or its absence) rather than a silent empty set.
             hits = index.search(str(args.get("query", query)), strat, top_k,
-                                rerank_candidates=rerank_candidates)
+                                rerank_candidates=rerank_candidates,
+                                reranker_name=cfg.get("retrieval", {}).get("reranker"))
         for h in hits:
             collected.setdefault(h["chunk"]["id"], h)
         return json.dumps([_hit_summary(h) for h in hits])
@@ -212,8 +214,8 @@ def run_researcher(
          "content": f"Original question: {query}\n{scope_line}\n\nRetrieval questions:\n{task}"},
     ]
 
-    client = get_llm_client(cfg=cfg, role="extraction")
-    model = get_model_for_role(cfg, "extraction") or client.default_model
+    client = get_llm_client(cfg=cfg, role="runtime")
+    model = get_model_for_role(cfg, "runtime") or client.default_model
 
     tools = [_SEARCH_TOOL, _LIST_TOOL]
     if graph_engine is not None:

@@ -1,18 +1,34 @@
-"""Unit tests for Project 5 Cost & Latency Optimization Framework."""
+"""Unit tests for Project 5 Cost & Latency Optimization Roadmap Schema."""
 
 import pytest
-from optimization.optimizer import SystemOptimizerEngine
+from optimization.optimizer import SystemOptimizerEngine, OptimizationTargetReport, OptimizationStepResult
 
 
-def test_optimization_benchmark_protocol():
+def test_optimization_target_report_schema():
+    """Verify that SystemOptimizerEngine outputs a schema-validated roadmap target structure."""
     engine = SystemOptimizerEngine()
-    report = engine.run_full_benchmark()
+    report = engine.get_illustrative_benchmark_targets()
 
-    assert report.baseline.cost_per_100_runs_usd == 14.50
+    # Schema type assertions
+    assert isinstance(report, OptimizationTargetReport)
+    assert isinstance(report.baseline, OptimizationStepResult)
     assert len(report.optimized_steps) == 4
 
-    final_step = report.optimized_steps[-1]
-    assert final_step.cost_reduction_pct >= 75.0
-    assert final_step.latency_reduction_pct >= 60.0
-    assert final_step.eval_accuracy == report.baseline.eval_accuracy
-    assert report.final_summary["quality_held"] is True
+    # Structure assertions for progression
+    for step in report.optimized_steps:
+        assert isinstance(step, OptimizationStepResult)
+        assert step.cost_reduction_pct >= 0.0
+        assert step.latency_reduction_pct >= 0.0
+
+    # Summary integrity
+    assert "quality_held" in report.final_summary
+    assert "total_cost_saved_pct" in report.final_summary
+
+
+def test_optimization_backward_compatibility_alias():
+    """Verify run_full_benchmark() alias continues to function for backward compatibility."""
+    engine = SystemOptimizerEngine()
+    report = engine.run_full_benchmark()
+    assert isinstance(report, OptimizationTargetReport)
+    assert len(report.optimized_steps) == 4
+

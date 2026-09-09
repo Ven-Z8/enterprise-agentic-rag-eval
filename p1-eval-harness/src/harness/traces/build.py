@@ -102,7 +102,11 @@ def build_trace(case: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
             "confidence": result.get("confidence"),
             "invalid_citations": result.get("invalid_citations", []),
             "verification_verified": ver.get("verified", True),
-            "golden_verification": "v1 proven",
+            "golden_verification": (
+                case.get("golden_verification")
+                or case.get("provenance")
+                or ("v1 proven" if str(case.get("id", "")).startswith("fin-") else "diagnostic")
+            ),
             "graph_rescue": (
                 {"rescued": result["graph_rescue"].get("rescued", False),
                  "chunks_added": result["graph_rescue"].get("chunks_added", [])}

@@ -79,3 +79,35 @@ def test_report_generation(tmp_path):
     html_p, md_p = report.generate_reports(summary, tmp_path)
     assert html_p.exists()
     assert md_p.exists()
+
+
+def test_write_scorecard_dynamic_provenance_and_coverage(tmp_path):
+    all_results = {
+        "hybrid_rerank": {
+            "metrics": {
+                "n": 25,
+                "dataset": "diagnostic_25.jsonl",
+                "model": "qwen/qwen-2.5-72b-instruct",
+                "judge_model": "deepseek/deepseek-chat",
+                "accuracy": 0.84,
+                "citation_reference_hit": 0.90,
+                "citation_faithfulness": 0.90,
+                "coverage": {
+                    "accuracy": {"eligible": 25, "evaluated": 25, "successful": 21, "failed": 4, "skipped": 0},
+                    "citation_reference_hit": {"eligible": 25, "evaluated": 20, "successful": 18, "failed": 2, "skipped": 5},
+                },
+                "by_category": {"lookup": {"n": 10, "correct": 9, "accuracy": 0.9}},
+            }
+        }
+    }
+    md_p, png_p = report.write_scorecard(all_results, tmp_path)
+    assert md_p.exists()
+    content = md_p.read_text(encoding="utf-8")
+    # Must NOT have the hardcoded 50-case string
+    assert "Golden set v1 (2026-09-03): 50 cases" not in content
+    # Must have the dynamic 25 cases and dataset name
+    assert "diagnostic_25.jsonl" in content
+    assert "25 executed cases" in content
+    # Must have coverage info in the table
+    assert "84% (21/25)" in content
+    assert "90% (18/20 eval, 5 skip)" in content

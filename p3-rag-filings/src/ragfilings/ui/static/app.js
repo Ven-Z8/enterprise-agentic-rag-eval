@@ -96,6 +96,8 @@ function hideEvidencePanels() {
   });
   const cit = document.getElementById("citations-container");
   if (cit) cit.style.display = "none";
+  const verifiedBadge = document.getElementById("verified-shield-badge");
+  if (verifiedBadge) verifiedBadge.style.display = "none";
 }
 
 function appendUserBubble(text) {
@@ -364,26 +366,11 @@ async function executeQuery(query) {
 
   overallStatus.innerText = "Running pipeline";
   overallStatus.className = "header-tag active";
-  stepIndicator.innerText = "Step 1: Orchestrating...";
+  stepIndicator.innerText = "Step 1: Orchestrating & Planning...";
   hideEvidencePanels();
 
-  // Flowchart DAG Steps (animated)
-  const dagSteps = [
-    { node: "node-orchestrator", state: "state-orchestrator", label: "Step 1: Orchestrator", delay: 100 },
-    { node: "node-researcher", state: "state-researcher", label: "Step 2: Tri-Hybrid Search", delay: 500 },
-    { node: "node-doc-analyst", state: "state-doc-analyst", label: "Step 3: Table Extract", delay: 900 },
-    { node: "node-data-analyst", state: "state-data-analyst", label: "Step 4: AST Math", delay: 1300 },
-    { node: "node-synthesis", state: "state-synthesis", label: "Step 5: Synthesis", delay: 1700 },
-    { node: "node-auditor", state: "state-auditor", label: "Step 6: Auditor Compliance", delay: 2100 },
-  ];
-
   resetDagNodes();
-  dagSteps.forEach(({ node, state, label, delay }) => {
-    setTimeout(() => {
-      setDagNodeState(node, state, "running");
-      stepIndicator.innerText = label;
-    }, delay);
-  });
+  setDagNodeState("node-orchestrator", "state-orchestrator", "running");
 
   try {
     const res = await fetch("/api/query", {
@@ -398,13 +385,29 @@ async function executeQuery(query) {
 
     typing.remove();
 
-    // Complete DAG Nodes
-    dagSteps.forEach(({ node, state }) => {
-      setDagNodeState(node, state, "done");
-    });
-    overallStatus.innerText = "Complete";
-    overallStatus.className = "header-tag";
-    stepIndicator.innerText = "Done — see trace log";
+    // Complete DAG Nodes according to actual execution path
+    if (data.refused) {
+      setDagNodeState("node-orchestrator", "state-orchestrator", "done");
+      setDagNodeState("node-researcher", "state-researcher", (data.hits && data.hits.length > 0) ? "done" : "skipped");
+      setDagNodeState("node-doc-analyst", "state-doc-analyst", "skipped");
+      setDagNodeState("node-data-analyst", "state-data-analyst", "skipped");
+      setDagNodeState("node-synthesis", "state-synthesis", "skipped");
+      setDagNodeState("node-auditor", "state-auditor", "skipped");
+      overallStatus.innerText = "Refused";
+      overallStatus.className = "header-tag";
+      stepIndicator.innerText = "Refused — query out of scope or low confidence";
+    } else {
+      setDagNodeState("node-orchestrator", "state-orchestrator", "done");
+      setDagNodeState("node-researcher", "state-researcher", "done");
+      setDagNodeState("node-doc-analyst", "state-doc-analyst", (data.tables && data.tables.length > 0) ? "done" : "skipped");
+      setDagNodeState("node-data-analyst", "state-data-analyst", (data.math_result) ? "done" : "skipped");
+      setDagNodeState("node-synthesis", "state-synthesis", "done");
+      const hasVerification = data.verification && (data.verification.verified || (Array.isArray(data.verification.claims) && data.verification.claims.length > 0));
+      setDagNodeState("node-auditor", "state-auditor", hasVerification ? "done" : "skipped");
+      overallStatus.innerText = "Complete";
+      overallStatus.className = "header-tag";
+      stepIndicator.innerText = "Done — see trace log";
+    }
 
     // Assistant chat bubble (answer or refusal/clarification)
     appendAssistantBubble(data, data.rewritten_query);
@@ -422,6 +425,7 @@ async function executeQuery(query) {
     if (data.refused) {
       verifiedBadge.innerText = "REFUSED / CLARIFY";
       verifiedBadge.className = "audit-badge refused";
+      verifiedBadge.style.display = "inline-flex";
     } else if (data.verification && data.verification.verified) {
       verifiedBadge.innerHTML = `
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -430,9 +434,11 @@ async function executeQuery(query) {
         <span>AUDITED &amp; VERIFIED (${claimsChecked} claims)</span>
       `;
       verifiedBadge.className = "audit-badge verified";
+      verifiedBadge.style.display = "inline-flex";
     } else {
       verifiedBadge.innerText = "ANSWERED · CLAIMS UNVERIFIED — CHECK CHUNKS";
       verifiedBadge.className = "audit-badge refused";
+      verifiedBadge.style.display = "inline-flex";
     }
 
     // 3. Citations
@@ -488,9 +494,15 @@ async function executeQuery(query) {
   } catch (err) {
     typing.remove();
     appendAssistantBubble({ refused: true, refusal_reason: `Execution error: ${err.message}`, query, latency_ms: 0, usage: {}, confidence: 0 }, null);
+    setDagNodeState("node-orchestrator", "state-orchestrator", "error");
+    ["researcher", "doc-analyst", "data-analyst", "synthesis", "auditor"].forEach(name => {
+      setDagNodeState(`node-${name}`, `state-${name}`, "idle");
+    });
     overallStatus.innerText = "Error";
     overallStatus.className = "header-tag";
     stepIndicator.innerText = "Execution failed";
+    const verifiedBadge = document.getElementById("verified-shield-badge");
+    if (verifiedBadge) verifiedBadge.style.display = "none";
   } finally {
     btnRun.disabled = false;
     queryInput.focus();
@@ -526,6 +538,18 @@ function setDagNodeState(nodeId, stateId, state) {
     node.className = isParallel ? "dag-node node-parallel active-done" : "dag-node active-done";
     pill.className = "node-state-pill done";
     pill.innerText = "DONE";
+  } else if (state === "error") {
+    node.className = isParallel ? "dag-node node-parallel active-error" : "dag-node active-error";
+    pill.className = "node-state-pill error";
+    pill.innerText = "ERROR";
+  } else if (state === "skipped") {
+    node.className = isParallel ? "dag-node node-parallel" : "dag-node";
+    pill.className = "node-state-pill skipped";
+    pill.innerText = "SKIPPED";
+  } else {
+    node.className = isParallel ? "dag-node node-parallel" : "dag-node";
+    pill.className = "node-state-pill idle";
+    pill.innerText = "IDLE";
   }
 }
 

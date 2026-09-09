@@ -52,7 +52,7 @@ CORRECTNESS_STEPS = [
     "Extract every quantitative claim from the expected output.",
     "Check each claim appears in the actual output within rounding or unit re-expression.",
     "Check the actual output does not contradict the expected output on direction or attribution.",
-    "Return a verdict score between 0 and 1 for factual equivalence.",
+    "Return an integer score from 0 to 10 for factual equivalence (10 = fully equivalent, 0 = completely contradicts or unsupported).",
 ]
 
 
@@ -173,10 +173,13 @@ def build_metrics(judge: OpenRouterJudge) -> dict[str, Any]:
 
 def make_test_case(case: dict[str, Any], result: dict[str, Any]) -> LLMTestCase:
     retrieval_context = [h["chunk"]["text"] for h in result.get("hits", [])]
+    expected_output = case["expected"].get("answer") or ""
+    if case.get("notes"):
+        expected_output = f"{expected_output}\nRubric notes: {case['notes']}".strip()
     return LLMTestCase(
         input=case["input"],
         actual_output=result.get("answer") or "",
-        expected_output=case["expected"].get("answer") or "",
+        expected_output=expected_output,
         retrieval_context=retrieval_context,
     )
 

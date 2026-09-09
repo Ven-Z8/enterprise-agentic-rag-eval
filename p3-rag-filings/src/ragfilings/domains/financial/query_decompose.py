@@ -36,7 +36,7 @@ def decompose_query(query: str, cfg: dict[str, Any]) -> list[str]:
     ]
 
     try:
-        text, _ = complete_with_resilience(messages, cfg)
+        text, _ = complete_with_resilience(messages, cfg, role="planning")
         start, end = text.find("["), text.rfind("]")
         if start != -1 and end > start:
             sub_queries = json.loads(text[start : end + 1])

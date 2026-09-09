@@ -39,6 +39,7 @@ KNOWN_METRICS = {
     "net income": "Net Income",
     "net earnings": "Net Income",
     "operating income": "Operating Income",
+    "operating profit": "Operating Income",
     "income from operations": "Operating Income",
     "gross margin": "Gross Margin",
     "gross profit": "Gross Profit",

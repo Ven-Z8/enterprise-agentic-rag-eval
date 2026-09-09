@@ -42,10 +42,10 @@ _DOMAIN_META = {
 _PCT_METRICS = [
     ("accuracy", "Answer accuracy"),
     ("retrieval_hit_rate", "Retrieval hit rate"),
-    ("citation_faithfulness", "Citation faithfulness"),
+    ("citation_reference_hit", "Citation reference hit (exact/prefix)"),
     ("hallucination_rate", "Hallucination rate (unanswerable)"),
     ("refusal_correctness", "Refusal correctness"),
-    ("deepeval_faithfulness", "DeepEval faithfulness"),
+    ("deepeval_faithfulness", "DeepEval faithfulness (semantic)"),
     ("deepeval_answer_relevancy", "DeepEval answer relevancy"),
     ("deepeval_contextual_precision", "DeepEval contextual precision"),
 ]
@@ -56,7 +56,22 @@ def _pct(v: float | None) -> str:
 
 
 def _row(metrics: dict[str, Any], key: str) -> str:
-    return _pct(metrics.get(key))
+    val = metrics.get(key)
+    if val is None and key == "citation_reference_hit":
+        val = metrics.get("citation_faithfulness")
+    if val is None:
+        return "—"
+    base_pct = f"{val:.0%}"
+    cov = (metrics.get("coverage") or {}).get(key)
+    if cov and cov.get("eligible", 0) > 0:
+        eligible = cov["eligible"]
+        evaluated = cov["evaluated"]
+        successful = cov["successful"]
+        skipped = cov["skipped"]
+        if skipped > 0:
+            return f"{base_pct} ({successful}/{evaluated} eval, {skipped} skip)"
+        return f"{base_pct} ({successful}/{eligible})"
+    return base_pct
 
 
 def write_scorecard(
@@ -73,14 +88,31 @@ def write_scorecard(
 
     meta = _DOMAIN_META.get(domain, _DOMAIN_META["financial"])
     first = all_results[strategies[0]]["metrics"]
+    n_cases = first.get("n", 0)
+    dataset_name = first.get("dataset") or f"Evaluation set ({n_cases} cases)"
+
+    if first.get("caveat"):
+        caveat = first["caveat"]
+    elif n_cases == 50 and domain == "financial":
+        caveat = CAVEAT
+    elif n_cases == 56 and domain == "legal":
+        caveat = CAVEAT_LEGAL
+    else:
+        caveat = (
+            f"Dataset: {dataset_name} ({n_cases} executed cases). "
+            f"Corpus: {meta['corpus']}. "
+            "Every answered case evaluated deterministically against filings and via "
+            f"DeepEval G-Eval (`{first.get('judge_model', 'judge')}`); judge cost is evaluation overhead."
+        )
+
     lines = [
         f"# {meta['title']}",
         "",
-        f"*Generated {time.strftime('%Y-%m-%d %H:%M')} · {first['n']} golden "
+        f"*Generated {time.strftime('%Y-%m-%d %H:%M')} · {n_cases} golden "
         f"questions · {meta['corpus']} · generation model "
         f"`{first['model']}` · judge `{first['judge_model']}`*",
         "",
-        f"> {meta['caveat']}",
+        f"> {caveat}",
         "",
         "| Metric | " + " | ".join(s.capitalize() for s in strategies) + " |",
         "|---|" + "---|" * len(strategies),
@@ -128,7 +160,10 @@ def _write_png(all_results: dict[str, dict[str, Any]], path: Path) -> None:
     colors = ["#3b82f6", "#06b6d4", "#10b981", "#8b5cf6"]
     for i, s in enumerate(strategies):
         m = all_results[s]["metrics"]
-        vals = [m.get(k) or 0.0 for k, _ in _PCT_METRICS]
+        vals = [
+            m.get(k) if m.get(k) is not None else (m.get("citation_faithfulness") if k == "citation_reference_hit" else 0.0)
+            for k, _ in _PCT_METRICS
+        ]
         bars = ax.bar(x + i * width, vals, width, label=s, color=colors[i % len(colors)])
         ax.bar_label(bars, fmt="{:.0%}", fontsize=7.5, padding=2)
     ax.set_xticks(x + width * (len(strategies) - 1) / 2)

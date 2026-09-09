@@ -23,6 +23,19 @@ def test_fiscal_year_is_period_end_year():
     assert _fiscal_year({"filing_date": "2025-10-31", "source_url": "garbage"}) == 2025
 
 
+def test_fiscal_year_reconciled_home_depot():
+    # Home Depot filed in calendar 2026 with period ending Feb 1, 2026, but fiscal year focus 2025
+    hd_meta = {
+        "ticker": "HD",
+        "company": "Home Depot",
+        "filing_date": "2026-03-18",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/354950/000162828026019436/hd-20260201.htm",
+        "DocumentFiscalYearFocus": "2025",
+    }
+    assert _fiscal_year(hd_meta) == 2025
+
+
+
 def _sec(item, text, part="II", title="T", resolved_from=None):
     return Section(item, part, title, text, resolved_from)
 

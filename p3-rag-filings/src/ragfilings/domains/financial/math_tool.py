@@ -55,21 +55,21 @@ def compute_financial_math(
     client: BaseLLMClient | None = None,
 ) -> dict[str, Any] | None:
     """Extract arithmetic expression and evaluate using safe AST interpreter."""
-    context = "\n".join(c.get("text", "") for c in chunks[:4])
+    context = "\n".join(c.get("text", "") for c in chunks[:8])
     messages = [
         {"role": "system", "content": PromptRegistry.get_math_tool()},
         {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"},
     ]
 
     try:
-        text, usage = complete_with_resilience(messages, cfg, client=client)
+        text, usage = complete_with_resilience(messages, cfg, client=client, role="runtime")
         start, end = text.find("{"), text.rfind("}")
         if start != -1 and end > start:
             data = json.loads(text[start : end + 1])
             expr = data.get("expression", "")
             if expr:
                 val = safe_eval(expr)
-                is_pct = any(k in query.lower() for k in ("growth", "percent", "margin", "cagr", "rate"))
+                is_pct = any(k in query.lower() for k in ("growth", "percent", "margin", "cagr", "rate", "share", "portion", "ratio"))
                 return {
                     "expression": expr,
                     "result_value": round(val, 4),

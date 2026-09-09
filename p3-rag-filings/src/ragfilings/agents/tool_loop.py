@@ -30,6 +30,7 @@ def run_tool_loop(
     usage: dict[str, Any],
     max_steps: int = 6,
     temperature: float = 0.0,
+    max_tokens: int = 1500,
 ) -> tuple[str, list[dict[str, Any]]]:
     """Run a tool-calling loop until the model stops issuing tool calls.
 
@@ -49,6 +50,7 @@ def run_tool_loop(
             "model": model,
             "messages": msgs,
             "temperature": temperature,
+            "max_tokens": max_tokens,
             "extra_body": {"usage": {"include": True}},
         }
         if tools:

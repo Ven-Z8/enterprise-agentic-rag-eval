@@ -278,6 +278,7 @@ def answer(
             "answer": None,
             "citations": [],
             "invalid_citations": [],
+            "verified": False,
             "verification": {"verified": True, "claims": []},
             "confidence": conf,
             "usage": usage,
@@ -292,6 +293,7 @@ def answer(
         "answer": str(data["answer"]),
         "citations": checked["citations"],
         "invalid_citations": checked["invalid_citations"],
+        "verified": bool(checked.get("verified", False) and not checked.get("invalid_citations")),
         "verification": checked,
         "confidence": conf,
         "usage": usage,
@@ -337,6 +339,8 @@ def ask(
     refusal_log: str | Path = "reports/refusals.jsonl",
     filters: dict[str, Any] | None = None,
     domain: str = "financial",
+    top_k: int | None = None,
+    memory: Any = None,
 ) -> dict[str, Any]:
     """End-to-end RAG pipeline execution for one domain pack."""
     pack = get_pack(domain)
@@ -348,7 +352,7 @@ def ask(
 
     if base_strat == "agent_react":
         from .orchestrator import MultiAgentOrchestrator
-        orch = MultiAgentOrchestrator(cfg)
+        orch = MultiAgentOrchestrator(cfg, memory=memory)
         res = orch.run(query, index, strategy="hybrid_rerank")
         res["strategy"] = "agent_react"
         res["model"] = cfg.get("generation", {}).get("model", "")
@@ -361,7 +365,7 @@ def ask(
         rescuer = pack.load_rescue(cfg, index)
 
     t0 = time.perf_counter()
-    top_k = cfg.get("retrieval", {}).get("top_k", 8)
+    effective_top_k = top_k if top_k is not None else cfg.get("retrieval", {}).get("top_k", 8)
     rerank_candidates = cfg.get("retrieval", {}).get("rerank_candidates", 25)
 
     if pack.needs_decomposition(query):
@@ -369,17 +373,19 @@ def ask(
         hits: list[dict[str, Any]] = []
         seen_ids: set[str] = set()
         for sq in sub_queries:
-            sq_hits = index.search(sq, base_strat, top_k, filters=filters,
-                                   rerank_candidates=rerank_candidates)
+            sq_hits = index.search(sq, base_strat, effective_top_k, filters=filters,
+                                   rerank_candidates=rerank_candidates,
+                                   reranker_name=cfg.get("retrieval", {}).get("reranker"))
             for h in sq_hits:
                 cid = h["chunk"]["id"]
                 if cid not in seen_ids:
                     hits.append(h)
                     seen_ids.add(cid)
-        hits = sorted(hits, key=lambda x: x["score"], reverse=True)[:top_k]
+        hits = sorted(hits, key=lambda x: x["score"], reverse=True)[:effective_top_k]
     else:
-        hits = index.search(query, base_strat, top_k, filters=filters,
-                            rerank_candidates=rerank_candidates)
+        hits = index.search(query, base_strat, effective_top_k, filters=filters,
+                            rerank_candidates=rerank_candidates,
+                                   reranker_name=cfg.get("retrieval", {}).get("reranker"))
 
     result = answer(query, hits, cfg, graph_rescue=rescuer, pack=pack)
     result["latency_ms"] = (time.perf_counter() - t0) * 1000.0

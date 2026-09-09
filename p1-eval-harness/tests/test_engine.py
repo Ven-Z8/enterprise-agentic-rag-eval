@@ -191,3 +191,64 @@ def test_aggregate_metrics():
     assert m["latency_p50_ms"] == 1000.0
     assert m["cost_per_query_usd"] == pytest.approx(0.002)
     assert m["by_category"]["unanswerable"]["n"] == 2
+    assert "coverage" in m
+    assert m["coverage"]["accuracy"]["eligible"] == 3
+    assert m["coverage"]["accuracy"]["successful"] == 2
+    assert m["citation_reference_hit"] == pytest.approx(1 / 2)
+
+
+def test_figures_match_requires_all_material_claims():
+    case = _case("Direct 40%; indirect 60%", ctype="exact")
+    # Swapped or incorrect second figure must fail
+    wrong = engine.score_case(case, _result("Direct 40%; indirect 99%"), cfg=None)
+    assert wrong["correct"] is False
+
+    # Both matching within tolerance must pass
+    correct = engine.score_case(case, _result("Direct was 40% while indirect accounted for 60%."), cfg=None)
+    assert correct["correct"] is True
+
+
+def test_citation_prefix_collision_prevention():
+    # Expected chunk c001 should NOT match c0019 (digit suffix prefix collision)
+    case = _case("$100M", ctype="exact", citations=("AAPL_2025_10K:Item1:c001",))
+    res_collision = _result("$100M", citations=("AAPL_2025_10K:Item1:c0019",), hit_ids=("AAPL_2025_10K:Item1:c0019",))
+    scored = engine.score_case(case, res_collision, cfg=None)
+    assert scored["citation_hit"] is False
+
+    # Exact chunk matches
+    res_exact = _result("$100M", citations=("AAPL_2025_10K:Item1:c001",), hit_ids=("AAPL_2025_10K:Item1:c001",))
+    scored_exact = engine.score_case(case, res_exact, cfg=None)
+    assert scored_exact["citation_hit"] is True
+
+    # Section-level expected citation matches chunk-level produced citation
+    case_section = _case("$100M", ctype="exact", citations=("AAPL_2025_10K:Item1",))
+    scored_section = engine.score_case(case_section, res_exact, cfg=None)
+    assert scored_section["citation_hit"] is True
+
+
+def test_load_cases_rejects_duplicate_ids(tmp_path):
+    dup_file = tmp_path / "golden_set_dup.jsonl"
+    case1 = {"id": "dup-001", "input": "q1", "expected": {"answer": "a", "citations": [], "type": "exact"}, "difficulty": "easy", "failure_category": "lookup", "domain": "financial"}
+    case2 = {"id": "dup-001", "input": "q2", "expected": {"answer": "b", "citations": [], "type": "exact"}, "difficulty": "easy", "failure_category": "lookup", "domain": "financial"}
+    dup_file.write_text(f"{json.dumps(case1)}\n{json.dumps(case2)}\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="duplicate id dup-001"):
+        engine.load_cases(dup_file)
+
+
+def test_home_depot_citation_migration_aliasing():
+    """Verify HD_2026_10K and HD_2025_10K resolve bi-directionally without regression."""
+    # Case expects legacy HD_2026_10K citation, pipeline produces migrated HD_2025_10K chunk
+    case_legacy_exp = _case("$14,156 million", ctype="exact", citations=("HD_2026_10K:Item8",))
+    res_migrated = _result("$14,156 million", citations=("HD_2025_10K:Item8:c007",), hit_ids=("HD_2025_10K:Item8:c007",))
+    scored = engine.score_case(case_legacy_exp, res_migrated, cfg=None)
+    assert scored["retrieval_hit"] is True
+    assert scored["citation_hit"] is True
+
+    # Case expects migrated HD_2025_10K citation, legacy run produced HD_2026_10K chunk
+    case_migrated_exp = _case("$14,156 million", ctype="exact", citations=("HD_2025_10K:Item8",))
+    res_legacy = _result("$14,156 million", citations=("HD_2026_10K:Item8:c007",), hit_ids=("HD_2026_10K:Item8:c007",))
+    scored2 = engine.score_case(case_migrated_exp, res_legacy, cfg=None)
+    assert scored2["retrieval_hit"] is True
+    assert scored2["citation_hit"] is True
+

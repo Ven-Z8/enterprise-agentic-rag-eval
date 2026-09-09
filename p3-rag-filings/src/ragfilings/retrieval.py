@@ -88,13 +88,15 @@ def embed_text(chunk: dict[str, Any]) -> str:
 
 
 _reranker_model = None
+_reranker_name = None
 
 
 def _get_reranker(model_name: str = "BAAI/bge-reranker-base"):
-    global _reranker_model
-    if _reranker_model is None:
+    global _reranker_model, _reranker_name
+    if _reranker_model is None or _reranker_name != model_name:
         from sentence_transformers import CrossEncoder
         _reranker_model = CrossEncoder(model_name)
+        _reranker_name = model_name
     return _reranker_model
 
 

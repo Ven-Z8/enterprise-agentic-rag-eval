@@ -51,7 +51,7 @@ def audit_answer(
         {"role": "system", "content": PromptRegistry.get_auditor()},
         {"role": "user", "content": "\n".join(user_parts)},
     ]
-    instance, u = complete_structured(messages, AuditResult, cfg, role="generation")
+    instance, u = complete_structured(messages, AuditResult, cfg, role="runtime")
     for k in ("input_tokens", "output_tokens", "cost_usd"):
         usage[k] += u.get(k, 0)
     usage["calls"] += u.get("calls", 1)

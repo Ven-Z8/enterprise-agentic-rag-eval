@@ -1,4 +1,4 @@
-"""Rigorous Agent Optimization Framework (Cost -75%, Latency -60%, Quality Flat)."""
+"""Illustrative Target Schema and Planned Experiment Ladder (Prototype - Not Measured Results)."""
 
 from __future__ import annotations
 
@@ -7,27 +7,32 @@ from pydantic import BaseModel, Field
 
 
 class OptimizationStepResult(BaseModel):
-    """Result metrics for a single optimization technique applied."""
+    """Target metrics for a single planned optimization technique."""
     technique: str
     description: str
-    eval_accuracy: float = Field(description="Harness-verified accuracy percentage")
+    eval_accuracy: float = Field(description="Target harness-verified accuracy percentage")
     cost_per_100_runs_usd: float
     latency_p95_ms: float
     cost_reduction_pct: float
     latency_reduction_pct: float
 
 
-class OptimizationBenchmarkReport(BaseModel):
-    """Full optimization case study benchmark comparing baseline vs optimized system."""
+class OptimizationTargetReport(BaseModel):
+    """Illustrative optimization roadmap comparing baseline targets vs planned system steps."""
     baseline: OptimizationStepResult
     optimized_steps: List[OptimizationStepResult]
     final_summary: Dict[str, Any]
 
 
-class SystemOptimizerEngine:
-    """Executes step-by-step optimization protocol against agent workflow."""
+# Backward compatibility alias
+OptimizationBenchmarkReport = OptimizationTargetReport
 
-    def run_full_benchmark(self) -> OptimizationBenchmarkReport:
+
+class SystemOptimizerEngine:
+    """Roadmap specification engine defining step-by-step target milestones for agent optimization."""
+
+    def get_illustrative_benchmark_targets(self) -> OptimizationTargetReport:
+        """Returns the planned target progression milestones for cost and latency optimization."""
         # Step 0: Unoptimized Baseline
         baseline = OptimizationStepResult(
             technique="0. Baseline (Unoptimized)",
@@ -98,8 +103,12 @@ class SystemOptimizerEngine:
             "cost_delta_per_1k_runs": "$145.00 -> $36.20"
         }
 
-        return OptimizationBenchmarkReport(
+        return OptimizationTargetReport(
             baseline=baseline,
             optimized_steps=steps,
             final_summary=final_summary
         )
+
+    # Backward compatibility alias
+    run_full_benchmark = get_illustrative_benchmark_targets
+

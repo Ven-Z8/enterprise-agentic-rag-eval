@@ -17,8 +17,10 @@ p3-rag-filings/corpus/parsed/
 p3-rag-filings/corpus/chunks/
 p3-rag-filings/corpus/index/
 # Eval runs are reproducible via `eval-harness run` — keep them out of git
+reports/
 p3-rag-filings/reports/
 p1-eval-harness/reports/
+*.db
 
 # Internal development detail — not part of the public portfolio
 /.dev-notes/

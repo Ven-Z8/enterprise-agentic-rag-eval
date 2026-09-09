@@ -1,0 +1,51 @@
+{
+  "sets": [
+    {
+      "file": "golden_set_v1.jsonl",
+      "count": 50,
+      "categories": {
+        "lookup": 12,
+        "table": 10,
+        "synthesis": 10,
+        "unanswerable": 8,
+        "ambiguous": 10
+      },
+      "sha256": "a78a83074f524e830adead81997af9c228e4fb11f0aee2eb0d7deee0cd20a96c",
+      "unresolved_citation_prefixes": []
+    },
+    {
+      "file": "golden_set_enterprise_v1.jsonl",
+      "count": 45,
+      "categories": {
+        "synthesis": 30,
+        "unanswerable": 8,
+        "ambiguous": 7
+      },
+      "sha256": "19d92a305e8aedc832ab1a80771c3b90312070f4458abc9e358c54a3607bf275",
+      "unresolved_citation_prefixes": []
+    },
+    {
+      "file": "judge_calibration_v1.jsonl",
+      "count": 52,
+      "categories": {
+        "lookup": 18,
+        "table": 12,
+        "synthesis": 12,
+        "ambiguous": 10
+      },
+      "sha256": "f170366a4f9b15ddff184930d6f5245fc377a66e796f796773429db9b50f7f2f",
+      "unresolved_citation_prefixes": []
+    }
+  ],
+  "execution_exclusions": [
+    "golden_set_v1.jsonl (50 hiring cases), per user instruction"
+  ],
+  "findings": [
+    "Existing sets are development/regression sets, repeatedly used for fixes; not independent holdouts.",
+    "Calibration set has 52 labels, but zero unanswerable-category examples; expand refusal calibration in v0.2.",
+    "Existing exact/contains scoring checks only the first expected numerical claim; multi-claim correctness needs a separate rubric.",
+    "An ambiguous case with refused=true can receive credit without an actual clarifying question.",
+    "New 25-question set uses judge scoring with explicit multi-claim rubrics; current correctness judge does not enforce every rubric automatically.",
+    "Home Depot raw DocumentFiscalYearFocus is 2025 while index doc ID is HD_2026_10K; validate metadata before rebuilding golden labels."
+  ]
+}
