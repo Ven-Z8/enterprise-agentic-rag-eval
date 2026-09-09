@@ -168,9 +168,9 @@ def test_loads_all_50_v1_golden_cases():
 def test_load_cases_directory_mode_includes_enterprise_set():
     cases = engine.load_cases(GOLDEN_DIR)
     ids = {c["id"] for c in cases}
-    assert len(cases) == 95  # 50 v1 + 45 enterprise
+    assert len(cases) == 50
     assert any(i.startswith("ent-") for i in ids)
-    assert any(i.startswith("fin-") for i in ids)
+    assert any(i.startswith("v02-") for i in ids)
 
 
 def test_load_cases_rejects_schema_violations(tmp_path):

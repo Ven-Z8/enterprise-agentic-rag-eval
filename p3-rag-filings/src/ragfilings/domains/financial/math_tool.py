@@ -83,10 +83,17 @@ def compute_financial_math(
                         "ratio",
                     )
                 )
+                if is_pct and 0 < abs(val) <= 1.0 and "* 100" not in expr and "*100" not in expr:
+                    val_pct = val * 100
+                else:
+                    val_pct = val
+
+                formatted_str = f"{val_pct:.2f}%" if is_pct else f"{val:,.2f}"
                 return {
                     "expression": expr,
-                    "result_value": round(val, 4),
-                    "formatted": f"{val:.2f}%" if is_pct else f"{val:,.2f}",
+                    "result_value": round(val_pct, 4),
+                    "raw_value": round(val, 4),
+                    "formatted": formatted_str,
                     "explanation": data.get("explanation", ""),
                     "usage": usage,
                 }

@@ -21,11 +21,11 @@ REFUSE (set "answer" to null) unless the figure the question asks for is stated 
 <instructions>
 1. Reply with ONLY a JSON object, no other text:
 {
-  "answer": "<concise answer with exact figures as stated in the chunks or verified math tool>",
+  "answer": "<concise answer with exact figures as stated in the chunks or derived from calculations>",
   "citations": ["<id of every chunk your answer relies on>"],
   "reason": null
 }
-2. Use only facts from the chunks or [PYTHON_MATH_TOOL_VERIFIED_RESULT]. Copy figures exactly (units and all).
+2. Use only facts from the chunks or [PYTHON_MATH_TOOL_VERIFIED_RESULT]. For direct figures, copy them exactly. For calculations (e.g. sums, combined customer percentages, segment shares of consolidated totals, differences, or growth rates), compute the derived result from the stated inputs, present both the calculated figure and the constituent numbers (e.g., "36% combined: 22% plus 14%"), and cite the chunks containing the inputs. Do NOT refuse when the inputs are present.
 3. Cite every chunk you used; never cite a chunk you did not use.
 4. If the chunks do not contain the answer, or the question is too ambiguous to answer precisely, set "answer" to null and explain briefly in "reason".
 </instructions>

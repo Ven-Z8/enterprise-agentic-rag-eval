@@ -60,6 +60,7 @@ def _cmd_run(args: argparse.Namespace) -> None:
         limit=args.limit,
         baseline=args.baseline,
         skip_judge_metrics=args.skip_judge_metrics,
+        run_dir=args.run_dir,
     )
 
     md, png = write_scorecard(all_results, run_dir, domain=args.domain)
@@ -125,6 +126,11 @@ def main() -> None:
         help="run dir name under --out-root (default: latest existing run)",
     )
     run.add_argument("--out-root", default="reports/evals")
+    run.add_argument(
+        "--run-dir",
+        default=None,
+        help="existing run directory to resume or output into (relative to out-root or absolute)",
+    )
     run.add_argument(
         "--skip-judge-metrics",
         action="store_true",

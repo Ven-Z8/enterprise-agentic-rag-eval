@@ -86,11 +86,13 @@ def verify(
     any cited chunk.
     """
     numbers = _chunk_numbers(cited_chunks)
-    if math_result and "result_value" in math_result:
-        try:
-            numbers.append(float(math_result["result_value"]))
-        except (ValueError, TypeError):
-            pass
+    if math_result:
+        for k in ("result_value", "raw_value"):
+            if k in math_result:
+                try:
+                    numbers.append(float(math_result[k]))
+                except (ValueError, TypeError):
+                    pass
     for dv in derived_values or []:
         try:
             numbers.append(float(dv))

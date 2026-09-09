@@ -122,14 +122,12 @@ def run_regression(
     limit: int | None = None,
     baseline: str | None = None,
     skip_judge_metrics: bool = False,
+    run_dir: str | Path | None = None,
 ) -> tuple[Path, dict[str, Any] | None, dict[str, Any]]:
     """Run the suite into a fresh timestamped dir and diff against baseline.
 
     baseline: a run dir name under out_root, or None to auto-pick the latest
     existing run. Returns (run_dir, diff_or_None, all_results).
-
-    skip_judge_metrics: omit the complementary DeepEval metrics for a faster
-    accuracy-focused run (see runner.run_eval).
     """
     out_root = Path(out_root)
     out_root.mkdir(parents=True, exist_ok=True)
@@ -142,21 +140,26 @@ def run_regression(
     else:
         baseline_dir = latest_run(out_root)
 
-    stamp = time.strftime("%Y%m%d-%H%M%S")
-    run_dir = out_root / f"{stamp}-{git_sha()[:8]}-{strategy}"
+    if run_dir is not None:
+        target_run_dir = Path(run_dir)
+        if not target_run_dir.is_absolute():
+            target_run_dir = out_root / target_run_dir
+    else:
+        stamp = time.strftime("%Y%m%d-%H%M%S")
+        target_run_dir = out_root / f"{stamp}-{git_sha()[:8]}-{strategy}"
 
     all_results = run_eval(
         cfg,
         adapter,
         golden_set,
         [strategy],
-        out_dir=run_dir,
+        out_dir=target_run_dir,
         limit=limit,
         skip_judge_metrics=skip_judge_metrics,
     )
 
     diff = None
-    if baseline_dir is not None and baseline_dir != run_dir:
-        diff = diff_runs(baseline_dir, run_dir)
-        write_diff_report(diff, run_dir / "diff_report.md")
-    return run_dir, diff, all_results
+    if baseline_dir is not None and baseline_dir != target_run_dir:
+        diff = diff_runs(baseline_dir, target_run_dir)
+        write_diff_report(diff, target_run_dir / "diff_report.md")
+    return target_run_dir, diff, all_results
