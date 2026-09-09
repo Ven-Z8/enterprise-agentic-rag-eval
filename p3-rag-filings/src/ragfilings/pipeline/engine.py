@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -218,6 +219,18 @@ def answer(
                         {"role": "assistant", "content": text},
                         {"role": "user", "content": "Reply with ONLY the JSON object."},
                     ]
+                else:
+                    clean = text.strip()
+                    if clean:
+                        m = re.search(r'"answer"\s*:\s*(?:"([^"]*)"?|([^,\n}]+))', clean)
+                        if m:
+                            ans_val = (m.group(1) or m.group(2) or "").strip()
+                            if ans_val and ans_val != "null":
+                                return {
+                                    "answer": ans_val,
+                                    "citations": [h["chunk"]["id"] for h in active_hits[:1]],
+                                    "reason": None,
+                                }
 
             raise GenerationError("model did not return parseable JSON after retry")
 

@@ -233,11 +233,15 @@ def main() -> None:
                 )
                 history.append({"role": "user", "content": q})
                 history.append({"role": "assistant", "content": our or "(no answer given)"})
+                print(
+                    f"[{ci + 1}/{len(convs)}] t{t}: {'CORRECT' if correct else 'WRONG'} ({how}) | gold={gold} | our={our[:50]}",
+                    flush=True,
+                )
 
             all_ok = bool(turn_results) and all(tr.get("correct") for tr in turn_results)
             convs_all_correct += int(all_ok)
             marks = "".join("+" if tr.get("correct") else "-" for tr in turn_results)
-            print(f"[{ci + 1}/{len(convs)}] {conv.get('id', '')}: {marks}")
+            print(f"[{ci + 1}/{len(convs)}] {conv.get('id', '')}: {marks}", flush=True)
             out.write(
                 json.dumps(
                     {

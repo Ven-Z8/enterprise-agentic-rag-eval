@@ -7,6 +7,7 @@ Rules:
   ellipsis ("what about FY2024?", "the same for Microsoft?", "and FY2023?"),
   and implied subjects. Name the company, the financial metric, and the fiscal
   year(s) explicitly in the rewritten question.
+- For relative operations, calculations, or changes (e.g. "what was the change between those two years?", "what is that times 100?", "what was that divided by total?"): state the exact metrics, years, and specific numbers previously discussed so the calculation is completely self-contained.
 - Preserve the user's intent exactly. Do NOT answer the question. Do NOT add
   facts that were not asked for or already established.
 - If the follow-up is already fully self-contained, return it unchanged.

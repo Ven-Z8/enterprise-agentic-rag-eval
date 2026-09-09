@@ -29,6 +29,7 @@ p1-eval-harness/reports/
 p3-rag-filings/data/
 p1-eval-harness/data/financebench/
 p1-eval-harness/data/convfinqa/
+p1-eval-harness/data/archive/
 
 # Legal domain pack: CUAD downloads + derived corpus artifacts
 # (reproducible via domains/legal/build_corpus.py)
