@@ -38,10 +38,15 @@ def check_one(path: Path, min_section_chars: int, pointer_chars: int) -> dict:
     reloc = [i for i in ("7", "8") if chars.get(i, 0) < pointer_chars]
     resolved = {s.item: s.resolved_from for s in secs if s.resolved_from}
     monotonic = sorted(ingestion._item_key(s.item) for s in secs)
-    status = ("MISSING-CORE" if missing_core
-              else "reloc-financials" if reloc
-              else f"resolved({','.join(f'{k}<-{v}' for k, v in resolved.items())})" if resolved
-              else "clean")
+    status = (
+        "MISSING-CORE"
+        if missing_core
+        else "reloc-financials"
+        if reloc
+        else f"resolved({','.join(f'{k}<-{v}' for k, v in resolved.items())})"
+        if resolved
+        else "clean"
+    )
     return {
         "file": path.name,
         "n_sections": len(secs),
@@ -79,8 +84,10 @@ def main() -> None:
         big = f"Item{r['biggest'][0]}={r['biggest'][1]:,}"
         ordf = "ok" if r["in_order"] else "OOO"
         miss = f" missing:{','.join(r['missing_core'])}" if r["missing_core"] else ""
-        print(f"{r['ticker']:<7}{r['n_sections']:>5}{ordf:>5}  {r['item7']:>9,}{r['item8']:>9,}  "
-              f"{big:<14}{r['status']}{miss}")
+        print(
+            f"{r['ticker']:<7}{r['n_sections']:>5}{ordf:>5}  {r['item7']:>9,}{r['item8']:>9,}  "
+            f"{big:<14}{r['status']}{miss}"
+        )
 
     n = len(rows)
     clean = sum(r["status"] == "clean" for r in rows)
@@ -88,8 +95,10 @@ def main() -> None:
     reloc = sum(r["status"] == "reloc-financials" for r in rows)
     bad = sum(r["status"] == "MISSING-CORE" for r in rows)
     ooo = sum(not r["in_order"] for r in rows)
-    print(f"\n{clean}/{n} clean | {resolved} resolved | {reloc} unresolved-reloc | "
-          f"{bad} missing-core | {ooo} out-of-order")
+    print(
+        f"\n{clean}/{n} clean | {resolved} resolved | {reloc} unresolved-reloc | "
+        f"{bad} missing-core | {ooo} out-of-order"
+    )
 
 
 if __name__ == "__main__":

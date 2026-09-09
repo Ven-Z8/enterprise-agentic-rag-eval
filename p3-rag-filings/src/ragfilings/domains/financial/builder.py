@@ -150,9 +150,11 @@ def _unit_near(lines: list[str], block_start: int, default: str) -> str:
     for j in range(block_start, max(-1, block_start - 20), -1):
         low = lines[j].lower()
         candidates = []
-        for phrase, unit in (("in thousands", "USD_TH"),
-                             ("in millions", "USD_M"),
-                             ("in billions", "USD_B")):
+        for phrase, unit in (
+            ("in thousands", "USD_TH"),
+            ("in millions", "USD_M"),
+            ("in billions", "USD_B"),
+        ):
             pos = low.find(phrase)
             if pos >= 0:
                 candidates.append((pos, unit))
@@ -173,16 +175,18 @@ class FinancialGraphBuilder:
     def add_company(self, ticker: str, name: str | None = None) -> str:
         cid = f"company:{ticker.upper()}"
         if not self.graph.has_node(cid):
-            self.graph.add_node(cid, label="Company", ticker=ticker.upper(),
-                                name=name or ticker.upper())
+            self.graph.add_node(
+                cid, label="Company", ticker=ticker.upper(), name=name or ticker.upper()
+            )
         return cid
 
     def add_filing(self, ticker: str, fiscal_year: int | str, form: str = "10-K") -> str:
         comp_id = self.add_company(ticker)
         fid = f"filing:{ticker.upper()}_{fiscal_year}_{form}"
         if not self.graph.has_node(fid):
-            self.graph.add_node(fid, label="Filing", ticker=ticker.upper(),
-                                fiscal_year=str(fiscal_year), form=form)
+            self.graph.add_node(
+                fid, label="Filing", ticker=ticker.upper(), fiscal_year=str(fiscal_year), form=form
+            )
             self.graph.add_edge(comp_id, fid, relation="REPORTED_IN")
         return fid
 
@@ -206,18 +210,25 @@ class FinancialGraphBuilder:
         if not self.graph.has_node(metric_id):
             self.graph.add_node(metric_id, label="FinancialMetric", name=metric_name)
 
-        val_id = (f"val:{ticker.upper()}:{metric_name.lower().replace(' ', '_')}"
-                  f":{fiscal_year}")
+        val_id = f"val:{ticker.upper()}:{metric_name.lower().replace(' ', '_')}:{fiscal_year}"
         if self.graph.has_node(val_id):
             if priority <= self.graph.nodes[val_id].get("_priority", 0):
                 return val_id
             self.graph.nodes[val_id].update(
-                value=value, unit=unit, chunk_id=chunk_id, _priority=priority)
+                value=value, unit=unit, chunk_id=chunk_id, _priority=priority
+            )
             return val_id
-        self.graph.add_node(val_id, label="MetricValue", ticker=ticker.upper(),
-                            metric=metric_name, fiscal_year=str(fiscal_year),
-                            value=value, unit=unit, chunk_id=chunk_id,
-                            _priority=priority)
+        self.graph.add_node(
+            val_id,
+            label="MetricValue",
+            ticker=ticker.upper(),
+            metric=metric_name,
+            fiscal_year=str(fiscal_year),
+            value=value,
+            unit=unit,
+            chunk_id=chunk_id,
+            _priority=priority,
+        )
         self.graph.add_edge(filing_id, val_id, relation="RECORDED_VALUE")
         self.graph.add_edge(metric_id, val_id, relation="CONTAINS_METRIC")
         if chunk_id:
@@ -296,9 +307,15 @@ class FinancialGraphBuilder:
                     continue  # cannot attribute values to years honestly
 
                 for year, (value, _) in pairs:
-                    self.add_metric_value(ticker, year, metric, value,
-                                          unit=row_unit, chunk_id=chunk.get("id"),
-                                          priority=priority)
+                    self.add_metric_value(
+                        ticker,
+                        year,
+                        metric,
+                        value,
+                        unit=row_unit,
+                        chunk_id=chunk.get("id"),
+                        priority=priority,
+                    )
                     added += 1
         return added
 
@@ -306,14 +323,19 @@ class FinancialGraphBuilder:
         facts = 0
         for c in chunks:
             facts += self.ingest_chunk(c)
-        logger.info("Fact graph: %d nodes, %d edges, %d value facts",
-                    self.graph.number_of_nodes(), self.graph.number_of_edges(), facts)
+        logger.info(
+            "Fact graph: %d nodes, %d edges, %d value facts",
+            self.graph.number_of_nodes(),
+            self.graph.number_of_edges(),
+            facts,
+        )
         return self.graph
 
     # ------------------------------------------------------- community layer
 
-    def build_communities(self, chunks: list[dict[str, Any]],
-                          resolution: float = 1.0, seed: int = 42) -> list[dict[str, Any]]:
+    def build_communities(
+        self, chunks: list[dict[str, Any]], resolution: float = 1.0, seed: int = 42
+    ) -> list[dict[str, Any]]:
         """Louvain communities over company/metric co-occurrence in chunks."""
         cooccur = nx.Graph()
         chunk_entities: list[tuple[str, set[str]]] = []
@@ -333,7 +355,7 @@ class FinancialGraphBuilder:
                     cooccur.add_node(e)
                 ents = sorted(entities)
                 for i, a in enumerate(ents):
-                    for b in ents[i + 1:]:
+                    for b in ents[i + 1 :]:
                         if cooccur.has_edge(a, b):
                             cooccur[a][b]["weight"] += 1
                         else:
@@ -343,25 +365,29 @@ class FinancialGraphBuilder:
         if cooccur.number_of_edges() == 0:
             return self.communities
 
-        groups = nx.community.louvain_communities(cooccur, weight="weight",
-                                                  resolution=resolution, seed=seed)
+        groups = nx.community.louvain_communities(
+            cooccur, weight="weight", resolution=resolution, seed=seed
+        )
         for idx, members in enumerate(sorted(groups, key=len, reverse=True)):
-            supporting = [cid for cid, ents in chunk_entities
-                          if len(ents & set(members)) >= 2]
-            self.communities.append({
-                "id": f"community:{idx}",
-                "members": sorted(members),
-                "size": len(members),
-                "n_chunks": len(supporting),
-                "chunk_ids": supporting[:25],
-                "summary": None,
-            })
-        logger.info("Communities: %d detected over %d entities",
-                    len(self.communities), cooccur.number_of_nodes())
+            supporting = [cid for cid, ents in chunk_entities if len(ents & set(members)) >= 2]
+            self.communities.append(
+                {
+                    "id": f"community:{idx}",
+                    "members": sorted(members),
+                    "size": len(members),
+                    "n_chunks": len(supporting),
+                    "chunk_ids": supporting[:25],
+                    "summary": None,
+                }
+            )
+        logger.info(
+            "Communities: %d detected over %d entities",
+            len(self.communities),
+            cooccur.number_of_nodes(),
+        )
         return self.communities
 
-    def summarize_communities(self, cfg: dict[str, Any],
-                              max_communities: int = 12) -> int:
+    def summarize_communities(self, cfg: dict[str, Any], max_communities: int = 12) -> int:
         """LLM-summarize the largest communities (cached in the community dict)."""
         from ..llm import complete_with_resilience
 
@@ -371,15 +397,21 @@ class FinancialGraphBuilder:
                 continue
             members = ", ".join(m.split(":", 1)[1] for m in comm["members"][:20])
             messages = [
-                {"role": "system", "content": (
-                    "You summarize clusters of financial entities found across "
-                    "SEC 10-K filings. Two sentences, plain factual language."
-                )},
-                {"role": "user", "content": (
-                    f"A cluster of {comm['size']} entities appears together in "
-                    f"{comm['n_chunks']} filing chunks: {members}. What financial "
-                    "theme does this cluster represent?"
-                )},
+                {
+                    "role": "system",
+                    "content": (
+                        "You summarize clusters of financial entities found across "
+                        "SEC 10-K filings. Two sentences, plain factual language."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"A cluster of {comm['size']} entities appears together in "
+                        f"{comm['n_chunks']} filing chunks: {members}. What financial "
+                        "theme does this cluster represent?"
+                    ),
+                },
             ]
             text, _ = complete_with_resilience(messages, cfg, role="extraction")
             comm["summary"] = text.strip()

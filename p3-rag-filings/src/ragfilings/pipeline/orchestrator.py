@@ -19,7 +19,7 @@ import logging
 import operator
 import time
 import uuid
-from typing import Annotated, Any, Optional, TypedDict
+from typing import Annotated, Any, TypedDict
 
 from langgraph.graph import END, StateGraph
 
@@ -43,24 +43,23 @@ class OrchestratorState(TypedDict, total=False):
     graph_engine: Any
     plan: dict[str, Any]
     hits: list[dict[str, Any]]
-    math_result: Optional[dict[str, Any]]
-    answer: Optional[str]
+    math_result: dict[str, Any] | None
+    answer: str | None
     citations: list[str]
     invalid_citations: list[str]
-    feedback: Optional[str]
-    audit: Optional[dict[str, Any]]
+    feedback: str | None
+    audit: dict[str, Any] | None
     verification: dict[str, Any]
     verified: bool
     refused: bool
-    refusal_reason: Optional[str]
+    refusal_reason: str | None
     usage: dict[str, Any]
     retries_left: int
     steps: Annotated[list[dict[str, Any]], operator.add]
 
 
 def _step(agent: str, action: str, input_payload: Any, output_payload: Any) -> dict[str, Any]:
-    return {"agent": agent, "action": action,
-            "input": input_payload, "output": output_payload}
+    return {"agent": agent, "action": action, "input": input_payload, "output": output_payload}
 
 
 def _merge_usage(state: OrchestratorState, u: dict[str, Any]) -> None:
@@ -92,24 +91,44 @@ def build_workflow() -> StateGraph:
                 "steps": [_step("Researcher", "skipped", {}, "out-of-corpus plan")],
             }
 
-        res = run_researcher(state["query"], plan, state["index"], state["cfg"],
-                             state["usage"],
-                             graph_engine=state.get("graph_engine"))
+        res = run_researcher(
+            state["query"],
+            plan,
+            state["index"],
+            state["cfg"],
+            state["usage"],
+            graph_engine=state.get("graph_engine"),
+        )
         hits = res["hits"]
 
         conf = confidence(hits)
         min_conf = state["cfg"].get("verification", {}).get("min_confidence", 0.35)
         update: dict[str, Any] = {
             "hits": hits,
-            "steps": [_step("Researcher", "tool_loop",
-                            {"sub_questions": plan.sub_questions,
-                             "ticker": plan.ticker, "fiscal_year": plan.fiscal_year},
-                            {"n_hits": len(hits), "confidence": round(conf, 4),
-                             "tool_calls": res["events"], "notes": res["notes"]})],
+            "steps": [
+                _step(
+                    "Researcher",
+                    "tool_loop",
+                    {
+                        "sub_questions": plan.sub_questions,
+                        "ticker": plan.ticker,
+                        "fiscal_year": plan.fiscal_year,
+                    },
+                    {
+                        "n_hits": len(hits),
+                        "confidence": round(conf, 4),
+                        "tool_calls": res["events"],
+                        "notes": res["notes"],
+                    },
+                )
+            ],
         }
         if not hits or conf < min_conf:
-            reason = ("no retrieval hits" if not hits
-                      else f"low retrieval confidence: {conf:.3f} < {min_conf}")
+            reason = (
+                "no retrieval hits"
+                if not hits
+                else f"low retrieval confidence: {conf:.3f} < {min_conf}"
+            )
             update.update({"refused": True, "refusal_reason": reason})
         return update
 
@@ -125,14 +144,22 @@ def build_workflow() -> StateGraph:
             _merge_usage(state, math_res.pop("usage", {}))
         return {
             "math_result": math_res,
-            "steps": [_step("DataAnalyst", "safe_eval_math",
-                            {"query": state["query"]},
-                            math_res or {"calculated": False})],
+            "steps": [
+                _step(
+                    "DataAnalyst",
+                    "safe_eval_math",
+                    {"query": state["query"]},
+                    math_res or {"calculated": False},
+                )
+            ],
         }
 
     def synthesize_node(state: OrchestratorState) -> dict[str, Any]:
         instance = synthesize(
-            state["query"], state["hits"], state["cfg"], state["usage"],
+            state["query"],
+            state["hits"],
+            state["cfg"],
+            state["usage"],
             math_result=state.get("math_result"),
             feedback=state.get("feedback"),
         )
@@ -140,11 +167,17 @@ def build_workflow() -> StateGraph:
             "answer": instance.answer,
             "citations": instance.citations,
             "feedback": None,
-            "steps": [_step("Synthesizer", "grounded_synthesis",
-                            {"n_context": len(state["hits"]),
-                             "retry_feedback": bool(state.get("feedback"))},
-                            {"answer_len": len(instance.answer or ""),
-                             "citations": instance.citations})],
+            "steps": [
+                _step(
+                    "Synthesizer",
+                    "grounded_synthesis",
+                    {
+                        "n_context": len(state["hits"]),
+                        "retry_feedback": bool(state.get("feedback")),
+                    },
+                    {"answer_len": len(instance.answer or ""), "citations": instance.citations},
+                )
+            ],
         }
 
     def audit_node(state: OrchestratorState) -> dict[str, Any]:
@@ -163,11 +196,15 @@ def build_workflow() -> StateGraph:
         invalid = [c for c in citations if c not in by_id]
         cited_chunks = [by_id[c] for c in valid] or [h["chunk"] for h in state["hits"]]
 
-        checked = verify(str(state["answer"]), cited_chunks,
-                         math_result=state.get("math_result"))
+        checked = verify(str(state["answer"]), cited_chunks, math_result=state.get("math_result"))
         audit_res = audit_answer(
-            state["query"], str(state["answer"]), citations, state["hits"],
-            state["cfg"], state["usage"], math_result=state.get("math_result"),
+            state["query"],
+            str(state["answer"]),
+            citations,
+            state["hits"],
+            state["cfg"],
+            state["usage"],
+            math_result=state.get("math_result"),
         )
         audit_d = audit_res.model_dump()
         llm_ok = bool(audit_d.get("verified")) and not audit_d.get("refuse")
@@ -190,10 +227,14 @@ def build_workflow() -> StateGraph:
             "verification": checked,
             "audit": audit_d,
             "verified": all_ok,
-            "steps": [_step("Auditor", "claim_audit",
-                            {"answer": state["answer"][:200]},
-                            {"deterministic": checked["verified"], "llm": llm_ok,
-                             "problems": problems})],
+            "steps": [
+                _step(
+                    "Auditor",
+                    "claim_audit",
+                    {"answer": state["answer"][:200]},
+                    {"deterministic": checked["verified"], "llm": llm_ok, "problems": problems},
+                )
+            ],
         }
         if not all_ok:
             if state.get("retries_left", 0) > 0:
@@ -201,7 +242,9 @@ def build_workflow() -> StateGraph:
                 update["retries_left"] = state.get("retries_left", 0) - 1
             else:
                 update["refused"] = True
-                update["refusal_reason"] = f"audit failed: {'; '.join(problems) or 'unverified claims'}"
+                update["refusal_reason"] = (
+                    f"audit failed: {'; '.join(problems) or 'unverified claims'}"
+                )
                 update["verified"] = False
         return update
 
@@ -226,16 +269,16 @@ def build_workflow() -> StateGraph:
     workflow.add_edge("retrieve", "analyze")
     workflow.add_edge("analyze", "synthesize")
     workflow.add_edge("synthesize", "audit")
-    workflow.add_conditional_edges("audit", route_after_audit,
-                                   {"synthesize": "synthesize", END: END})
+    workflow.add_conditional_edges(
+        "audit", route_after_audit, {"synthesize": "synthesize", END: END}
+    )
     return workflow
 
 
 class MultiAgentOrchestrator:
     """LangGraph multi-agent pipeline with real usage accounting."""
 
-    def __init__(self, cfg: dict[str, Any],
-                 memory: SessionMemoryManager | None = None) -> None:
+    def __init__(self, cfg: dict[str, Any], memory: SessionMemoryManager | None = None) -> None:
         self.cfg = cfg
         self.memory = memory
         self.workflow = build_workflow().compile()
@@ -294,7 +337,9 @@ class MultiAgentOrchestrator:
             "answer": final_state.get("answer") if not final_state.get("refused") else None,
             "citations": final_state.get("citations", []) if not final_state.get("refused") else [],
             "invalid_citations": final_state.get("invalid_citations", []),
-            "verified": bool(final_state.get("verified", False) and not final_state.get("refused", False)),
+            "verified": bool(
+                final_state.get("verified", False) and not final_state.get("refused", False)
+            ),
             "verification": final_state.get("verification", {}),
             "audit": final_state.get("audit"),
             "confidence": confidence(final_state.get("hits", [])),

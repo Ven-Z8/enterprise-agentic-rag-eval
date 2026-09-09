@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,14 +40,14 @@ if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # Shared state
-_cfg: Optional[Dict[str, Any]] = None
-_index: Optional[Any] = None
-_graph_engine: Optional[GraphQueryEngine] = None
+_cfg: dict[str, Any] | None = None
+_index: Any | None = None
+_graph_engine: GraphQueryEngine | None = None
 _memory = SessionMemoryManager()
 
 # In-memory conversational sessions: session_id -> ordered turns
 # [{"role": "user"|"assistant", "content": str}]
-_CONVERSATIONS: Dict[str, List[Dict[str, str]]] = {}
+_CONVERSATIONS: dict[str, list[dict[str, str]]] = {}
 
 PRESET_QUESTIONS = [
     {
@@ -158,7 +158,7 @@ class QueryRequest(BaseModel):
     query: str
     strategy: str = "hybrid_rerank_graph"
     top_k: int = 8
-    session_id: Optional[str] = None
+    session_id: str | None = None
     domain: str = "financial"
 
 
@@ -166,6 +166,7 @@ class QueryRequest(BaseModel):
 async def new_session():
     """Start a fresh conversation and return its session id."""
     import uuid
+
     sid = f"conv_{uuid.uuid4().hex[:12]}"
     _CONVERSATIONS[sid] = []
     return {"session_id": sid}
@@ -174,8 +175,7 @@ async def new_session():
 @app.get("/api/session/{session_id}")
 async def get_session(session_id: str):
     """Return the conversation turns for a session."""
-    return {"session_id": session_id,
-            "turns": _CONVERSATIONS.get(session_id, [])}
+    return {"session_id": session_id, "turns": _CONVERSATIONS.get(session_id, [])}
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -212,41 +212,53 @@ async def get_graph():
     g = graph_engine.graph
     nodes = []
     for node_id, data in g.nodes(data=True):
-        nodes.append({
-            "id": node_id,
-            "label": data.get("name") or str(node_id),
-            "type": data.get("type", "Entity"),
-            "ticker": data.get("ticker"),
-            "value": data.get("value"),
-            "fiscal_year": data.get("fiscal_year"),
-        })
+        nodes.append(
+            {
+                "id": node_id,
+                "label": data.get("name") or str(node_id),
+                "type": data.get("type", "Entity"),
+                "ticker": data.get("ticker"),
+                "value": data.get("value"),
+                "fiscal_year": data.get("fiscal_year"),
+            }
+        )
 
     links = []
     for u, v, data in g.edges(data=True):
-        links.append({
-            "source": u,
-            "target": v,
-            "relation": data.get("relation", "RELATES_TO"),
-        })
+        links.append(
+            {
+                "source": u,
+                "target": v,
+                "relation": data.get("relation", "RELATES_TO"),
+            }
+        )
 
-    return {"nodes": nodes, "links": links, "stats": {"node_count": len(nodes), "edge_count": len(links)}}
+    return {
+        "nodes": nodes,
+        "links": links,
+        "stats": {"node_count": len(nodes), "edge_count": len(links)},
+    }
 
 
 @app.post("/api/query")
 async def execute_query(req: QueryRequest):
     cfg, index, graph_engine = get_system_components()
     if not index:
-        raise HTTPException(status_code=500, detail="Search index not available. Please run indexing first.")
+        raise HTTPException(
+            status_code=500, detail="Search index not available. Please run indexing first."
+        )
 
     # Conversational session: get-or-create, then resolve elliptical follow-ups
     # into a self-contained question so multi-hop grounding still applies.
     session_id = req.session_id
     if not session_id or session_id not in _CONVERSATIONS:
         import uuid
+
         session_id = session_id or f"conv_{uuid.uuid4().hex[:12]}"
         _CONVERSATIONS.setdefault(session_id, [])
     history = _CONVERSATIONS[session_id]
     from ..domains import get_pack
+
     pack = get_pack(req.domain)
     rewritten = rewrite_followup(req.query, history, cfg, pack=pack)
 
@@ -291,22 +303,28 @@ async def execute_query(req: QueryRequest):
                     continue
 
                 # Header detection: line with years or short column labels
-                is_header_row = any(re.match(r"^(FY)?202[0-9]$", c) for c in cells) or (current_headers is None and len(cells) >= 2)
+                is_header_row = any(re.match(r"^(FY)?202[0-9]$", c) for c in cells) or (
+                    current_headers is None and len(cells) >= 2
+                )
 
                 if is_header_row and current_rows:
                     # Flush previous sub-table
                     if current_headers and len(current_rows) >= 1:
                         # Check relevance to query words
-                        table_blob = " ".join([current_headers[0]] + [r[0] for r in current_rows if r]).lower()
+                        table_blob = " ".join(
+                            [current_headers[0]] + [r[0] for r in current_rows if r]
+                        ).lower()
                         relevance = sum(1 for w in q_words if w in table_blob)
-                        tables.append({
-                            "chunk_id": cid,
-                            "section": section,
-                            "title": f"Filing Table · {section}",
-                            "headers": current_headers,
-                            "rows": current_rows,
-                            "relevance": relevance,
-                        })
+                        tables.append(
+                            {
+                                "chunk_id": cid,
+                                "section": section,
+                                "title": f"Filing Table · {section}",
+                                "headers": current_headers,
+                                "rows": current_rows,
+                                "relevance": relevance,
+                            }
+                        )
                     current_headers = cells
                     current_rows = []
                 elif current_headers is None:
@@ -319,16 +337,20 @@ async def execute_query(req: QueryRequest):
                         current_rows.append(cleaned_cells)
 
             if current_headers and len(current_rows) >= 1:
-                table_blob = " ".join([current_headers[0]] + [r[0] for r in current_rows if r]).lower()
+                table_blob = " ".join(
+                    [current_headers[0]] + [r[0] for r in current_rows if r]
+                ).lower()
                 relevance = sum(1 for w in q_words if w in table_blob)
-                tables.append({
-                    "chunk_id": cid,
-                    "section": section,
-                    "title": f"Filing Table · {section}",
-                    "headers": current_headers,
-                    "rows": current_rows,
-                    "relevance": relevance,
-                })
+                tables.append(
+                    {
+                        "chunk_id": cid,
+                        "section": section,
+                        "title": f"Filing Table · {section}",
+                        "headers": current_headers,
+                        "rows": current_rows,
+                        "relevance": relevance,
+                    }
+                )
 
     # Sort tables by relevance to query and keep top 2 most relevant tables
     if tables:
@@ -341,7 +363,33 @@ async def execute_query(req: QueryRequest):
         # 1. Detect target ticker from query or top hits with word boundaries
         q_upper = req.query.upper()
         detected_ticker = None
-        known_tickers = ["META", "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "TSLA", "JPM", "BAC", "GS", "WMT", "COST", "JNJ", "PFE", "UNH", "XOM", "CVX", "KO", "PEP", "PG", "DIS", "NFLX", "BA", "CAT", "HD"]
+        known_tickers = [
+            "META",
+            "AAPL",
+            "MSFT",
+            "NVDA",
+            "AMZN",
+            "GOOGL",
+            "TSLA",
+            "JPM",
+            "BAC",
+            "GS",
+            "WMT",
+            "COST",
+            "JNJ",
+            "PFE",
+            "UNH",
+            "XOM",
+            "CVX",
+            "KO",
+            "PEP",
+            "PG",
+            "DIS",
+            "NFLX",
+            "BA",
+            "CAT",
+            "HD",
+        ]
         for t in known_tickers:
             if re.search(rf"\b{re.escape(t)}\b", q_upper):
                 detected_ticker = t
@@ -391,10 +439,14 @@ async def execute_query(req: QueryRequest):
             chart_metric_title = detected_metric
             if not metric_history and detected_metric != "Total Revenue":
                 # Try fallback to Total Revenue or Net Sales, labeling explicitly
-                fallback_hist = graph_engine.get_metric_history(detected_ticker, "Total Revenue") or graph_engine.get_metric_history(detected_ticker, "Net Sales")
+                fallback_hist = graph_engine.get_metric_history(
+                    detected_ticker, "Total Revenue"
+                ) or graph_engine.get_metric_history(detected_ticker, "Net Sales")
                 if fallback_hist:
                     metric_history = fallback_hist
-                    chart_metric_title = f"Total Revenue (Alternative History, {detected_metric} unavailable)"
+                    chart_metric_title = (
+                        f"Total Revenue (Alternative History, {detected_metric} unavailable)"
+                    )
 
             if metric_history:
                 # Deduplicate by fiscal_year to guarantee distinct years
@@ -404,7 +456,9 @@ async def execute_query(req: QueryRequest):
                     if fy and fy not in unique_by_year:
                         unique_by_year[fy] = m
 
-                sorted_hist = sorted(unique_by_year.values(), key=lambda x: str(x.get("fiscal_year", "")))
+                sorted_hist = sorted(
+                    unique_by_year.values(), key=lambda x: str(x.get("fiscal_year", ""))
+                )
                 if len(sorted_hist) >= 2:
                     chart_data = {
                         "ticker": detected_ticker,

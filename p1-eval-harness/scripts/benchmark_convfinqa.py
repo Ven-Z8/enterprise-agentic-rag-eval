@@ -41,10 +41,10 @@ P3 = P1.parent / "p3-rag-filings"
 sys.path.insert(0, str(P1 / "src"))
 sys.path.insert(0, str(P3 / "src"))
 
-from ragfilings.config import load as load_cfg          # noqa: E402
-from ragfilings.domains import get_pack                 # noqa: E402
+from ragfilings.config import load as load_cfg  # noqa: E402
+from ragfilings.domains import get_pack  # noqa: E402
 from ragfilings.pipeline.converse import rewrite_followup  # noqa: E402
-from ragfilings.pipeline.engine import answer           # noqa: E402
+from ragfilings.pipeline.engine import answer  # noqa: E402
 
 CFQ_DIR = P1 / "data" / "convfinqa"
 DEV_PATH = CFQ_DIR / "data" / "dev.json"
@@ -75,12 +75,20 @@ def context_hits(conv: dict) -> list[dict]:
     def add(text: str, kind: str, i: int) -> None:
         if not text.strip():
             return
-        hits.append({
-            "chunk": {"id": f"{name}:{kind}:{i}", "text": text,
-                      "section": kind, "ticker": None,
-                      "company": name, "form": "annual report"},
-            "score": 0.9, "dense_sim": 0.9,
-        })
+        hits.append(
+            {
+                "chunk": {
+                    "id": f"{name}:{kind}:{i}",
+                    "text": text,
+                    "section": kind,
+                    "ticker": None,
+                    "company": name,
+                    "form": "annual report",
+                },
+                "score": 0.9,
+                "dense_sim": 0.9,
+            }
+        )
 
     add(render_table(conv.get("table") or []), "table", 0)
     for i, p in enumerate(conv.get("pre_text") or []):
@@ -94,8 +102,7 @@ def numeric_claims(text: str) -> tuple[list[float], list[float]]:
     """(plain numbers, percent values) claimed by an answer string."""
     plain: list[float] = []
     pcts: list[float] = []
-    for m in re.finditer(r"-?\$?\s?([\d,]+(?:\.\d+)?)\s?(%|million|billion|thousand)?",
-                         text):
+    for m in re.finditer(r"-?\$?\s?([\d,]+(?:\.\d+)?)\s?(%|million|billion|thousand)?", text):
         num = m.group(1)
         if not re.search(r"\d", num):
             continue
@@ -145,27 +152,35 @@ def score_turn(question: str, gold: float, our_text: str) -> tuple[bool, str]:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--limit", type=int, default=None,
-                    help="only the first N conversations (smoke runs)")
-    ap.add_argument("--dry-run", action="store_true",
-                    help="no LLM calls — verify parsing/scoring plumbing")
+    ap.add_argument(
+        "--limit", type=int, default=None, help="only the first N conversations (smoke runs)"
+    )
+    ap.add_argument(
+        "--dry-run", action="store_true", help="no LLM calls — verify parsing/scoring plumbing"
+    )
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
 
     if not DEV_PATH.exists():
-        raise SystemExit(f"missing {DEV_PATH} — download data.zip from "
-                         "github.com/czyssrs/ConvFinQA into data/convfinqa/")
+        raise SystemExit(
+            f"missing {DEV_PATH} — download data.zip from "
+            "github.com/czyssrs/ConvFinQA into data/convfinqa/"
+        )
 
     cfg = load_cfg(str(P3 / "config.toml"))
     pack = get_pack("financial")
     convs = load_conversations(args.limit)
     n_turns = sum(len(c["annotation"]["dialogue_break"]) for c in convs)
-    print(f"ConvFinQA dev: {len(convs)} conversations, {n_turns} turns"
-          + (" [DRY RUN — no LLM calls]" if args.dry_run else ""))
+    print(
+        f"ConvFinQA dev: {len(convs)} conversations, {n_turns} turns"
+        + (" [DRY RUN — no LLM calls]" if args.dry_run else "")
+    )
 
-    out_path = Path(args.out) if args.out else (
-        P1 / "reports" / "convfinqa" /
-        f"convfinqa_{time.strftime('%Y%m%d-%H%M%S')}.jsonl")
+    out_path = (
+        Path(args.out)
+        if args.out
+        else (P1 / "reports" / "convfinqa" / f"convfinqa_{time.strftime('%Y%m%d-%H%M%S')}.jsonl")
+    )
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     n_correct = n_scored = n_refused = n_errors = 0
@@ -186,14 +201,15 @@ def main() -> None:
                 else:
                     try:
                         rewritten = rewrite_followup(q, history, cfg, pack=pack)
-                        res = answer(rewritten, hits, cfg, graph_rescue=None,
-                                     pack=pack)
+                        res = answer(rewritten, hits, cfg, graph_rescue=None, pack=pack)
                     except Exception as e:  # noqa: BLE001
                         n_errors += 1
-                        turn_results.append({"turn": t, "question": q,
-                                             "error": f"{type(e).__name__}: {e}"[:200]})
-                        print(f"[{ci+1}/{len(convs)}] t{t}: ERROR "
-                              f"{type(e).__name__}: {str(e)[:80]}")
+                        turn_results.append(
+                            {"turn": t, "question": q, "error": f"{type(e).__name__}: {e}"[:200]}
+                        )
+                        print(
+                            f"[{ci + 1}/{len(convs)}] t{t}: ERROR {type(e).__name__}: {str(e)[:80]}"
+                        )
                         continue
                     our = res.get("answer") or ""
                     if res.get("refused"):
@@ -204,31 +220,45 @@ def main() -> None:
 
                 n_scored += 1
                 n_correct += int(correct)
-                turn_results.append({
-                    "turn": t, "question": q, "rewritten": rewritten,
-                    "gold": gold, "our_answer": our, "correct": correct,
-                    "how": how,
-                })
+                turn_results.append(
+                    {
+                        "turn": t,
+                        "question": q,
+                        "rewritten": rewritten,
+                        "gold": gold,
+                        "our_answer": our,
+                        "correct": correct,
+                        "how": how,
+                    }
+                )
                 history.append({"role": "user", "content": q})
-                history.append({"role": "assistant",
-                                "content": our or "(no answer given)"})
+                history.append({"role": "assistant", "content": our or "(no answer given)"})
 
-            all_ok = bool(turn_results) and all(
-                tr.get("correct") for tr in turn_results)
+            all_ok = bool(turn_results) and all(tr.get("correct") for tr in turn_results)
             convs_all_correct += int(all_ok)
             marks = "".join("+" if tr.get("correct") else "-" for tr in turn_results)
-            print(f"[{ci+1}/{len(convs)}] {conv.get('id', '')}: {marks}")
-            out.write(json.dumps({
-                "conv_id": conv.get("id"), "filename": conv.get("filename"),
-                "n_turns": len(questions), "all_correct": all_ok,
-                "turns": turn_results,
-            }, ensure_ascii=False) + "\n")
+            print(f"[{ci + 1}/{len(convs)}] {conv.get('id', '')}: {marks}")
+            out.write(
+                json.dumps(
+                    {
+                        "conv_id": conv.get("id"),
+                        "filename": conv.get("filename"),
+                        "n_turns": len(questions),
+                        "all_correct": all_ok,
+                        "turns": turn_results,
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
             out.flush()
 
-    print(f"\nConvFinQA: turn accuracy {n_correct}/{n_scored} "
-          f"= {n_correct / n_scored:.1%}" if n_scored else "\nno turns scored")
-    print(f"conversation accuracy (all turns correct): "
-          f"{convs_all_correct}/{len(convs)}")
+    print(
+        f"\nConvFinQA: turn accuracy {n_correct}/{n_scored} = {n_correct / n_scored:.1%}"
+        if n_scored
+        else "\nno turns scored"
+    )
+    print(f"conversation accuracy (all turns correct): {convs_all_correct}/{len(convs)}")
     print(f"refusals: {n_refused} | errors: {n_errors}")
     print(f"results -> {out_path}")
 

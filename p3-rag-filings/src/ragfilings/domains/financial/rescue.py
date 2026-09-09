@@ -67,6 +67,8 @@ def _find_years(text: str) -> list[int]:
 def _strip_years(text: str) -> str:
     """Remove all year mentions (longhand + FY-shorthand) from query text."""
     return _FY_YEAR_RE.sub(" ", _YEAR_RE.sub(" ", text))
+
+
 _PERIOD_RE = re.compile(
     r"\bquarter(?:ly)?\b|\bq[1-4]\b|\b(?:first|second|third|fourth) quarter\b"
     r"|\b(?:three|six|nine) months\b|\bhalf[- ]?year\b",
@@ -78,16 +80,72 @@ _TOKEN_RE = re.compile(r"[a-z0-9][a-z0-9-]*")
 # over after removing companies, metric phrases, years, and these words is a
 # qualifier the graph cannot vouch for, so rescue aborts.
 _FILLERS = {
-    "what", "was", "were", "is", "are", "the", "a", "an", "of", "for", "in",
-    "on", "as", "by", "or", "and", "to", "from", "its", "did", "do", "does",
-    "how", "much", "many", "which", "company", "companies", "report",
-    "reported", "higher", "lower", "change", "changed", "increase",
-    "decrease", "fiscal", "year", "years", "fy", "s", "10-k", "between",
-    "over", "vs", "compared", "with", "expense", "amount",
+    "what",
+    "was",
+    "were",
+    "is",
+    "are",
+    "the",
+    "a",
+    "an",
+    "of",
+    "for",
+    "in",
+    "on",
+    "as",
+    "by",
+    "or",
+    "and",
+    "to",
+    "from",
+    "its",
+    "did",
+    "do",
+    "does",
+    "how",
+    "much",
+    "many",
+    "which",
+    "company",
+    "companies",
+    "report",
+    "reported",
+    "higher",
+    "lower",
+    "change",
+    "changed",
+    "increase",
+    "decrease",
+    "fiscal",
+    "year",
+    "years",
+    "fy",
+    "s",
+    "10-k",
+    "between",
+    "over",
+    "vs",
+    "compared",
+    "with",
+    "expense",
+    "amount",
     # multi-hop scaffolding (ratios, CAGR, trends)
-    "compound", "annual", "growth", "rate", "cagr", "trend", "had", "have",
-    "margin", "intensity", "percentage", "relative", "peers", "spending",
-    "increasing", "decreasing",
+    "compound",
+    "annual",
+    "growth",
+    "rate",
+    "cagr",
+    "trend",
+    "had",
+    "have",
+    "margin",
+    "intensity",
+    "percentage",
+    "relative",
+    "peers",
+    "spending",
+    "increasing",
+    "decreasing",
 }
 
 # Ratio metrics: phrase -> numerator metric. The denominator is consolidated
@@ -113,33 +171,35 @@ _CAGR_RE = re.compile(r"\bcagr\b|\bcompound annual growth rate\b", re.IGNORECASE
 # before "earnings"). Each entry: (term, family wording, candidate canonical
 # metrics used only to list the years the corpus actually holds).
 _VAGUE_METRIC_TERMS = (
-    ("earnings per share",
-     "basic or diluted earnings per share",
-     ("Diluted EPS",)),
-    ("eps",
-     "basic or diluted earnings per share",
-     ("Diluted EPS",)),
-    ("profit margin",
-     "gross margin, operating margin, or net profit margin",
-     ("Gross Profit", "Operating Income", "Net Income")),
-    ("growth rate",
-     "the growth of a specific line item (total revenue, net income, "
-     "earnings per share, ...)",
-     ("Total Revenue", "Net Sales", "Net Income")),
-    ("earnings",
-     "net income, operating income, or earnings per share",
-     ("Net Income", "Operating Income", "Diluted EPS")),
-    ("cash",
-     "cash & cash equivalents, a broader cash-and-investments total, "
-     "operating cash flow, or free cash flow",
-     ("Cash & Cash Equivalents", "Operating Cash Flow", "Free Cash Flow")),
+    ("earnings per share", "basic or diluted earnings per share", ("Diluted EPS",)),
+    ("eps", "basic or diluted earnings per share", ("Diluted EPS",)),
+    (
+        "profit margin",
+        "gross margin, operating margin, or net profit margin",
+        ("Gross Profit", "Operating Income", "Net Income"),
+    ),
+    (
+        "growth rate",
+        "the growth of a specific line item (total revenue, net income, earnings per share, ...)",
+        ("Total Revenue", "Net Sales", "Net Income"),
+    ),
+    (
+        "earnings",
+        "net income, operating income, or earnings per share",
+        ("Net Income", "Operating Income", "Diluted EPS"),
+    ),
+    (
+        "cash",
+        "cash & cash equivalents, a broader cash-and-investments total, "
+        "operating cash flow, or free cash flow",
+        ("Cash & Cash Equivalents", "Operating Cash Flow", "Free Cash Flow"),
+    ),
 )
 
 # Phrases that anchor a question to one specific metric; when any of these is
 # present the vague-term clarification abstains ("revenue growth rate" is a
 # modifier on a real metric, not a vague reference).
-_ANCHOR_PHRASES = sorted(
-    set(KNOWN_METRICS) | set(_RATIO_NUMERATORS), key=len, reverse=True)
+_ANCHOR_PHRASES = sorted(set(KNOWN_METRICS) | set(_RATIO_NUMERATORS), key=len, reverse=True)
 
 # First words of company names that are also common English words; these
 # match only via the full company name, never via the first-word fallback.
@@ -164,8 +224,7 @@ class RescueQuery:
 
     @property
     def fact_id(self) -> str:
-        return (f"val:{self.ticker}:{self.metric.lower().replace(' ', '_')}"
-                f":{self.fiscal_year}")
+        return f"val:{self.ticker}:{self.metric.lower().replace(' ', '_')}:{self.fiscal_year}"
 
 
 @dataclass
@@ -271,19 +330,21 @@ def _derived_values(facts: list[dict[str, Any]]) -> list[float]:
 class GraphRescue:
     """Deterministic rescue lookups against the fact graph."""
 
-    def __init__(self, engine: GraphQueryEngine, chunks_by_id: dict[str, dict[str, Any]],
-                 company_aliases: dict[str, list[str]] | None = None,
-                 excluded: frozenset[str] | None = None,
-                 company_names: dict[str, str] | None = None) -> None:
+    def __init__(
+        self,
+        engine: GraphQueryEngine,
+        chunks_by_id: dict[str, dict[str, Any]],
+        company_aliases: dict[str, list[str]] | None = None,
+        excluded: frozenset[str] | None = None,
+        company_names: dict[str, str] | None = None,
+    ) -> None:
         self.engine = engine
         self.chunks_by_id = chunks_by_id
         self.company_aliases = company_aliases or {}
         self.company_names = company_names or {}
         self.excluded = excluded if excluded is not None else load_excluded_facts()
         self._alias_re = sorted(
-            ((alias, ticker)
-             for ticker, names in self.company_aliases.items()
-             for alias in names),
+            ((alias, ticker) for ticker, names in self.company_aliases.items() for alias in names),
             key=lambda pair: len(pair[0]),
             reverse=True,
         )
@@ -346,23 +407,30 @@ class GraphRescue:
         if residual:
             return None
 
-        return [RescueQuery(t, m, y)
-                for t in tickers for m in metrics for y in dict.fromkeys(years)]
+        return [
+            RescueQuery(t, m, y) for t in tickers for m in metrics for y in dict.fromkeys(years)
+        ]
 
     # --------------------------------------------------------------- multi-hop
 
     def _fact_id(self, row: dict[str, Any]) -> str:
-        return (f"val:{row['ticker']}:"
-                f"{row['metric'].lower().replace(' ', '_')}:{row['fiscal_year']}")
+        return f"val:{row['ticker']}:{row['metric'].lower().replace(' ', '_')}:{row['fiscal_year']}"
 
     def _excluded_fact(self, row: dict[str, Any]) -> bool:
         return self._fact_id(row) in self.excluded
 
-    def _outcome(self, facts: list[dict[str, Any]], queries: list,
-                 derived: list[float],
-                 derived_lines: list[str] | None = None) -> RescueOutcome | None:
-        chunks = [self.chunks_by_id[f["chunk_id"]] for f in facts
-                  if f.get("chunk_id") in self.chunks_by_id]
+    def _outcome(
+        self,
+        facts: list[dict[str, Any]],
+        queries: list,
+        derived: list[float],
+        derived_lines: list[str] | None = None,
+    ) -> RescueOutcome | None:
+        chunks = [
+            self.chunks_by_id[f["chunk_id"]]
+            for f in facts
+            if f.get("chunk_id") in self.chunks_by_id
+        ]
         if not chunks:
             return None
         chunk_ids = [c["id"] for c in chunks]
@@ -381,9 +449,14 @@ class GraphRescue:
             "from. If you use one of these figures, cite that source chunk ID, "
             "not this block.\n" + "\n".join(lines)
         )
-        return RescueOutcome(queries=queries, facts=facts, chunk_ids=chunk_ids,
-                             chunks=chunks, facts_block=block,
-                             derived_values=derived)
+        return RescueOutcome(
+            queries=queries,
+            facts=facts,
+            chunk_ids=chunk_ids,
+            chunks=chunks,
+            facts_block=block,
+            derived_values=derived,
+        )
 
     def _rescue_ratios(self, query: str) -> RescueOutcome | None:
         """Margin/intensity ratios (numerator over consolidated revenue),
@@ -438,7 +511,8 @@ class GraphRescue:
                 ratio_lines.append(
                     f"- {t} {ratio_phrase} FY{y}: {ratio:.1f}% (derived: "
                     f"{num['metric']} ÷ {den['metric']}; source chunks: "
-                    f"{num['chunk_id']}, {den['chunk_id']})")
+                    f"{num['chunk_id']}, {den['chunk_id']})"
+                )
         if not facts:
             return None
 
@@ -449,8 +523,7 @@ class GraphRescue:
                 gap = abs(ratio_vals[i] - ratio_vals[j])
                 derived.append(gap)
                 derived.append(round(gap, 1))  # match 1-decimal phrasing
-        queries = [RescueQuery(f["ticker"], f["metric"], int(f["fiscal_year"]))
-                   for f in facts]
+        queries = [RescueQuery(f["ticker"], f["metric"], int(f["fiscal_year"])) for f in facts]
         return self._outcome(facts, queries, derived, derived_lines=ratio_lines)
 
     def _rescue_cagr(self, query: str) -> RescueOutcome | None:
@@ -491,9 +564,9 @@ class GraphRescue:
         cagr_line = (
             f"- {ticker} {metric} CAGR FY{y0}→FY{y1}: {cagr:.1f}% per year "
             f"(derived: compound growth between the two endpoint figures; "
-            f"source chunks: {v0['chunk_id']}, {v1['chunk_id']})")
-        return self._outcome(facts, queries, [cagr, round(cagr, 1)],
-                             derived_lines=[cagr_line])
+            f"source chunks: {v0['chunk_id']}, {v1['chunk_id']})"
+        )
+        return self._outcome(facts, queries, [cagr, round(cagr, 1)], derived_lines=[cagr_line])
 
     # ---------------------------------------------------------------- lookup
 
@@ -527,13 +600,17 @@ class GraphRescue:
 
     _CHANGE_INTENT_RE = re.compile(
         r"\b(change|changed|trend|grow|grew|growth|increasing|decreasing|"
-        r"increase|decrease|rise|fall|rose|fell|cagr)\b", re.IGNORECASE)
+        r"increase|decrease|rise|fall|rose|fell|cagr)\b",
+        re.IGNORECASE,
+    )
 
     # "relative to its peers" leaves the comparison set undefined — the
     # clarification must ask for it as well as the missing fiscal year.
     _PEERS_RE = re.compile(
         r"\b(?:relative|compared|vs\.?|versus)\s+(?:to\s+)?(?:its\s+|their\s+|the\s+)?"
-        r"peers?\b|\bpeer\s+(?:group|companies|comparison)\b", re.IGNORECASE)
+        r"peers?\b|\bpeer\s+(?:group|companies|comparison)\b",
+        re.IGNORECASE,
+    )
 
     def missing_year_clarification(self, query: str) -> str | None:
         """A deterministic clarification when a single company + a recognized
@@ -556,20 +633,31 @@ class GraphRescue:
                 metric = KNOWN_METRICS[phrase]
                 break
         if metric is None:
-            for phrase in ("total revenue", "net revenue", "revenue", "operating profit", "operating income", "net sales", "net income", "r&d"):
+            for phrase in (
+                "total revenue",
+                "net revenue",
+                "revenue",
+                "operating profit",
+                "operating income",
+                "net sales",
+                "net income",
+                "r&d",
+            ):
                 if phrase in KNOWN_METRICS and re.search(rf"\b{re.escape(phrase)}\b", text):
                     metric = KNOWN_METRICS[phrase]
                     break
         if metric is None:
             return None
         hist = self.engine.get_metric_history(ticker, metric)
-        years = sorted({int(h["fiscal_year"]) for h in hist
-                        if str(h.get("fiscal_year", "")).isdigit()})
+        years = sorted(
+            {int(h["fiscal_year"]) for h in hist if str(h.get("fiscal_year", "")).isdigit()}
+        )
         if len(years) < 2 and metric in ("Total Revenue", "Net Sales"):
             alt = "Net Sales" if metric == "Total Revenue" else "Total Revenue"
             hist_alt = self.engine.get_metric_history(ticker, alt)
-            years_alt = sorted({int(h["fiscal_year"]) for h in hist_alt
-                               if str(h.get("fiscal_year", "")).isdigit()})
+            years_alt = sorted(
+                {int(h["fiscal_year"]) for h in hist_alt if str(h.get("fiscal_year", "")).isdigit()}
+            )
             if len(years_alt) >= 2:
                 metric = alt
                 years = years_alt
@@ -579,17 +667,23 @@ class GraphRescue:
         span = ", ".join(f"FY{y}" for y in years)
         metric_l = metric.lower()
         if self._CHANGE_INTENT_RE.search(text):
-            msg = (f"{name} reports {metric_l} for {len(years)} fiscal years in "
-                   f"the corpus ({span}), and the question does not specify a "
-                   f"period. Between which fiscal years would you like the change "
-                   f"in {metric_l}?")
+            msg = (
+                f"{name} reports {metric_l} for {len(years)} fiscal years in "
+                f"the corpus ({span}), and the question does not specify a "
+                f"period. Between which fiscal years would you like the change "
+                f"in {metric_l}?"
+            )
         else:
-            msg = (f"{name} reports {metric_l} for {len(years)} fiscal years in the "
-                   f"corpus ({span}), and the question does not specify one. Which "
-                   f"fiscal year's {metric_l} would you like?")
+            msg = (
+                f"{name} reports {metric_l} for {len(years)} fiscal years in the "
+                f"corpus ({span}), and the question does not specify one. Which "
+                f"fiscal year's {metric_l} would you like?"
+            )
         if self._PEERS_RE.search(query):
-            msg += (" Also, 'relative to its peers' is unspecified: which peer "
-                    "companies would you like it compared against?")
+            msg += (
+                " Also, 'relative to its peers' is unspecified: which peer "
+                "companies would you like it compared against?"
+            )
         return msg
 
     def vague_metric_clarification(self, query: str) -> str | None:
@@ -611,31 +705,45 @@ class GraphRescue:
         for term, family, candidates in _VAGUE_METRIC_TERMS:
             if not re.search(rf"\b{re.escape(term)}\b", text):
                 continue
-            subject = (self.company_names.get(tickers[0], tickers[0])
-                       if len(tickers) == 1 else "the company")
+            subject = (
+                self.company_names.get(tickers[0], tickers[0])
+                if len(tickers) == 1
+                else "the company"
+            )
             if years:
-                year_txt = (f"fiscal year {years[0]}" if len(years) == 1
-                            else f"fiscal years {', '.join(map(str, years))}")
-                return (f"'{term.capitalize()}' is ambiguous: it could mean "
-                        f"{family}. Which measure of {subject}'s {term} for "
-                        f"{year_txt} would you like?")
+                year_txt = (
+                    f"fiscal year {years[0]}"
+                    if len(years) == 1
+                    else f"fiscal years {', '.join(map(str, years))}"
+                )
+                return (
+                    f"'{term.capitalize()}' is ambiguous: it could mean "
+                    f"{family}. Which measure of {subject}'s {term} for "
+                    f"{year_txt} would you like?"
+                )
             span_years: set[int] = set()
             if len(tickers) == 1:
                 for m in candidates:
-                    span_years |= {int(h["fiscal_year"])
-                                     for h in self.engine.get_metric_history(tickers[0], m)
-                                     if str(h.get("fiscal_year", "")).isdigit()}
+                    span_years |= {
+                        int(h["fiscal_year"])
+                        for h in self.engine.get_metric_history(tickers[0], m)
+                        if str(h.get("fiscal_year", "")).isdigit()
+                    }
             if len(span_years) >= 2:
                 span = ", ".join(f"FY{y}" for y in sorted(span_years))
-                return (f"{subject} reports figures that could match '{term}' "
-                        f"({family}) for {len(span_years)} fiscal years in the "
-                        f"corpus ({span}), and the question specifies neither the "
-                        f"exact measure nor the fiscal year. Which measure — and "
-                        f"which fiscal year — would you like?")
-            return (f"'{term.capitalize()}' is ambiguous: it could mean {family}, "
-                    f"and the question specifies neither the exact measure nor a "
-                    f"fiscal year. Which measure — and which fiscal year — would "
-                    f"you like?")
+                return (
+                    f"{subject} reports figures that could match '{term}' "
+                    f"({family}) for {len(span_years)} fiscal years in the "
+                    f"corpus ({span}), and the question specifies neither the "
+                    f"exact measure nor the fiscal year. Which measure — and "
+                    f"which fiscal year — would you like?"
+                )
+            return (
+                f"'{term.capitalize()}' is ambiguous: it could mean {family}, "
+                f"and the question specifies neither the exact measure nor a "
+                f"fiscal year. Which measure — and which fiscal year — would "
+                f"you like?"
+            )
         return None
 
     def no_company_clarification(self, query: str) -> str | None:
@@ -659,24 +767,38 @@ class GraphRescue:
                 metric = KNOWN_METRICS[phrase]
                 break
         if metric is None:
-            for phrase in ("total revenue", "net revenue", "revenue", "operating profit", "operating income", "net sales", "net income", "gross profit", "r&d"):
+            for phrase in (
+                "total revenue",
+                "net revenue",
+                "revenue",
+                "operating profit",
+                "operating income",
+                "net sales",
+                "net income",
+                "gross profit",
+                "r&d",
+            ):
                 if phrase in KNOWN_METRICS and re.search(rf"\b{re.escape(phrase)}\b", text):
                     metric = KNOWN_METRICS[phrase]
                     break
         if metric is None:
             return None
         n = len(self.company_names)
-        return (f"The corpus holds filings for {n} companies, each reporting "
-                f"several fiscal years, and the question names neither a company "
-                f"nor a fiscal year. Which company's {metric.lower()} would you "
-                f"like — and for which fiscal year?")
+        return (
+            f"The corpus holds filings for {n} companies, each reporting "
+            f"several fiscal years, and the question names neither a company "
+            f"nor a fiscal year. Which company's {metric.lower()} would you "
+            f"like — and for which fiscal year?"
+        )
 
     def clarification(self, query: str) -> str | None:
         """Any deterministic clarifying question for an under-specified
         query, or None when the question is in scope for synthesis."""
-        for handler in (self.missing_year_clarification,
-                        self.vague_metric_clarification,
-                        self.no_company_clarification):
+        for handler in (
+            self.missing_year_clarification,
+            self.vague_metric_clarification,
+            self.no_company_clarification,
+        ):
             out = handler(query)
             if out is not None:
                 return out

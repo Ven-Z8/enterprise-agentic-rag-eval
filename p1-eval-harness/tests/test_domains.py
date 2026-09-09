@@ -39,8 +39,9 @@ def test_legal_golden_set_loads():
 
 
 def test_unknown_domain_rejected():
-    from harness.cli import _adapter_for
     import pytest
+
+    from harness.cli import _adapter_for
 
     with pytest.raises(SystemExit):
         _adapter_for("klingon", None)

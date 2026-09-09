@@ -56,12 +56,28 @@ def _complete(
 # often emit the refusal as prose in the answer field instead. Treat the
 # common shapes as refusals so graph rescue still gets a chance.
 _REFUSAL_MARKERS = (
-    "do not contain", "does not contain", "do not include", "does not include",
-    "not provided in", "not present in", "not directly stated",
-    "no context chunks", "none of the provided", "cannot find", "could not find",
-    "cannot answer", "unable to answer", "cannot determine", "unable to determine",
-    "not stated in", "not mentioned in", "not disclosed in",
-    "does not provide", "do not provide", "is not available", "not available in",
+    "do not contain",
+    "does not contain",
+    "do not include",
+    "does not include",
+    "not provided in",
+    "not present in",
+    "not directly stated",
+    "no context chunks",
+    "none of the provided",
+    "cannot find",
+    "could not find",
+    "cannot answer",
+    "unable to answer",
+    "cannot determine",
+    "unable to determine",
+    "not stated in",
+    "not mentioned in",
+    "not disclosed in",
+    "does not provide",
+    "do not provide",
+    "is not available",
+    "not available in",
 )
 
 
@@ -156,16 +172,20 @@ def answer(
     llm_client = client or get_llm_client(cfg=cfg)
     verify_retries = cfg.get("generation", {}).get("verify_retries", 1)
 
-    def _synthesize(active_hits: list[dict[str, Any]], graph_block: str | None,
-                    math_result: dict[str, Any] | None,
-                    derived_values: list[float] | None = None,
-                    ) -> tuple[dict[str, Any], dict[str, Any]]:
+    def _synthesize(
+        active_hits: list[dict[str, Any]],
+        graph_block: str | None,
+        math_result: dict[str, Any] | None,
+        derived_values: list[float] | None = None,
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
         """One grounded synthesis pass (with verification retries).
 
         Returns (parsed_data, verification) — verification is None when the
         model refused.
         """
-        context = "\n\n".join(f"[{h['chunk']['id']}]\n{embed_text(h['chunk'])}" for h in active_hits)
+        context = "\n\n".join(
+            f"[{h['chunk']['id']}]\n{embed_text(h['chunk'])}" for h in active_hits
+        )
         if math_result:
             context += (
                 f"\n\n[PYTHON_MATH_TOOL_VERIFIED_RESULT]\n"
@@ -214,8 +234,9 @@ def answer(
             invalid = [c for c in raw_citations if c not in by_id]
             cited = [by_id[c] for c in valid] or [h["chunk"] for h in active_hits]
 
-            checked = pack.verify(str(data["answer"]), cited, math_result=math_result,
-                                  derived_values=derived_values)
+            checked = pack.verify(
+                str(data["answer"]), cited, math_result=math_result, derived_values=derived_values
+            )
             checked["citations"] = valid
             checked["invalid_citations"] = invalid
             if checked["verified"] or retries <= 0:
@@ -223,9 +244,14 @@ def answer(
 
             retries -= 1
             failed_claims = [c["raw"] for c in checked["claims"] if not c["found"]]
-            msgs = msgs + [{"role": "user",
-                            "content": pack.format_prompt("verification_retry",
-                                                            failed_claims=failed_claims)}]
+            msgs = msgs + [
+                {
+                    "role": "user",
+                    "content": pack.format_prompt(
+                        "verification_retry", failed_claims=failed_claims
+                    ),
+                }
+            ]
             data = _call_model()
 
     # --- deterministic graph augmentation ---------------------------------
@@ -240,8 +266,11 @@ def answer(
     outcome = graph_rescue.rescue(query) if graph_rescue is not None else None
     if outcome is not None:
         seen = {h["chunk"]["id"] for h in hits}
-        extra = [{"chunk": c, "score": conf, "dense_sim": conf}
-                 for c in outcome.chunks if c["id"] not in seen]
+        extra = [
+            {"chunk": c, "score": conf, "dense_sim": conf}
+            for c in outcome.chunks
+            if c["id"] not in seen
+        ]
         aug_hits = hits + extra
         aug_block = outcome.facts_block
         aug_derived = outcome.derived_values
@@ -262,7 +291,8 @@ def answer(
             # Grounded facts are already in context; one retry leverages
             # free-model non-determinism before giving up.
             retry_data, retry_checked = _synthesize(
-                aug_hits, aug_block, math_res, derived_values=aug_derived)
+                aug_hits, aug_block, math_res, derived_values=aug_derived
+            )
             if _is_real_answer(retry_data):
                 data, checked = retry_data, retry_checked
                 rescue_meta["rescued"] = True
@@ -352,6 +382,7 @@ def ask(
 
     if base_strat == "agent_react":
         from .orchestrator import MultiAgentOrchestrator
+
         orch = MultiAgentOrchestrator(cfg, memory=memory)
         res = orch.run(query, index, strategy="hybrid_rerank")
         res["strategy"] = "agent_react"
@@ -373,9 +404,14 @@ def ask(
         hits: list[dict[str, Any]] = []
         seen_ids: set[str] = set()
         for sq in sub_queries:
-            sq_hits = index.search(sq, base_strat, effective_top_k, filters=filters,
-                                   rerank_candidates=rerank_candidates,
-                                   reranker_name=cfg.get("retrieval", {}).get("reranker"))
+            sq_hits = index.search(
+                sq,
+                base_strat,
+                effective_top_k,
+                filters=filters,
+                rerank_candidates=rerank_candidates,
+                reranker_name=cfg.get("retrieval", {}).get("reranker"),
+            )
             for h in sq_hits:
                 cid = h["chunk"]["id"]
                 if cid not in seen_ids:
@@ -383,9 +419,14 @@ def ask(
                     seen_ids.add(cid)
         hits = sorted(hits, key=lambda x: x["score"], reverse=True)[:effective_top_k]
     else:
-        hits = index.search(query, base_strat, effective_top_k, filters=filters,
-                            rerank_candidates=rerank_candidates,
-                                   reranker_name=cfg.get("retrieval", {}).get("reranker"))
+        hits = index.search(
+            query,
+            base_strat,
+            effective_top_k,
+            filters=filters,
+            rerank_candidates=rerank_candidates,
+            reranker_name=cfg.get("retrieval", {}).get("reranker"),
+        )
 
     result = answer(query, hits, cfg, graph_rescue=rescuer, pack=pack)
     result["latency_ms"] = (time.perf_counter() - t0) * 1000.0

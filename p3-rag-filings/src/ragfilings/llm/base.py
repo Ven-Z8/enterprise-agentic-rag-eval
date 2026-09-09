@@ -11,7 +11,12 @@ from .types import ChatMessage, LLMResponse
 class BaseLLMClient(ABC):
     """Abstract interface for all LLM provider adapters."""
 
-    def __init__(self, api_key: str | None = None, base_url: str | None = None, default_model: str | None = None):
+    def __init__(
+        self,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        default_model: str | None = None,
+    ):
         self.api_key = api_key
         self.base_url = base_url
         self._default_model = default_model

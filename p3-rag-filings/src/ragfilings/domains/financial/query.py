@@ -32,8 +32,9 @@ def _canon_metric(metric_name: str) -> str:
 class GraphQueryEngine:
     """High-level query interface for agent tools."""
 
-    def __init__(self, builder: FinancialGraphBuilder | None = None,
-                 graph: nx.DiGraph | None = None) -> None:
+    def __init__(
+        self, builder: FinancialGraphBuilder | None = None, graph: nx.DiGraph | None = None
+    ) -> None:
         self._builder = builder
         if builder is not None:
             self.graph = builder.graph
@@ -47,9 +48,9 @@ class GraphQueryEngine:
 
     # ------------------------------------------------------------ fact queries
 
-    def _value_nodes(self, ticker: str | None = None,
-                     metric: str | None = None,
-                     fiscal_year: str | None = None) -> list[dict[str, Any]]:
+    def _value_nodes(
+        self, ticker: str | None = None, metric: str | None = None, fiscal_year: str | None = None
+    ) -> list[dict[str, Any]]:
         canon = _canon_metric(metric) if metric else None
         out = []
         for _, data in self.graph.nodes(data=True):
@@ -64,8 +65,9 @@ class GraphQueryEngine:
             out.append(data)
         return out
 
-    def get_metric_value(self, ticker: str, metric_name: str,
-                         fiscal_year: int | str) -> dict[str, Any] | None:
+    def get_metric_value(
+        self, ticker: str, metric_name: str, fiscal_year: int | str
+    ) -> dict[str, Any] | None:
         """Exact single fact: value + unit + provenance chunk."""
         rows = self._value_nodes(ticker, metric_name, fiscal_year)
         if not rows:
@@ -96,8 +98,9 @@ class GraphQueryEngine:
         ]
         return sorted(series, key=lambda x: str(x.get("fiscal_year", "")))
 
-    def compare_metrics(self, tickers: list[str], metric_name: str,
-                        fiscal_year: str | int | None = None) -> list[dict[str, Any]]:
+    def compare_metrics(
+        self, tickers: list[str], metric_name: str, fiscal_year: str | int | None = None
+    ) -> list[dict[str, Any]]:
         """Same metric across companies (optionally one year)."""
         results = []
         for t in tickers:

@@ -74,8 +74,9 @@ class DomainPack(ABC):
     # --------------------------------------------------- synthesis-time tools
 
     @abstractmethod
-    def compute(self, query: str, chunks: list[dict[str, Any]],
-                cfg: dict[str, Any], client: Any = None) -> dict[str, Any] | None:
+    def compute(
+        self, query: str, chunks: list[dict[str, Any]], cfg: dict[str, Any], client: Any = None
+    ) -> dict[str, Any] | None:
         """Pack derivation tool (financial math, clause arithmetic, ...).
 
         Returns ``{"explanation", "formatted", "expression", "result_value",
@@ -85,9 +86,13 @@ class DomainPack(ABC):
     # ------------------------------------------------------- claim semantics
 
     @abstractmethod
-    def verify(self, answer_text: str, chunks: list[dict[str, Any]],
-               math_result: dict[str, Any] | None = None,
-               derived_values: list[float] | None = None) -> dict[str, Any]:
+    def verify(
+        self,
+        answer_text: str,
+        chunks: list[dict[str, Any]],
+        math_result: dict[str, Any] | None = None,
+        derived_values: list[float] | None = None,
+    ) -> dict[str, Any]:
         """Check every domain claim in the answer against the cited chunks.
 
         Returns ``{"verified": bool, "claims": [...]}``.
@@ -97,8 +102,7 @@ class DomainPack(ABC):
 def get_pack(name: str) -> DomainPack:
     """Load a pack by name (`ragfilings.domains.<name>.PACK`)."""
     if name not in _KNOWN_PACKS:
-        raise ValueError(
-            f"unknown domain pack {name!r} — available: {', '.join(_KNOWN_PACKS)}")
+        raise ValueError(f"unknown domain pack {name!r} — available: {', '.join(_KNOWN_PACKS)}")
     module = import_module(f"ragfilings.domains.{name}")
     pack = getattr(module, "PACK", None)
     if pack is None:

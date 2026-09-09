@@ -61,18 +61,22 @@ def test_get_llm_client_helper():
 
 def test_luna_request_omits_unsupported_temperature():
     from types import SimpleNamespace
+
     requests = []
 
     def complete(**kwargs):
         requests.append(kwargs)
-        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='ok'))],
-                               usage=None)
+        return SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content="ok"))], usage=None
+        )
 
-    client = OpenRouterClient(api_key='sk-or-test', default_model='openai/gpt-5.6-luna')
-    client._client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=complete)))
-    client.complete([{'role': 'user', 'content': 'hello'}], max_tokens=128)
-    assert 'temperature' not in requests[0]
-    assert requests[0]['max_tokens'] == 128
+    client = OpenRouterClient(api_key="sk-or-test", default_model="openai/gpt-5.6-luna")
+    client._client = SimpleNamespace(
+        chat=SimpleNamespace(completions=SimpleNamespace(create=complete))
+    )
+    client.complete([{"role": "user", "content": "hello"}], max_tokens=128)
+    assert "temperature" not in requests[0]
+    assert requests[0]["max_tokens"] == 128
 
 
 def test_is_transient_error_classification():

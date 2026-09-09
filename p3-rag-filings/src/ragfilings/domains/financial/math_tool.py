@@ -28,6 +28,7 @@ _SAFE_OPERATORS = {
 
 def safe_eval(expr: str) -> float:
     """Safely evaluate a mathematical Python expression using AST parsing."""
+
     def _eval_node(node: ast.AST) -> float:
         if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
             return float(node.value)
@@ -69,7 +70,19 @@ def compute_financial_math(
             expr = data.get("expression", "")
             if expr:
                 val = safe_eval(expr)
-                is_pct = any(k in query.lower() for k in ("growth", "percent", "margin", "cagr", "rate", "share", "portion", "ratio"))
+                is_pct = any(
+                    k in query.lower()
+                    for k in (
+                        "growth",
+                        "percent",
+                        "margin",
+                        "cagr",
+                        "rate",
+                        "share",
+                        "portion",
+                        "ratio",
+                    )
+                )
                 return {
                     "expression": expr,
                     "result_value": round(val, 4),

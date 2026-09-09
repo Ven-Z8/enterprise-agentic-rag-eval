@@ -96,7 +96,5 @@ def verify(
             numbers.append(float(dv))
         except (ValueError, TypeError):
             pass
-    claims = [
-        {**c, "found": _matches(c, numbers)} for c in extract_claims(answer_text)
-    ]
+    claims = [{**c, "found": _matches(c, numbers)} for c in extract_claims(answer_text)]
     return {"verified": all(c["found"] for c in claims), "claims": claims}

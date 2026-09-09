@@ -48,7 +48,9 @@ def main() -> None:
         notes = case.get("notes", "")
         chunk_ids = re.findall(r"[\w]+_20\d\d_10K:Item\w+:c\d+", notes)
         print("=" * 100)
-        print(f"{case['id']} [{case['failure_category']}/{case['difficulty']}/{case['expected']['type']}]")
+        print(
+            f"{case['id']} [{case['failure_category']}/{case['difficulty']}/{case['expected']['type']}]"
+        )
         print(f"  Q: {case['input']}")
         print(f"  A: {case['expected']['answer']}")
         for cid in dict.fromkeys(chunk_ids):
@@ -65,7 +67,7 @@ def main() -> None:
                 if i == -1:
                     continue
                 shown = True
-                snippet = src[max(0, i - args.radius): i + len(probe) + args.radius]
+                snippet = src[max(0, i - args.radius) : i + len(probe) + args.radius]
                 print(f"  [{cid}] ...{snippet.replace(chr(10), ' | ')}...")
             if not shown:
                 print(f"  [{cid}] !! none of {nums} located in chunk")

@@ -41,21 +41,28 @@ class FinancialPack(DomainPack):
 
     def load_rescue(self, cfg: dict[str, Any], index: Any) -> Any | None:
         from .loader import load_rescue
+
         return load_rescue(cfg, index)
 
     # --------------------------------------------------- synthesis-time tools
 
-    def compute(self, query: str, chunks: list[dict[str, Any]],
-                cfg: dict[str, Any], client: Any = None) -> dict[str, Any] | None:
+    def compute(
+        self, query: str, chunks: list[dict[str, Any]], cfg: dict[str, Any], client: Any = None
+    ) -> dict[str, Any] | None:
         return compute_financial_math(query, chunks, cfg, client=client)
 
     # ------------------------------------------------------- claim semantics
 
-    def verify(self, answer_text: str, chunks: list[dict[str, Any]],
-               math_result: dict[str, Any] | None = None,
-               derived_values: list[float] | None = None) -> dict[str, Any]:
-        return verify_claims(answer_text, chunks, math_result=math_result,
-                             derived_values=derived_values)
+    def verify(
+        self,
+        answer_text: str,
+        chunks: list[dict[str, Any]],
+        math_result: dict[str, Any] | None = None,
+        derived_values: list[float] | None = None,
+    ) -> dict[str, Any]:
+        return verify_claims(
+            answer_text, chunks, math_result=math_result, derived_values=derived_values
+        )
 
 
 __all__ = ["FinancialPack"]

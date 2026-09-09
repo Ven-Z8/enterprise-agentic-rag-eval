@@ -21,11 +21,12 @@ def patched_llm(monkeypatch):
     """Returns a recorder standing in for complete_with_resilience."""
     calls = []
 
-    def fake_complete(messages, model=None, max_tokens=1500, temperature=0.0,
-                      client=None):
+    def fake_complete(messages, model=None, max_tokens=1500, temperature=0.0, client=None):
         calls.append({"messages": messages, "model": model})
         return json.dumps({"verdict": "correct", "score": 0.9}), {
-            "input_tokens": 100, "output_tokens": 25, "cost_usd": 0.002,
+            "input_tokens": 100,
+            "output_tokens": 25,
+            "cost_usd": 0.002,
         }
 
     monkeypatch.setattr(dj, "complete_with_resilience", fake_complete)
@@ -38,8 +39,10 @@ def test_judge_resolves_model_and_ledger(patched_llm):
     out = judge.generate("grade this")
     assert json.loads(out)["verdict"] == "correct"
     assert judge.ledger.to_dict() == {
-        "judge_calls": 1, "judge_input_tokens": 100,
-        "judge_output_tokens": 25, "judge_cost_usd": 0.002,
+        "judge_calls": 1,
+        "judge_input_tokens": 100,
+        "judge_output_tokens": 25,
+        "judge_cost_usd": 0.002,
     }
     judge.generate("grade again")
     assert judge.ledger.to_dict()["judge_calls"] == 2
@@ -72,8 +75,12 @@ def test_judge_injects_schema_system_prompt(patched_llm):
 def test_build_metrics_wired_to_judge(patched_llm):
     judge = dj.OpenRouterJudge(CFG)
     metrics = dj.build_metrics(judge)
-    assert set(metrics) == {"correctness", "faithfulness", "answer_relevancy",
-                            "contextual_precision"}
+    assert set(metrics) == {
+        "correctness",
+        "faithfulness",
+        "answer_relevancy",
+        "contextual_precision",
+    }
     for m in metrics.values():
         assert getattr(m, "model", None) is judge
 
@@ -92,9 +99,11 @@ def test_scorer_correctness_maps_verdict_and_threshold(patched_llm):
 
     scorer._metrics["correctness"] = FakeMetric(0.9)
     case = {
-        "id": "fin-x", "input": "q?",
+        "id": "fin-x",
+        "input": "q?",
         "expected": {"answer": "$1 million", "citations": [], "type": "judge"},
-        "failure_category": "synthesis", "notes": "",
+        "failure_category": "synthesis",
+        "notes": "",
     }
     result = {"answer": "about $1 million", "hits": []}
     v = scorer.correctness(case, result)
@@ -110,24 +119,31 @@ def test_scorer_correctness_maps_verdict_and_threshold(patched_llm):
 def test_scorer_ambiguous_expected_output_describes_clarification(patched_llm):
     scorer = dj.DeepEvalScorer(CFG)
     case = {
-        "id": "fin-y", "input": "What was the net income?",
+        "id": "fin-y",
+        "input": "What was the net income?",
         "expected": {"answer": None, "citations": [], "type": "judge"},
-        "failure_category": "ambiguous", "notes": "company and year unspecified",
+        "failure_category": "ambiguous",
+        "notes": "company and year unspecified",
     }
     text = scorer._expected_output(case)
     assert "clarification" in text and "company and year unspecified" in text
 
-    answerable = {**case, "expected": {"answer": "$1M", "citations": [], "type": "judge"},
-                  "failure_category": "synthesis"}
+    answerable = {
+        **case,
+        "expected": {"answer": "$1M", "citations": [], "type": "judge"},
+        "failure_category": "synthesis",
+    }
     assert scorer._expected_output(answerable) == "$1M"
 
 
 def test_scorer_metrics_skips_empty_answers(patched_llm):
     scorer = dj.DeepEvalScorer(CFG)
     case = {
-        "id": "fin-z", "input": "q?",
+        "id": "fin-z",
+        "input": "q?",
         "expected": {"answer": "$1 million", "citations": [], "type": "exact"},
-        "failure_category": "lookup", "notes": "",
+        "failure_category": "lookup",
+        "notes": "",
     }
     assert scorer.metrics(case, {"answer": None, "hits": []}) == {}
 
@@ -141,9 +157,11 @@ def test_scorer_correctness_survives_metric_failure(patched_llm):
 
     scorer._metrics["correctness"] = ExplodingMetric()
     case = {
-        "id": "fin-w", "input": "q?",
+        "id": "fin-w",
+        "input": "q?",
         "expected": {"answer": "$1 million", "citations": [], "type": "judge"},
-        "failure_category": "synthesis", "notes": "",
+        "failure_category": "synthesis",
+        "notes": "",
     }
     v = scorer.correctness(case, {"answer": "x", "hits": []})
     assert v["correct"] is False and "provider down" in v["reason"]
@@ -174,19 +192,24 @@ def test_score_with_deepeval_reports_metric_errors_as_none(patched_llm):
 
 def test_luna_transport_omits_temperature():
     from types import SimpleNamespace
+
     from harness.llm import OpenRouterClient
+
     requests = []
 
     def complete(**kwargs):
         requests.append(kwargs)
-        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='ok'))],
-                               usage=None)
+        return SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content="ok"))], usage=None
+        )
 
-    client = OpenRouterClient(api_key='sk-or-test')
-    client._client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=complete)))
-    client.complete([{'role': 'user', 'content': 'grade'}], 'openai/gpt-5.6-luna', max_tokens=128)
-    assert 'temperature' not in requests[0]
-    assert requests[0]['max_tokens'] == 128
+    client = OpenRouterClient(api_key="sk-or-test")
+    client._client = SimpleNamespace(
+        chat=SimpleNamespace(completions=SimpleNamespace(create=complete))
+    )
+    client.complete([{"role": "user", "content": "grade"}], "openai/gpt-5.6-luna", max_tokens=128)
+    assert "temperature" not in requests[0]
+    assert requests[0]["max_tokens"] == 128
 
 
 def test_correctness_steps_uses_unified_ten_point_scale():

@@ -26,7 +26,8 @@ _CODE_RE_SRC = r"[A-Z][A-Z0-9]*(?:-[0-9]+)?"
 
 _TERM_RE = re.compile(r"['\"]([^'\"\n]{2,90}?)['\"]")
 _DEFINITION_INTENT_RE = re.compile(
-    r"\bdefin(?:ed|ition)\b|\bmeans?\b|\bwhat is meant by\b", re.IGNORECASE)
+    r"\bdefin(?:ed|ition)\b|\bmeans?\b|\bwhat is meant by\b", re.IGNORECASE
+)
 
 
 @dataclass
@@ -42,16 +43,22 @@ class LegalRescueOutcome:
 class LegalRescue:
     """Deterministic rescue/clarification over the contract corpus."""
 
-    def __init__(self, contract_codes: list[str], contract_titles: dict[str, str],
-                 chunks_by_id: dict[str, dict[str, Any]],
-                 defined_terms: dict[str, dict[str, Any]]) -> None:
+    def __init__(
+        self,
+        contract_codes: list[str],
+        contract_titles: dict[str, str],
+        chunks_by_id: dict[str, dict[str, Any]],
+        defined_terms: dict[str, dict[str, Any]],
+    ) -> None:
         self.contract_codes = contract_codes
         self.contract_titles = contract_titles
         self.chunks_by_id = chunks_by_id
         self.defined_terms = defined_terms
         self._code_re = re.compile(
             rf"\b({'|'.join(re.escape(c) for c in sorted(contract_codes, key=len, reverse=True))})\b"
-            if contract_codes else r"(?!x)x")
+            if contract_codes
+            else r"(?!x)x"
+        )
 
     # ------------------------------------------------------------ extraction
 
@@ -64,15 +71,22 @@ class LegalRescue:
         """Ask which agreement, when a clause/definition question names none."""
         if self.find_contracts(query):
             return None  # scope already pinned to at least one contract
-        if not (_DEFINITION_INTENT_RE.search(query)
-                or re.search(r"\bclause\b|\bprovision\b|\bterm\b|\bagreement\b|"
-                             r"\bcontract\b",
-                             query, re.IGNORECASE)):
+        if not (
+            _DEFINITION_INTENT_RE.search(query)
+            or re.search(
+                r"\bclause\b|\bprovision\b|\bterm\b|\bagreement\b|"
+                r"\bcontract\b",
+                query,
+                re.IGNORECASE,
+            )
+        ):
             return None
         n = len(self.contract_codes)
-        return (f"The corpus holds {n} separate agreements, and the question "
-                f"does not say which one. Which contract should I look at "
-                f"(e.g. by its document code)?")
+        return (
+            f"The corpus holds {n} separate agreements, and the question "
+            f"does not say which one. Which contract should I look at "
+            f"(e.g. by its document code)?"
+        )
 
     # ---------------------------------------------------------------- rescue
 
@@ -88,7 +102,8 @@ class LegalRescue:
         for m in _TERM_RE.finditer(query):
             term = m.group(1).strip()
             hit = terms.get(term) or next(
-                (v for k, v in terms.items() if k.lower() == term.lower()), None)
+                (v for k, v in terms.items() if k.lower() == term.lower()), None
+            )
             if hit is None:
                 continue
             chunk = self.chunks_by_id.get(hit["chunk_id"])
@@ -100,7 +115,7 @@ class LegalRescue:
                 "Each line carries the source chunk ID it was parsed from. If you "
                 "use one of these, cite that source chunk ID, not this block.\n"
                 f'- {code} defined term "{term}": {hit["definition"]} '
-                f'(source chunk: {hit["chunk_id"]}; agreement: {title})'
+                f"(source chunk: {hit['chunk_id']}; agreement: {title})"
             )
             return LegalRescueOutcome(
                 queries=[{"contract": code, "term": term}],

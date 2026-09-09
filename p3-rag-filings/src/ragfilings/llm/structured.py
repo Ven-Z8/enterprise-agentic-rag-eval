@@ -37,6 +37,7 @@ def complete_structured(
     import instructor
 
     from .. import config as cfg_mod
+
     cfg_mod._load_env()
 
     active = client or get_llm_client(cfg=cfg, role=role)

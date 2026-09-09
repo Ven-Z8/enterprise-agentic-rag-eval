@@ -123,9 +123,13 @@ def write_scorecard(
     for key, label, fmt in [
         ("refusal_rate", "Refusal rate", _pct),
         ("cost_per_query_usd", "Cost / query", lambda v: "—" if v is None else f"${v:.4f}"),
-        ("latency_p50_ms", "Latency p50", lambda v: "—" if v is None else f"{v/1000:.1f}s"),
-        ("latency_p95_ms", "Latency p95", lambda v: "—" if v is None else f"{v/1000:.1f}s"),
-        ("judge_cost_usd", "Judge cost (eval overhead, total)", lambda v: "—" if v is None else f"${v:.3f}"),
+        ("latency_p50_ms", "Latency p50", lambda v: "—" if v is None else f"{v / 1000:.1f}s"),
+        ("latency_p95_ms", "Latency p95", lambda v: "—" if v is None else f"{v / 1000:.1f}s"),
+        (
+            "judge_cost_usd",
+            "Judge cost (eval overhead, total)",
+            lambda v: "—" if v is None else f"${v:.3f}",
+        ),
     ]:
         cells = " | ".join(fmt(all_results[s]["metrics"].get(key)) for s in strategies)
         lines.append(f"| {label} | {cells} |")
@@ -148,6 +152,7 @@ def write_scorecard(
 
 def _write_png(all_results: dict[str, dict[str, Any]], path: Path) -> None:
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     import numpy as np
@@ -161,13 +166,17 @@ def _write_png(all_results: dict[str, dict[str, Any]], path: Path) -> None:
     for i, s in enumerate(strategies):
         m = all_results[s]["metrics"]
         vals = [
-            m.get(k) if m.get(k) is not None else (m.get("citation_faithfulness") if k == "citation_reference_hit" else 0.0)
+            m.get(k)
+            if m.get(k) is not None
+            else (m.get("citation_faithfulness") if k == "citation_reference_hit" else 0.0)
             for k, _ in _PCT_METRICS
         ]
         bars = ax.bar(x + i * width, vals, width, label=s, color=colors[i % len(colors)])
         ax.bar_label(bars, fmt="{:.0%}", fontsize=7.5, padding=2)
     ax.set_xticks(x + width * (len(strategies) - 1) / 2)
-    ax.set_xticklabels([lb.replace(" (unanswerable)", "\n(unanswerable)") for lb in labels], fontsize=8)
+    ax.set_xticklabels(
+        [lb.replace(" (unanswerable)", "\n(unanswerable)") for lb in labels], fontsize=8
+    )
     ax.set_ylim(0, 1.15)
     ax.yaxis.set_major_formatter(lambda v, _: f"{v:.0%}")
     ax.legend(frameon=False, fontsize=8.5)
@@ -187,11 +196,20 @@ def _write_png(all_results: dict[str, dict[str, Any]], path: Path) -> None:
         txt.append(
             f"{s.upper()}\n"
             f"  cost/query  ${(m.get('cost_per_query_usd') or 0):.4f}\n"
-            f"  p50 latency {(m.get('latency_p50_ms') or 0)/1000:.1f}s\n"
-            f"  p95 latency {(m.get('latency_p95_ms') or 0)/1000:.1f}s"
+            f"  p50 latency {(m.get('latency_p50_ms') or 0) / 1000:.1f}s\n"
+            f"  p95 latency {(m.get('latency_p95_ms') or 0) / 1000:.1f}s"
         )
     txt.append(f"model: {first['model']}")
-    side.text(0.0, 0.95, "\n\n".join(txt), va="top", ha="left", fontsize=8.5, family="monospace", transform=side.transAxes)
+    side.text(
+        0.0,
+        0.95,
+        "\n\n".join(txt),
+        va="top",
+        ha="left",
+        fontsize=8.5,
+        family="monospace",
+        transform=side.transAxes,
+    )
     fig.tight_layout()
     fig.savefig(path, bbox_inches="tight")
     plt.close(fig)
@@ -314,7 +332,9 @@ def generate_reports(summary: dict[str, Any], out_dir: str | Path) -> tuple[Path
     ]
     for r in summary["results"]:
         status = "✅ PASS" if r["correct"] else "❌ FAIL"
-        md_lines.append(f"| `{r['case_id']}` | {status} | {r['outcome']} | {r['trace']['latency_ms']/1000:.1f}s |")
+        md_lines.append(
+            f"| `{r['case_id']}` | {status} | {r['outcome']} | {r['trace']['latency_ms'] / 1000:.1f}s |"
+        )
 
     md_path.write_text("\n".join(md_lines) + "\n", encoding="utf-8")
 

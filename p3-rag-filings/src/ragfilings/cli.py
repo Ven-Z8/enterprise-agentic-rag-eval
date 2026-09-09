@@ -45,7 +45,10 @@ def _cmd_index(args: argparse.Namespace) -> None:
         for m in csv.DictReader(f):
             path = root / "corpus" / m["local_file"]
             if not path.exists():
-                print(f"skip {m['ticker']}: {path.name} missing (run scripts/download_corpus.py)", file=sys.stderr)
+                print(
+                    f"skip {m['ticker']}: {path.name} missing (run scripts/download_corpus.py)",
+                    file=sys.stderr,
+                )
                 continue
             sections = ingestion.parse_file(path, ing["min_section_chars"], ing["pointer_chars"])
             chunks = chunking.chunk_sections(sections, m, cfg["chunking"]["max_chars"])
@@ -54,8 +57,12 @@ def _cmd_index(args: argparse.Namespace) -> None:
                     out.write(json.dumps(c, ensure_ascii=False) + "\n")
             all_chunks.extend(chunks)
             print(f"{m['ticker']:<6} {len(chunks):>5} chunks")
-    print(f"\nembedding {len(all_chunks)} chunks with {cfg['embedding']['model']} (first run downloads the model)...")
-    retrieval.build_index(all_chunks, root / cfg["embedding"]["index_dir"], cfg["embedding"]["model"])
+    print(
+        f"\nembedding {len(all_chunks)} chunks with {cfg['embedding']['model']} (first run downloads the model)..."
+    )
+    retrieval.build_index(
+        all_chunks, root / cfg["embedding"]["index_dir"], cfg["embedding"]["model"]
+    )
     print(f"index written to {cfg['embedding']['index_dir']}")
 
 
@@ -64,7 +71,7 @@ def _cmd_ask(args: argparse.Namespace) -> None:
     result = ask(args.question, cfg, strategy=args.strategy, domain=args.domain)
     print(
         f"strategy={result['strategy']} confidence={result['confidence']:.3f} "
-        f"latency={result['latency_ms']/1000:.1f}s "
+        f"latency={result['latency_ms'] / 1000:.1f}s "
         f"cost=${result['usage']['cost_usd']:.4f}\n"
     )
     if result["refused"]:
@@ -87,8 +94,7 @@ def _cmd_graph(args: argparse.Namespace) -> None:
 
     cfg = cfg_mod.load(args.config)
     root = cfg_mod.ROOT
-    index = retrieval.load_index(root / cfg["embedding"]["index_dir"],
-                                 cfg["embedding"]["model"])
+    index = retrieval.load_index(root / cfg["embedding"]["index_dir"], cfg["embedding"]["model"])
     builder = FinancialGraphBuilder()
     builder.build_from_chunks(index.chunks)
     builder.build_communities(index.chunks)
@@ -97,14 +103,17 @@ def _cmd_graph(args: argparse.Namespace) -> None:
         print(f"summarized {n} communities via [extraction] model")
     out = root / "corpus" / "graph" / "financial_graph.json"
     builder.save(out)
-    print(f"graph: {builder.graph.number_of_nodes()} nodes, "
-          f"{builder.graph.number_of_edges()} edges, "
-          f"{len(builder.communities)} communities -> {out}")
+    print(
+        f"graph: {builder.graph.number_of_nodes()} nodes, "
+        f"{builder.graph.number_of_edges()} edges, "
+        f"{len(builder.communities)} communities -> {out}"
+    )
 
 
 def _cmd_serve(args: argparse.Namespace) -> None:
     """Launch the modern 3-panel UI and live Agent Swarm visualizer."""
     import uvicorn
+
     from .ui.server import app
 
     print(f"Starting RAGFilings Intelligence UI at http://{args.host}:{args.port}")
@@ -127,12 +136,20 @@ def main() -> None:
     ask_cmd.add_argument("question")
     ask_cmd.add_argument(
         "--strategy",
-        choices=["dense", "hybrid", "hybrid_rerank", "agent_react",
-                 "dense_graph", "hybrid_graph", "hybrid_rerank_graph"],
+        choices=[
+            "dense",
+            "hybrid",
+            "hybrid_rerank",
+            "agent_react",
+            "dense_graph",
+            "hybrid_graph",
+            "hybrid_rerank_graph",
+        ],
         default=None,
         help="override config [retrieval] strategy; *_graph adds fact-graph augmentation",
     )
     from .domains import available_packs
+
     ask_cmd.add_argument(
         "--domain",
         choices=list(available_packs()),
@@ -142,8 +159,11 @@ def main() -> None:
     ask_cmd.set_defaults(func=_cmd_ask)
 
     graph = sub.add_parser("graph", help="build the fact graph + communities")
-    graph.add_argument("--summarize", action="store_true",
-                       help="LLM-summarize the largest communities (costs API calls)")
+    graph.add_argument(
+        "--summarize",
+        action="store_true",
+        help="LLM-summarize the largest communities (costs API calls)",
+    )
     graph.add_argument("--max-summaries", type=int, default=12)
     graph.set_defaults(func=_cmd_graph)
 

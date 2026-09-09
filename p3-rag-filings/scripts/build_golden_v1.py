@@ -52,9 +52,11 @@ NET_INCOME_WHITELIST = {"GOOGL", "MSFT", "AMZN", "KO", "NVDA", "HD", "BA"}
 # Single source of truth: corpus/graph/excluded_facts.json (also consumed
 # by the runtime graph rescue). Fix direction: the builder's table
 # heuristics; until then they stay excluded here too.
-BAD_FACTS = set(json.loads(
-    (ROOT / "corpus" / "graph" / "excluded_facts.json").read_text(encoding="utf-8")
-)["excluded"])
+BAD_FACTS = set(
+    json.loads((ROOT / "corpus" / "graph" / "excluded_facts.json").read_text(encoding="utf-8"))[
+        "excluded"
+    ]
+)
 
 METRIC_PHRASE = {
     "Net Sales": "net sales",
@@ -79,16 +81,29 @@ METRIC_PHRASE = {
 
 # deep-table metrics for the table-reading category
 TABLE_METRICS = {
-    "Total Liabilities", "SG&A Expense", "Cost of Sales", "Cost of Revenue",
-    "Operating Expenses", "Total Assets", "Cash & Cash Equivalents",
-    "Stockholders Equity", "Gross Profit", "Operating Cash Flow",
-    "Capital Expenditures", "Free Cash Flow", "Diluted EPS", "R&D Expense",
+    "Total Liabilities",
+    "SG&A Expense",
+    "Cost of Sales",
+    "Cost of Revenue",
+    "Operating Expenses",
+    "Total Assets",
+    "Cash & Cash Equivalents",
+    "Stockholders Equity",
+    "Gross Profit",
+    "Operating Cash Flow",
+    "Capital Expenditures",
+    "Free Cash Flow",
+    "Diluted EPS",
+    "R&D Expense",
 }
 
 # metrics subject to year-over-year plausibility screening (always-positive
 # size metrics only — net income/operating income legitimately swing hard)
 PLAUSIBLE_SERIES_METRICS = {
-    "Net Sales", "Total Revenue", "Gross Profit", "Total Assets",
+    "Net Sales",
+    "Total Revenue",
+    "Gross Profit",
+    "Total Assets",
 }
 MAX_YOY_SWING = 0.75  # revenue/assets of these large caps do not move >75% YoY
 
@@ -193,8 +208,9 @@ def rules_for(fact: dict, derived: bool = False) -> list[str]:
     return ["numeric_tolerance:1%" if derived else "numeric_tolerance:0.5%", "unit_equivalence"]
 
 
-def make_case(cid, question, answer, facts, category, difficulty, ctype="exact",
-              rules=None, notes="") -> dict:
+def make_case(
+    cid, question, answer, facts, category, difficulty, ctype="exact", rules=None, notes=""
+) -> dict:
     rules = rules if rules is not None else rules_for(facts[0])
     cits = sorted({citation_of(f) for f in facts})
     fact_ids = ", ".join(f["id"] for f in facts)
@@ -249,8 +265,10 @@ def main() -> None:
             swing = abs(b["value"] - a["value"]) / max(abs(a["value"]), abs(b["value"]), 1.0)
             if swing > MAX_YOY_SWING:
                 implausible.add((ticker, metric))
-                print(f"  plausibility drop: {ticker} {metric} swings "
-                      f"{a['fiscal_year']}={a['value']} -> {b['fiscal_year']}={b['value']}")
+                print(
+                    f"  plausibility drop: {ticker} {metric} swings "
+                    f"{a['fiscal_year']}={a['value']} -> {b['fiscal_year']}={b['value']}"
+                )
                 break
     usable = [f for f in usable if (f["ticker"], f["metric"]) not in implausible]
 
@@ -258,8 +276,15 @@ def main() -> None:
     cases: list[dict] = []
 
     # ---------- lookup: latest-year headline metrics, company diversity ----------
-    common = ["Net Income", "Total Revenue", "Net Sales", "Total Assets",
-              "Operating Income", "Gross Profit", "Cash & Cash Equivalents"]
+    common = [
+        "Net Income",
+        "Total Revenue",
+        "Net Sales",
+        "Total Assets",
+        "Operating Income",
+        "Gross Profit",
+        "Cash & Cash Equivalents",
+    ]
     pool = [f for f in usable if f["metric"] in common]
     rng.shuffle(pool)
     per_company: dict[str, int] = {}
@@ -267,7 +292,9 @@ def main() -> None:
     for f in pool:
         if n_lookup >= 22:
             break
-        if f["fiscal_year"] != max(x["fiscal_year"] for x in by_co_metric[(f["ticker"], f["metric"])]):
+        if f["fiscal_year"] != max(
+            x["fiscal_year"] for x in by_co_metric[(f["ticker"], f["metric"])]
+        ):
             continue
         if per_company.get(f["ticker"], 0) >= 2:
             continue
@@ -278,7 +305,7 @@ def main() -> None:
         per_company[f["ticker"]] = per_company.get(f["ticker"], 0) + 1
         phrase = METRIC_PHRASE[f["metric"]]
         q = f"What was {possessive(names[f['ticker']])} {phrase} for fiscal year {f['fiscal_year']}?"
-        cases.append(make_case(f"fin-1{n_lookup+1:03d}", q, fmt_answer(f), [f], "lookup", "easy"))
+        cases.append(make_case(f"fin-1{n_lookup + 1:03d}", q, fmt_answer(f), [f], "lookup", "easy"))
         n_lookup += 1
 
     # ---------- table: deep-table metrics or prior years ----------
@@ -294,9 +321,11 @@ def main() -> None:
         seen.add(key)
         per_company[f["ticker"]] = per_company.get(f["ticker"], 0) + 1
         phrase = METRIC_PHRASE[f["metric"]]
-        q = (f"In its 10-K, what did {names[f['ticker']]} report as {phrase} "
-             f"for fiscal year {f['fiscal_year']}?")
-        cases.append(make_case(f"fin-2{n_table+1:03d}", q, fmt_answer(f), [f], "table", "medium"))
+        q = (
+            f"In its 10-K, what did {names[f['ticker']]} report as {phrase} "
+            f"for fiscal year {f['fiscal_year']}?"
+        )
+        cases.append(make_case(f"fin-2{n_table + 1:03d}", q, fmt_answer(f), [f], "table", "medium"))
         n_table += 1
 
     # ---------- year-over-year comparison (judge) ----------
@@ -320,18 +349,36 @@ def main() -> None:
             continue
         pct = (v2 - v1) / abs(v1) * 100.0
         direction = "increased" if pct >= 0 else "decreased"
-        answer = (f"{fmt_dollars(v2, f2['unit'])} in fiscal year {f2['fiscal_year']}, "
-                  f"{'up' if pct >= 0 else 'down'} from {fmt_dollars(v1, f1['unit'])} in fiscal year "
-                  f"{f1['fiscal_year']} — a {abs(pct):.1f}% {direction.replace('increased','increase').replace('decreased','decrease')}.")
+        answer = (
+            f"{fmt_dollars(v2, f2['unit'])} in fiscal year {f2['fiscal_year']}, "
+            f"{'up' if pct >= 0 else 'down'} from {fmt_dollars(v1, f1['unit'])} in fiscal year "
+            f"{f1['fiscal_year']} — a {abs(pct):.1f}% {direction.replace('increased', 'increase').replace('decreased', 'decrease')}."
+        )
         q = f"How did {co} {phrase} change from fiscal year {f1['fiscal_year']} to fiscal year {f2['fiscal_year']}?"
-        cases.append(make_case(f"fin-3{n_yoy+1:03d}", q, answer, [f1, f2], "synthesis", "medium",
-                               ctype="judge", rules=rules_for(f1, derived=True)))
+        cases.append(
+            make_case(
+                f"fin-3{n_yoy + 1:03d}",
+                q,
+                answer,
+                [f1, f2],
+                "synthesis",
+                "medium",
+                ctype="judge",
+                rules=rules_for(f1, derived=True),
+            )
+        )
         n_yoy += 1
 
     # ---------- cross-company comparison (judge) ----------
     by_metric_year: dict[tuple, list] = {}
     for f in usable:
-        if f["metric"] not in ("Net Income", "Total Revenue", "Net Sales", "Total Assets", "Operating Income"):
+        if f["metric"] not in (
+            "Net Income",
+            "Total Revenue",
+            "Net Sales",
+            "Total Assets",
+            "Operating Income",
+        ):
             continue
         by_metric_year.setdefault((f["metric"], f["fiscal_year"]), []).append(f)
     pool = [(m, y, fs) for (m, y), fs in by_metric_year.items() if len(fs) >= 3]
@@ -347,13 +394,27 @@ def main() -> None:
         seen.add((a["ticker"], a["metric"], a["fiscal_year"]))
         phrase = METRIC_PHRASE[metric]
         diff = a["value"] - b["value"]
-        answer = (f"{names[a['ticker']]} reported higher {phrase}: {fmt_answer(a)} vs "
-                  f"{possessive(names[b['ticker']])} {fmt_answer(b)} — a difference of "
-                  f"{fmt_dollars(diff, a['unit'])}.")
-        q = (f"Which company reported higher {phrase} in fiscal year {year}: "
-             f"{names[a['ticker']]} or {names[b['ticker']]}? By how much?")
-        cases.append(make_case(f"fin-4{n_cmp+1:03d}", q, answer, [a, b], "synthesis", "hard",
-                               ctype="judge", rules=rules_for(a, derived=True)))
+        answer = (
+            f"{names[a['ticker']]} reported higher {phrase}: {fmt_answer(a)} vs "
+            f"{possessive(names[b['ticker']])} {fmt_answer(b)} — a difference of "
+            f"{fmt_dollars(diff, a['unit'])}."
+        )
+        q = (
+            f"Which company reported higher {phrase} in fiscal year {year}: "
+            f"{names[a['ticker']]} or {names[b['ticker']]}? By how much?"
+        )
+        cases.append(
+            make_case(
+                f"fin-4{n_cmp + 1:03d}",
+                q,
+                answer,
+                [a, b],
+                "synthesis",
+                "hard",
+                ctype="judge",
+                rules=rules_for(a, derived=True),
+            )
+        )
         n_cmp += 1
 
     with OUT.open("w", encoding="utf-8") as f:

@@ -90,7 +90,7 @@ class OpenRouterJudge(DeepEvalBaseLLM):
         self.ledger = JudgeLedger()
         super().__init__(model=self._model_name)
 
-    def load_model(self) -> "OpenRouterJudge":
+    def load_model(self) -> OpenRouterJudge:
         return self
 
     def get_model_name(self) -> str:
@@ -242,8 +242,11 @@ class DeepEvalScorer:
                 "reason": getattr(metric, "reason", "") or "",
             }
         except Exception as e:
-            return {"correct": False, "score": None,
-                    "reason": f"judge failed: {type(e).__name__}: {e}"[:300]}
+            return {
+                "correct": False,
+                "score": None,
+                "reason": f"judge failed: {type(e).__name__}: {e}"[:300],
+            }
 
     def metrics(self, case: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
         """Faithfulness / relevancy / contextual precision for an answered case."""

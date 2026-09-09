@@ -16,7 +16,8 @@ _MONEY_RE = re.compile(r"\$\s?[\d,]+(?:\.\d+)?(?:\s?(?:million|billion|thousand)
 _DATE_RE = re.compile(
     r"\b(?:January|February|March|April|May|June|July|August|September|"
     r"October|November|December)\s+\d{1,2},\s+\d{4}\b"
-    r"|\b\d{1,2}/\d{1,2}/\d{2,4}\b")
+    r"|\b\d{1,2}/\d{1,2}/\d{2,4}\b"
+)
 _QUOTE_RE = re.compile(r'"([^"\n]{20,400})"')
 
 
@@ -43,9 +44,12 @@ def _matches(claim: dict[str, Any], chunk_text: str) -> bool:
     return claim["raw"].lower() in chunk_text.lower()
 
 
-def verify(answer_text: str, cited_chunks: list[dict[str, Any]],
-           math_result: dict[str, Any] | None = None,
-           derived_values: list[float] | None = None) -> dict[str, Any]:
+def verify(
+    answer_text: str,
+    cited_chunks: list[dict[str, Any]],
+    math_result: dict[str, Any] | None = None,
+    derived_values: list[float] | None = None,
+) -> dict[str, Any]:
     """Check every legal claim against the cited excerpts."""
     corpus = "\n".join(c.get("text", "") for c in cited_chunks)
     claims = [{**c, "found": _matches(c, corpus)} for c in extract_claims(answer_text)]

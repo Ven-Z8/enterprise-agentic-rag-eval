@@ -50,6 +50,7 @@ class LLMFactory:
     ) -> BaseLLMClient:
         """Create an OpenRouter client bound to the model for `role`."""
         from .. import config as cfg_mod
+
         cfg_mod._load_env()
 
         model = default_model or get_model_for_role(cfg, role)
@@ -95,9 +96,22 @@ def is_transient_error(exc: Exception) -> bool:
             return True
 
     exc_type = type(exc).__name__
-    if any(perm in exc_type for perm in ("BadRequest", "Authentication", "PermissionDenied", "NotFoundError", "ValueError", "TypeError")):
+    if any(
+        perm in exc_type
+        for perm in (
+            "BadRequest",
+            "Authentication",
+            "PermissionDenied",
+            "NotFoundError",
+            "ValueError",
+            "TypeError",
+        )
+    ):
         return False
-    if any(trans in exc_type for trans in ("RateLimit", "Timeout", "Connection", "InternalServer", "APIConnectionError")):
+    if any(
+        trans in exc_type
+        for trans in ("RateLimit", "Timeout", "Connection", "InternalServer", "APIConnectionError")
+    ):
         return True
 
     msg = str(exc).lower()
@@ -139,6 +153,7 @@ def complete_with_resilience(
     input_tokens / output_tokens / cost_usd reported by the API.
     """
     from .. import config as cfg_mod
+
     cfg_mod._load_env()
 
     tokens = max_tokens or cfg.get("generation", {}).get("max_tokens", 1200)
@@ -165,10 +180,13 @@ def complete_with_resilience(
                 raise e
 
             retry_after = _retry_after_seconds(e)
-            delay = min(retry_after, 180.0) if retry_after else min(2.0 ** attempt, 60.0)
+            delay = min(retry_after, 180.0) if retry_after else min(2.0**attempt, 60.0)
             logger.warning(
                 "OpenRouter call attempt %d/%d transient failure (%s); retrying in %.0fs",
-                attempt + 1, max_attempts, e, delay,
+                attempt + 1,
+                max_attempts,
+                e,
+                delay,
             )
             if attempt < max_attempts - 1:
                 time.sleep(delay)

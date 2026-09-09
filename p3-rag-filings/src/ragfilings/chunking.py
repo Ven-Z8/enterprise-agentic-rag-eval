@@ -59,8 +59,9 @@ def _note_head(line: str) -> str | None:
     return m.group(1) if m and " | " not in line else None
 
 
-def chunk_sections(sections: list[Section], doc_meta: dict[str, str],
-                   max_chars: int = 1_800) -> list[dict[str, Any]]:
+def chunk_sections(
+    sections: list[Section], doc_meta: dict[str, str], max_chars: int = 1_800
+) -> list[dict[str, Any]]:
     """Chunk every section of one filing; doc_meta needs ticker/company/filing_date."""
     doc_id = f"{doc_meta['ticker']}_{_fiscal_year(doc_meta)}_10K"
     chunks: list[dict[str, Any]] = []
@@ -69,8 +70,9 @@ def chunk_sections(sections: list[Section], doc_meta: dict[str, str],
     return chunks
 
 
-def _chunk_one(sec: Section, doc_id: str, meta: dict[str, str],
-               max_chars: int) -> list[dict[str, Any]]:
+def _chunk_one(
+    sec: Section, doc_id: str, meta: dict[str, str], max_chars: int
+) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     cur: list[str] = []
     cur_note: str | None = None
@@ -81,28 +83,37 @@ def _chunk_one(sec: Section, doc_id: str, meta: dict[str, str],
         if not cur:
             return
         text = "\n".join(cur)
-        refs = sorted({g for m in _NOTE_REF_RE.finditer(text)
-                       for g in m.groups() if g and g != state["note"]}, key=int)
-        out.append({
-            "id": f"{doc_id}:Item{sec.item}:c{len(out):03d}",
-            "doc_id": doc_id,
-            "ticker": meta["ticker"],
-            "company": meta["company"],
-            "fiscal_year": _fiscal_year(meta),
-            "period_end": _period_end(meta),
-            "filing_date": meta.get("filing_date"),
-            "item": sec.item,
-            "section_id": f"Item{sec.item}",
-            "part": sec.part,
-            "title": sec.title,
-            "resolved_from": sec.resolved_from,
-            "note": state["note"],
-            "note_refs": refs,
-            "has_table": any(" | " in ln for ln in cur),
-            "table_continuation": continuation,
-            "text": text,
-            "n_chars": len(text),
-        })
+        refs = sorted(
+            {
+                g
+                for m in _NOTE_REF_RE.finditer(text)
+                for g in m.groups()
+                if g and g != state["note"]
+            },
+            key=int,
+        )
+        out.append(
+            {
+                "id": f"{doc_id}:Item{sec.item}:c{len(out):03d}",
+                "doc_id": doc_id,
+                "ticker": meta["ticker"],
+                "company": meta["company"],
+                "fiscal_year": _fiscal_year(meta),
+                "period_end": _period_end(meta),
+                "filing_date": meta.get("filing_date"),
+                "item": sec.item,
+                "section_id": f"Item{sec.item}",
+                "part": sec.part,
+                "title": sec.title,
+                "resolved_from": sec.resolved_from,
+                "note": state["note"],
+                "note_refs": refs,
+                "has_table": any(" | " in ln for ln in cur),
+                "table_continuation": continuation,
+                "text": text,
+                "n_chars": len(text),
+            }
+        )
         cur = []
         state["note"] = cur_note
 

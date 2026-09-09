@@ -1,9 +1,7 @@
 """Tests for the fact graph: deterministic multi-year table extraction,
 provenance, community detection, and the query engine."""
 
-
 from ragfilings.graph import FinancialGraphBuilder, GraphQueryEngine
-
 
 STATEMENT_CHUNK = {
     "id": "AAPL_2025_10K:Item8:c007",
@@ -28,6 +26,7 @@ def _build(chunk=STATEMENT_CHUNK):
 
 # ------------------------------------------------------------- extraction
 
+
 def test_multi_year_columns_are_attributed_to_their_years():
     engine = GraphQueryEngine(builder=_build())
     series = engine.get_metric_history("AAPL", "Net Sales")
@@ -44,7 +43,9 @@ def test_percentage_rows_get_pct_unit():
 
 def test_thousands_unit_detected():
     chunk = {
-        "id": "X_2025_10K:Item8:c000", "ticker": "X", "fiscal_year": 2025,
+        "id": "X_2025_10K:Item8:c000",
+        "ticker": "X",
+        "fiscal_year": 2025,
         "text": "(In thousands)\nNet income | 2025 | 2024\nNet income | $1,000 | $900",
     }
     engine = GraphQueryEngine(builder=_build(chunk))
@@ -54,7 +55,9 @@ def test_thousands_unit_detected():
 
 def test_mixed_units_in_one_chunk_use_nearest_annotation():
     chunk = {
-        "id": "X_2025_10K:Item8:c010", "ticker": "X", "fiscal_year": 2025,
+        "id": "X_2025_10K:Item8:c010",
+        "ticker": "X",
+        "fiscal_year": 2025,
         "text": (
             "(In thousands, except per share data)\n"
             "Shares used for EPS | 2025 | 2024\n"
@@ -74,7 +77,9 @@ def test_apple_style_compound_unit_line_means_millions():
     # "(In millions, except shares reflected in thousands...)" — the FIRST
     # phrase is the primary unit of the statement.
     chunk = {
-        "id": "AAPL_2025_10K:Item8:c000", "ticker": "AAPL", "fiscal_year": 2025,
+        "id": "AAPL_2025_10K:Item8:c000",
+        "ticker": "AAPL",
+        "fiscal_year": 2025,
         "item": "8",
         "text": (
             "(In millions, except number of shares, which are reflected in "
@@ -89,7 +94,9 @@ def test_apple_style_compound_unit_line_means_millions():
 
 def test_parenthesized_values_are_negative():
     chunk = {
-        "id": "X_2025_10K:Item8:c001", "ticker": "X", "fiscal_year": 2025,
+        "id": "X_2025_10K:Item8:c001",
+        "ticker": "X",
+        "fiscal_year": 2025,
         "text": "2025 | 2024\nNet income | $(1,234) | $500",
     }
     engine = GraphQueryEngine(builder=_build(chunk))
@@ -100,7 +107,9 @@ def test_parenthesized_values_are_negative():
 def test_multi_value_row_without_year_header_is_skipped():
     # Honesty rule: never guess which column belongs to which year.
     chunk = {
-        "id": "X_2025_10K:Item8:c002", "ticker": "X", "fiscal_year": 2025,
+        "id": "X_2025_10K:Item8:c002",
+        "ticker": "X",
+        "fiscal_year": 2025,
         "text": "Total net sales | $100 | $90 | $80",
     }
     builder = FinancialGraphBuilder()
@@ -109,7 +118,9 @@ def test_multi_value_row_without_year_header_is_skipped():
 
 def test_single_value_without_header_falls_back_to_filing_year():
     chunk = {
-        "id": "X_2025_10K:Item7:c000", "ticker": "X", "fiscal_year": 2025,
+        "id": "X_2025_10K:Item7:c000",
+        "ticker": "X",
+        "fiscal_year": 2025,
         "text": "Free cash flow was reported as:\nFree cash flow | $12,345",
     }
     engine = GraphQueryEngine(builder=_build(chunk))
@@ -119,8 +130,7 @@ def test_single_value_without_header_falls_back_to_filing_year():
 
 def test_provenance_edges_point_to_source_chunk():
     builder = _build()
-    value_nodes = [n for n, d in builder.graph.nodes(data=True)
-                   if d.get("label") == "MetricValue"]
+    value_nodes = [n for n, d in builder.graph.nodes(data=True) if d.get("label") == "MetricValue"]
     assert value_nodes
     for vn in value_nodes:
         assert builder.graph.has_edge(vn, "chunk:AAPL_2025_10K:Item8:c007")
@@ -139,17 +149,21 @@ def test_duplicate_extraction_keeps_first_value():
 def test_statement_values_outrank_mda_values():
     builder = FinancialGraphBuilder()
     mda = {
-        "id": "X_2025_10K:Item7:c001", "ticker": "X", "fiscal_year": 2025,
+        "id": "X_2025_10K:Item7:c001",
+        "ticker": "X",
+        "fiscal_year": 2025,
         "item": "7",
         "text": "2025 | 2024\nNet income | $11 | $9",
     }
     stmt = {
-        "id": "X_2025_10K:Item8:c001", "ticker": "X", "fiscal_year": 2025,
+        "id": "X_2025_10K:Item8:c001",
+        "ticker": "X",
+        "fiscal_year": 2025,
         "item": "8",
         "text": "2025 | 2024\nNet income | $11,000 | $9,000",
     }
-    builder.ingest_chunk(mda)      # MD&A first...
-    builder.ingest_chunk(stmt)     # ...statements must win anyway
+    builder.ingest_chunk(mda)  # MD&A first...
+    builder.ingest_chunk(stmt)  # ...statements must win anyway
     engine = GraphQueryEngine(builder=builder)
     row = engine.get_metric_value("X", "Net Income", 2025)
     assert row["value"] == 11000.0
@@ -158,7 +172,9 @@ def test_statement_values_outrank_mda_values():
 
 def test_anchored_matching_rejects_ratio_rows():
     chunk = {
-        "id": "X_2025_10K:Item7:c002", "ticker": "X", "fiscal_year": 2025,
+        "id": "X_2025_10K:Item7:c002",
+        "ticker": "X",
+        "fiscal_year": 2025,
         "item": "7",
         "text": "2025 | 2024\nPercentage of total net sales | 8 | 7",
     }
@@ -170,7 +186,9 @@ def test_group_label_splitting_a_table_keeps_year_context():
     # Real pattern: "Revenue:" group labels have no pipe and split the
     # statement into blocks; the year header above must still apply.
     chunk = {
-        "id": "MSFT_2025_10K:Item8:c000", "ticker": "MSFT", "fiscal_year": 2025,
+        "id": "MSFT_2025_10K:Item8:c000",
+        "ticker": "MSFT",
+        "fiscal_year": 2025,
         "item": "8",
         "text": (
             "INCOME STATEMENTS (In millions)\n"
@@ -187,14 +205,23 @@ def test_group_label_splitting_a_table_keeps_year_context():
 
 # ------------------------------------------------------------- communities
 
+
 def test_louvain_communities_group_cooccurring_entities():
     chunks = [
-        {"id": f"A_{i}", "ticker": "AAPL", "fiscal_year": 2025,
-         "text": "Total net sales and net income grew."}
+        {
+            "id": f"A_{i}",
+            "ticker": "AAPL",
+            "fiscal_year": 2025,
+            "text": "Total net sales and net income grew.",
+        }
         for i in range(3)
     ] + [
-        {"id": f"M_{i}", "ticker": "MSFT", "fiscal_year": 2025,
-         "text": "Research and development expense rose."}
+        {
+            "id": f"M_{i}",
+            "ticker": "MSFT",
+            "fiscal_year": 2025,
+            "text": "Research and development expense rose.",
+        }
         for i in range(3)
     ]
     builder = FinancialGraphBuilder()
@@ -208,8 +235,14 @@ def test_louvain_communities_group_cooccurring_entities():
 def test_community_search_matches_keywords():
     builder = FinancialGraphBuilder()
     builder.communities = [
-        {"id": "community:0", "members": ["company:AAPL", "metric:Net Sales"],
-         "size": 2, "n_chunks": 5, "chunk_ids": ["c1"], "summary": None},
+        {
+            "id": "community:0",
+            "members": ["company:AAPL", "metric:Net Sales"],
+            "size": 2,
+            "n_chunks": 5,
+            "chunk_ids": ["c1"],
+            "summary": None,
+        },
     ]
     engine = GraphQueryEngine(builder=builder)
     hits = engine.community_search("apple net sales trajectory")
@@ -217,6 +250,7 @@ def test_community_search_matches_keywords():
 
 
 # ------------------------------------------------------------ persistence
+
 
 def test_save_load_roundtrip_preserves_facts_and_communities(tmp_path):
     builder = _build()
@@ -237,13 +271,18 @@ def test_load_missing_file_returns_empty_builder(tmp_path):
 
 # ------------------------------------------------------------ query engine
 
+
 def test_compare_metrics_across_companies():
     builder = FinancialGraphBuilder()
     builder.ingest_chunk(STATEMENT_CHUNK)
-    builder.ingest_chunk({
-        "id": "MSFT_2025_10K:Item8:c001", "ticker": "MSFT", "fiscal_year": 2025,
-        "text": "2025\nTotal net sales | $281,724",
-    })
+    builder.ingest_chunk(
+        {
+            "id": "MSFT_2025_10K:Item8:c001",
+            "ticker": "MSFT",
+            "fiscal_year": 2025,
+            "text": "2025\nTotal net sales | $281,724",
+        }
+    )
     engine = GraphQueryEngine(builder=builder)
     rows = engine.compare_metrics(["AAPL", "MSFT"], "net sales", 2025)
     values = {r["ticker"]: r["value"] for r in rows}

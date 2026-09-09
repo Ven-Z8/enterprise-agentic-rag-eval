@@ -34,10 +34,11 @@ sys.path.insert(0, str(P3 / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from financebench_common import FB_DIR, load_financebench  # noqa: E402
-from harness import config as harness_cfg                   # noqa: E402
-from harness.judge import DeepEvalScorer                   # noqa: E402
-from ragfilings.config import load as load_cfg             # noqa: E402
-from ragfilings.pipeline.engine import answer              # noqa: E402
+from ragfilings.config import load as load_cfg  # noqa: E402
+from ragfilings.pipeline.engine import answer  # noqa: E402
+
+from harness import config as harness_cfg  # noqa: E402
+from harness.judge import DeepEvalScorer  # noqa: E402
 
 
 def evidence_hits(rec: dict) -> list[dict]:
@@ -48,16 +49,18 @@ def evidence_hits(rec: dict) -> list[dict]:
         text = ev.get("evidence_text") or ev.get("evidence_text_full_page") or ""
         if not text.strip():
             continue
-        hits.append({
-            "chunk": {
-                "id": f"{doc}:evidence:{i}",
-                "text": text,
-                "section": "evidence",
-                "ticker": None,
-            },
-            "score": 0.9,
-            "dense_sim": 0.9,
-        })
+        hits.append(
+            {
+                "chunk": {
+                    "id": f"{doc}:evidence:{i}",
+                    "text": text,
+                    "section": "evidence",
+                    "ticker": None,
+                },
+                "score": 0.9,
+                "dense_sim": 0.9,
+            }
+        )
     return hits
 
 
@@ -69,8 +72,8 @@ def make_retriever(cfg: dict):
     manifest_path = FB_DIR / "corpus_manifest.json"
     if not (index_dir / "embeddings.npy").exists():
         raise SystemExit(
-            f"no FinanceBench index at {index_dir} — run "
-            "scripts/build_financebench_corpus.py first")
+            f"no FinanceBench index at {index_dir} — run scripts/build_financebench_corpus.py first"
+        )
     index = retrieval.load_index(index_dir, cfg["embedding"]["model"])
     manifest = {}
     if manifest_path.exists():
@@ -79,7 +82,8 @@ def make_retriever(cfg: dict):
 
     def retrieve(rec: dict) -> tuple[list[dict], bool]:
         hits = index.search(
-            rec["question"], "hybrid_rerank",
+            rec["question"],
+            "hybrid_rerank",
             top_k=cfg["retrieval"]["top_k"],
             reranker_name=cfg["retrieval"]["reranker"],
             rerank_candidates=cfg["retrieval"]["rerank_candidates"],
@@ -107,14 +111,23 @@ def main() -> None:
     if args.mode == "retrieval":
         retrieve, indexed_docs = make_retriever(cfg)
         covered = sum(1 for r in recs if r["doc_name"] in indexed_docs)
-        print(f"retrieval mode: {covered}/{len(recs)} questions have their "
-              f"document in the index ({len(indexed_docs)} docs indexed)")
+        print(
+            f"retrieval mode: {covered}/{len(recs)} questions have their "
+            f"document in the index ({len(indexed_docs)} docs indexed)"
+        )
 
     scorer = DeepEvalScorer(cfg)
 
-    out_path = Path(args.out) if args.out else (
-        P1 / "reports" / "financebench" /
-        f"fb_{args.mode}_{time.strftime('%Y%m%d-%H%M%S')}.jsonl")
+    out_path = (
+        Path(args.out)
+        if args.out
+        else (
+            P1
+            / "reports"
+            / "financebench"
+            / f"fb_{args.mode}_{time.strftime('%Y%m%d-%H%M%S')}.jsonl"
+        )
+    )
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     n_correct = 0
@@ -128,7 +141,7 @@ def main() -> None:
             if args.mode == "evidence":
                 hits = evidence_hits(rec)
                 if not hits:
-                    print(f"[{i+1}/{len(recs)}] {qid}: no evidence, skip")
+                    print(f"[{i + 1}/{len(recs)}] {qid}: no evidence, skip")
                     continue
             else:
                 hits, doc_ok = retrieve(rec)
@@ -140,7 +153,7 @@ def main() -> None:
                 # FinanceBench's, so disable graph augmentation/clarification here.
                 res = answer(question, hits, cfg, graph_rescue=None)
             except Exception as e:  # noqa: BLE001
-                print(f"[{i+1}/{len(recs)}] {qid}: ERROR {e}")
+                print(f"[{i + 1}/{len(recs)}] {qid}: ERROR {e}")
                 continue
             dt = time.time() - t0
 
@@ -154,38 +167,49 @@ def main() -> None:
                 "input": question,
                 "expected": {"answer": official, "type": "judge"},
             }
-            result = {"answer": our_answer, "refused": res.get("refused", False),
-                      "citations": res.get("citations", []), "hits": hits}
+            result = {
+                "answer": our_answer,
+                "refused": res.get("refused", False),
+                "citations": res.get("citations", []),
+                "hits": hits,
+            }
             try:
                 scored = scorer.correctness(case, result)
                 correct = bool(scored.get("correct"))
             except Exception as e:  # noqa: BLE001
-                print(f"[{i+1}/{len(recs)}] {qid}: judge ERROR {e}")
+                print(f"[{i + 1}/{len(recs)}] {qid}: judge ERROR {e}")
                 correct = False
 
             n_correct += int(correct)
             flag = "" if not doc_unavailable else " [doc-not-indexed]"
-            print(f"[{i+1}/{len(recs)}] {qid}: "
-                  f"{'CORRECT' if correct else 'WRONG'}{flag} ({dt:.1f}s)")
-            out.write(json.dumps({
-                "id": qid,
-                "mode": args.mode,
-                "question": question,
-                "doc_name": rec["doc_name"],
-                "doc_unavailable": doc_unavailable,
-                "official_answer": official,
-                "our_answer": our_answer,
-                "refused": res.get("refused", False),
-                "correct": correct,
-                "citations": res.get("citations", []),
-                "hit_ids": hit_ids,
-                "latency_s": dt,
-            }, ensure_ascii=False) + "\n")
+            print(
+                f"[{i + 1}/{len(recs)}] {qid}: "
+                f"{'CORRECT' if correct else 'WRONG'}{flag} ({dt:.1f}s)"
+            )
+            out.write(
+                json.dumps(
+                    {
+                        "id": qid,
+                        "mode": args.mode,
+                        "question": question,
+                        "doc_name": rec["doc_name"],
+                        "doc_unavailable": doc_unavailable,
+                        "official_answer": official,
+                        "our_answer": our_answer,
+                        "refused": res.get("refused", False),
+                        "correct": correct,
+                        "citations": res.get("citations", []),
+                        "hit_ids": hit_ids,
+                        "latency_s": dt,
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
             out.flush()
 
     total = len(recs)
-    print(f"\nFinanceBench ({args.mode}): {n_correct}/{total} "
-          f"= {n_correct / total:.1%}")
+    print(f"\nFinanceBench ({args.mode}): {n_correct}/{total} = {n_correct / total:.1%}")
     print(f"results -> {out_path}")
 
 

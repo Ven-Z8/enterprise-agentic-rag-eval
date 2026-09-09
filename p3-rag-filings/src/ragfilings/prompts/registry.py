@@ -60,7 +60,9 @@ class PromptRegistry:
 
     @classmethod
     def get_verification_retry(cls, failed_claims: list[str] | str) -> str:
-        failed_str = ", ".join(failed_claims) if isinstance(failed_claims, list) else str(failed_claims)
+        failed_str = (
+            ", ".join(failed_claims) if isinstance(failed_claims, list) else str(failed_claims)
+        )
         return cls.format("verification_retry", failed_claims=failed_str)
 
     @classmethod

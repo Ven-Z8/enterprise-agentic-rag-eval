@@ -17,7 +17,14 @@ from sentence_transformers import CrossEncoder
 from ragfilings.retrieval import load_index
 
 ROOT = Path(__file__).resolve().parents[1]
-QUESTIONS_PATH = ROOT.parent / "p1-eval-harness" / "data" / "diagnostics" / "portfolio_v02" / "questions_25.jsonl"
+QUESTIONS_PATH = (
+    ROOT.parent
+    / "p1-eval-harness"
+    / "data"
+    / "diagnostics"
+    / "portfolio_v02"
+    / "questions_25.jsonl"
+)
 REPORT_JSON = ROOT / "reports" / "reranker_comparison_v02.json"
 REPORT_MD = ROOT / "reports" / "reranker_comparison_v02.md"
 
@@ -28,7 +35,11 @@ MODELS = [
 
 
 def _matches_citation(produced: str, expected: str) -> bool:
-    if produced == expected or produced.startswith(expected + ":") or expected.startswith(produced + ":"):
+    if (
+        produced == expected
+        or produced.startswith(expected + ":")
+        or expected.startswith(produced + ":")
+    ):
         return True
     # Citation aliases for reconciled filers
     if "HD_2026_10K" in produced and "HD_2025_10K" in expected:
@@ -43,7 +54,7 @@ def _matches_citation(produced: str, expected: str) -> bool:
 def run_comparison():
     print(f"Loading questions from {QUESTIONS_PATH}...")
     questions = []
-    with open(QUESTIONS_PATH, "r", encoding="utf-8") as f:
+    with open(QUESTIONS_PATH, encoding="utf-8") as f:
         for line in f:
             if line.strip():
                 questions.append(json.loads(line))
@@ -60,12 +71,14 @@ def run_comparison():
         query_text = q["input"]
         # Search candidate pool of 25 using hybrid strategy
         candidates = index.search(query_text, strategy="hybrid", top_k=25)
-        candidate_pools.append({
-            "id": q["id"],
-            "input": query_text,
-            "expected_citations": q["expected"].get("citations", []),
-            "candidates": candidates,
-        })
+        candidate_pools.append(
+            {
+                "id": q["id"],
+                "input": query_text,
+                "expected_citations": q["expected"].get("citations", []),
+                "candidates": candidates,
+            }
+        )
 
     results_by_model: dict[str, Any] = {}
 
@@ -129,15 +142,17 @@ def run_comparison():
             rr = 1.0 / first_rank if first_rank is not None else 0.0
             reciprocal_ranks.append(rr)
 
-            per_query_details.append({
-                "id": item["id"],
-                "any_hit": has_any,
-                "all_hit": has_all,
-                "first_rank": first_rank,
-                "mrr": rr,
-                "latency_ms": elapsed_ms,
-                "top_chunk_id": top_ids[0] if top_ids else None,
-            })
+            per_query_details.append(
+                {
+                    "id": item["id"],
+                    "any_hit": has_any,
+                    "all_hit": has_all,
+                    "first_rank": first_rank,
+                    "mrr": rr,
+                    "latency_ms": elapsed_ms,
+                    "top_chunk_id": top_ids[0] if top_ids else None,
+                }
+            )
 
         n = len(candidate_pools)
         warm_latencies = latencies[1:] if len(latencies) > 1 else latencies
@@ -146,9 +161,9 @@ def run_comparison():
             "cold_load_ms": round(cold_load_ms, 2),
             "mean_warm_latency_ms": round(sum(warm_latencies) / len(warm_latencies), 2),
             "p95_latency_ms": round(sorted(latencies)[int(len(latencies) * 0.95)], 2),
-            "any_citation_coverage": f"{any_hits}/{n} ({any_hits/n*100:.1f}%)",
+            "any_citation_coverage": f"{any_hits}/{n} ({any_hits / n * 100:.1f}%)",
             "any_citation_rate": round(any_hits / n, 4),
-            "all_citation_coverage": f"{all_hits}/{n} ({all_hits/n*100:.1f}%)",
+            "all_citation_coverage": f"{all_hits}/{n} ({all_hits / n * 100:.1f}%)",
             "all_citation_rate": round(all_hits / n, 4),
             "mean_mrr": round(sum(reciprocal_ranks) / n, 4),
             "per_query": per_query_details,
@@ -170,12 +185,12 @@ Evaluated offline on frozen index with candidates retrieved via hybrid search (2
 
 | Metric | BGE-Reranker-Base | BGE-Reranker-V2-M3 | Delta (V2 vs Base) |
 | :--- | :--- | :--- | :--- |
-| **Any-Source Coverage (Top 8)** | {base_res['any_citation_coverage']} | {v2_res['any_citation_coverage']} | {v2_res['any_citation_rate'] - base_res['any_citation_rate']:+.2%} |
-| **All-Source Coverage (Top 8)** | {base_res['all_citation_coverage']} | {v2_res['all_citation_coverage']} | {v2_res['all_citation_rate'] - base_res['all_citation_rate']:+.2%} |
-| **Mean Reciprocal Rank (MRR)** | {base_res['mean_mrr']:.4f} | {v2_res['mean_mrr']:.4f} | {v2_res['mean_mrr'] - base_res['mean_mrr']:+.4f} |
-| **Cold Load Time** | {base_res['cold_load_ms']:.1f} ms | {v2_res['cold_load_ms']:.1f} ms | {v2_res['cold_load_ms'] - base_res['cold_load_ms']:+.1f} ms |
-| **Mean Warm Latency** | {base_res['mean_warm_latency_ms']:.1f} ms | {v2_res['mean_warm_latency_ms']:.1f} ms | {v2_res['mean_warm_latency_ms'] - base_res['mean_warm_latency_ms']:+.1f} ms |
-| **P95 Latency** | {base_res['p95_latency_ms']:.1f} ms | {v2_res['p95_latency_ms']:.1f} ms | {v2_res['p95_latency_ms'] - base_res['p95_latency_ms']:+.1f} ms |
+| **Any-Source Coverage (Top 8)** | {base_res["any_citation_coverage"]} | {v2_res["any_citation_coverage"]} | {v2_res["any_citation_rate"] - base_res["any_citation_rate"]:+.2%} |
+| **All-Source Coverage (Top 8)** | {base_res["all_citation_coverage"]} | {v2_res["all_citation_coverage"]} | {v2_res["all_citation_rate"] - base_res["all_citation_rate"]:+.2%} |
+| **Mean Reciprocal Rank (MRR)** | {base_res["mean_mrr"]:.4f} | {v2_res["mean_mrr"]:.4f} | {v2_res["mean_mrr"] - base_res["mean_mrr"]:+.4f} |
+| **Cold Load Time** | {base_res["cold_load_ms"]:.1f} ms | {v2_res["cold_load_ms"]:.1f} ms | {v2_res["cold_load_ms"] - base_res["cold_load_ms"]:+.1f} ms |
+| **Mean Warm Latency** | {base_res["mean_warm_latency_ms"]:.1f} ms | {v2_res["mean_warm_latency_ms"]:.1f} ms | {v2_res["mean_warm_latency_ms"] - base_res["mean_warm_latency_ms"]:+.1f} ms |
+| **P95 Latency** | {base_res["p95_latency_ms"]:.1f} ms | {v2_res["p95_latency_ms"]:.1f} ms | {v2_res["p95_latency_ms"] - base_res["p95_latency_ms"]:+.1f} ms |
 
 ## Findings & Tradeoffs
 - Evaluated on `{len(candidate_pools)}` realistic financial diagnostic queries across 25 corporate 10-K filings.

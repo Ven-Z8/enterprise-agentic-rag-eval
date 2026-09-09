@@ -164,4 +164,3 @@ class SessionMemoryManager:
                 }
                 for r in rows
             ]
-

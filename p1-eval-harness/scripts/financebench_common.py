@@ -11,8 +11,9 @@ from pathlib import Path
 P1 = Path(__file__).resolve().parent.parent
 FB_DIR = P1 / "data" / "financebench"
 FB = FB_DIR / "financebench_merged.jsonl"
-FB_URL = ("https://huggingface.co/datasets/PatronusAI/financebench/"
-          "resolve/main/financebench_merged.jsonl")
+FB_URL = (
+    "https://huggingface.co/datasets/PatronusAI/financebench/resolve/main/financebench_merged.jsonl"
+)
 
 _DOC_NAME_RE = re.compile(
     r"^(?P<co>.+?)_(?P<period>\d{4}(?:Q\d)?)_(?P<form>10K|10Q|8K|EARNINGS)"

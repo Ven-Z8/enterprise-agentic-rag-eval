@@ -13,7 +13,8 @@ import csv
 import json
 from pathlib import Path
 
-from ragfilings import chunking, config as cfg_mod, ingestion
+from ragfilings import chunking, ingestion
+from ragfilings import config as cfg_mod
 
 ROOT = Path(__file__).resolve().parent.parent
 

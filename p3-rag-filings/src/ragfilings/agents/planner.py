@@ -21,10 +21,7 @@ def corpus_inventory(chunks: list[dict[str, Any]]) -> list[str]:
         year = str(c.get("fiscal_year") or "")
         if ticker:
             seen.setdefault(ticker, set()).add(year)
-    return [
-        f"{t} FY{', FY'.join(sorted(y for y in ys if y))}"
-        for t, ys in sorted(seen.items())
-    ]
+    return [f"{t} FY{', FY'.join(sorted(y for y in ys if y))}" for t, ys in sorted(seen.items())]
 
 
 def plan_query(

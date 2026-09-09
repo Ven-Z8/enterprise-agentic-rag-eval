@@ -29,9 +29,9 @@ def _transcript(history: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def rewrite_followup(query: str, history: list[dict[str, Any]],
-                     cfg: dict[str, Any],
-                     pack: DomainPack | None = None) -> str:
+def rewrite_followup(
+    query: str, history: list[dict[str, Any]], cfg: dict[str, Any], pack: DomainPack | None = None
+) -> str:
     """Return a self-contained version of ``query`` given ``history``.
 
     Falls back to the original query whenever there is no history to resolve
@@ -44,10 +44,14 @@ def rewrite_followup(query: str, history: list[dict[str, Any]],
 
     messages = [
         {"role": "system", "content": pack.prompt("converse_rewrite")},
-        {"role": "user",
-         "content": (f"Conversation so far:\n{_transcript(history)}\n\n"
-                     f"Follow-up question: {query}\n\n"
-                     f"Rewritten self-contained question:")},
+        {
+            "role": "user",
+            "content": (
+                f"Conversation so far:\n{_transcript(history)}\n\n"
+                f"Follow-up question: {query}\n\n"
+                f"Rewritten self-contained question:"
+            ),
+        },
     ]
     try:
         text, _ = complete_with_resilience(messages, cfg, role="planning")

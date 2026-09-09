@@ -33,8 +33,9 @@ def test_pack_prompts_match_registry():
 
     pack = get_pack("financial")
     assert pack.prompt("synthesis") == PromptRegistry.get_system_synthesis()
-    assert pack.format_prompt("verification_retry", failed_claims=["$1M"]) == \
-        PromptRegistry.get_verification_retry(["$1M"])
+    assert pack.format_prompt(
+        "verification_retry", failed_claims=["$1M"]
+    ) == PromptRegistry.get_verification_retry(["$1M"])
 
 
 def test_pack_decomposition_delegates():
@@ -48,8 +49,9 @@ def test_pack_verify_matches_claim_checker():
     pack = get_pack("financial")
     assert pack.verify("Net sales were $416,161 million.", [chunk])["verified"]
     # identical result to calling the claim checker directly
-    assert pack.verify("Net sales were $416,161 million.", [chunk]) == \
-        verify("Net sales were $416,161 million.", [chunk])
+    assert pack.verify("Net sales were $416,161 million.", [chunk]) == verify(
+        "Net sales were $416,161 million.", [chunk]
+    )
 
 
 def test_pack_math_compute_delegates(monkeypatch):
@@ -61,14 +63,16 @@ def test_pack_math_compute_delegates(monkeypatch):
 
     def fake_complete(messages, cfg_, model=None, client=None, role="generation"):
         assert role == "runtime"
-        return ("{\"explanation\": \"growth\", \"expression\": \"(100-80)/80*100\", "
-                "\"result_value\": 25.0, \"formatted\": \"25.0%\"}"), {"calls": 1}
+        return (
+            '{"explanation": "growth", "expression": "(100-80)/80*100", '
+            '"result_value": 25.0, "formatted": "25.0%"}'
+        ), {"calls": 1}
 
     import ragfilings.domains.financial.math_tool as mt
+
     monkeypatch.setattr(mt, "complete_with_resilience", fake_complete)
     out_pack = pack.compute("What was the revenue growth rate?", chunks, cfg)
-    out_direct = compute_financial_math(
-        "What was the revenue growth rate?", chunks, cfg)
+    out_direct = compute_financial_math("What was the revenue growth rate?", chunks, cfg)
     assert out_pack == out_direct
     assert out_pack["result_value"] == 25.0
 

@@ -8,7 +8,8 @@ cost usage is accumulated from the API's own usage object on every call
 from __future__ import annotations
 
 import json
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from ..llm.openrouter import parse_usage
 
@@ -67,21 +68,23 @@ def run_tool_loop(
         if not msg.tool_calls:
             break
 
-        msgs.append({
-            "role": "assistant",
-            "content": msg.content or "",
-            "tool_calls": [
-                {
-                    "id": tc.id,
-                    "type": "function",
-                    "function": {
-                        "name": tc.function.name,
-                        "arguments": tc.function.arguments,
-                    },
-                }
-                for tc in msg.tool_calls
-            ],
-        })
+        msgs.append(
+            {
+                "role": "assistant",
+                "content": msg.content or "",
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments,
+                        },
+                    }
+                    for tc in msg.tool_calls
+                ],
+            }
+        )
 
         for tc in msg.tool_calls:
             try:
@@ -92,16 +95,20 @@ def run_tool_loop(
                 result = executor(tc.function.name, args)
             except Exception as e:  # noqa: BLE001 — surfaced to the model, not raised
                 result = f"TOOL ERROR: {type(e).__name__}: {e}"
-            events.append({
-                "step": step,
-                "tool": tc.function.name,
-                "args": args,
-                "result_preview": str(result)[:300],
-            })
-            msgs.append({
-                "role": "tool",
-                "tool_call_id": tc.id,
-                "content": str(result),
-            })
+            events.append(
+                {
+                    "step": step,
+                    "tool": tc.function.name,
+                    "args": args,
+                    "result_preview": str(result)[:300],
+                }
+            )
+            msgs.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "content": str(result),
+                }
+            )
 
     return final_text, events

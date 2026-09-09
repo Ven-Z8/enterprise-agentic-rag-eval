@@ -13,9 +13,20 @@ from ...llm import complete_with_resilience
 from ...prompts import PromptRegistry
 
 _MATH_KEYWORDS = (
-    "growth rate", "cagr", "average", "percentage change", "increased or decreased",
-    "compare", "difference", "margin delta", "ratio", "3-year", "multi-year",
-    "how much did", "faster than", "split between",
+    "growth rate",
+    "cagr",
+    "average",
+    "percentage change",
+    "increased or decreased",
+    "compare",
+    "difference",
+    "margin delta",
+    "ratio",
+    "3-year",
+    "multi-year",
+    "how much did",
+    "faster than",
+    "split between",
 )
 
 

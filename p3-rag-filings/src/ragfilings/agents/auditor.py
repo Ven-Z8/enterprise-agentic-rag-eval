@@ -32,8 +32,10 @@ def audit_answer(
         if chunk is None:
             missing.append(cid)
         else:
-            cited_texts.append(f"[{cid}] ({chunk.get('ticker')} FY{chunk.get('fiscal_year')}, "
-                               f"Item {chunk.get('item')})\n{chunk['text']}")
+            cited_texts.append(
+                f"[{cid}] ({chunk.get('ticker')} FY{chunk.get('fiscal_year')}, "
+                f"Item {chunk.get('item')})\n{chunk['text']}"
+            )
 
     user_parts = [f"Question: {query}", "", f"Candidate answer: {answer_text}"]
     if cited_texts:

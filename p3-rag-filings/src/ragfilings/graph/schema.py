@@ -9,8 +9,11 @@ from typing import Any, Literal
 @dataclass
 class EntityNode:
     """Base graph node."""
+
     id: str
-    label: Literal["Company", "Filing", "Section", "FinancialMetric", "FiscalYear", "TableNode", "VisualFigure"]
+    label: Literal[
+        "Company", "Filing", "Section", "FinancialMetric", "FiscalYear", "TableNode", "VisualFigure"
+    ]
     properties: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -20,6 +23,7 @@ class EntityNode:
 @dataclass
 class RelationEdge:
     """Typed edge between graph entity nodes."""
+
     source: str
     target: str
     relation: Literal[

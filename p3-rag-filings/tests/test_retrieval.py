@@ -35,22 +35,35 @@ class FakeModel:
 
 
 def _chunk(cid, text):
-    return {"id": cid, "doc_id": cid.split(":")[0], "section_id": cid.split(":")[1],
-            "item": "8", "ticker": cid.split("_")[0], "text": text}
+    return {
+        "id": cid,
+        "doc_id": cid.split(":")[0],
+        "section_id": cid.split(":")[1],
+        "item": "8",
+        "ticker": cid.split("_")[0],
+        "text": text,
+    }
 
 
 # The figure-bearing chunk sits LAST so index-order tie-breaks can never hand
 # it a win by accident.
 FIGURE_ID = "AAPL_2025_10K:Item8:c000"
 CHUNKS = [
-    _chunk("AAPL_2025_10K:Item7:c000",
-           "Management discussion of liquidity and capital resources for the year."),
-    _chunk("NVDA_2026_10K:Item8:c000",
-           "Data center segment revenue grew driven by accelerated computing demand."),
-    _chunk("PEP_2025_10K:Item1:c000",
-           "PepsiCo brands include beverages and convenient foods sold worldwide."),
-    _chunk(FIGURE_ID,
-           "Consolidated statements of operations. Total net sales | $416,161 | $391,035"),
+    _chunk(
+        "AAPL_2025_10K:Item7:c000",
+        "Management discussion of liquidity and capital resources for the year.",
+    ),
+    _chunk(
+        "NVDA_2026_10K:Item8:c000",
+        "Data center segment revenue grew driven by accelerated computing demand.",
+    ),
+    _chunk(
+        "PEP_2025_10K:Item1:c000",
+        "PepsiCo brands include beverages and convenient foods sold worldwide.",
+    ),
+    _chunk(
+        FIGURE_ID, "Consolidated statements of operations. Total net sales | $416,161 | $391,035"
+    ),
 ]
 
 
@@ -103,24 +116,45 @@ def test_confidence_is_top_dense_sim_for_both_strategies(index):
     for strategy in ("dense", "hybrid"):
         hits = index.search("pepsi beverages and convenient foods", strategy=strategy, top_k=4)
         assert max(h["dense_sim"] for h in hits) == pytest.approx(
-            retrieval.confidence(hits), abs=1e-9)
+            retrieval.confidence(hits), abs=1e-9
+        )
 
 
 def test_context_header_defaults_to_10k_and_item():
-    chunk = {"company": "Apple", "ticker": "AAPL", "fiscal_year": 2025,
-             "item": "8", "title": "Financial Statements", "text": "x"}
+    chunk = {
+        "company": "Apple",
+        "ticker": "AAPL",
+        "fiscal_year": 2025,
+        "item": "8",
+        "title": "Financial Statements",
+        "text": "x",
+    }
     assert retrieval.context_header(chunk) == (
-        "Apple (AAPL) FY2025 10-K — Item 8: Financial Statements")
+        "Apple (AAPL) FY2025 10-K — Item 8: Financial Statements"
+    )
 
 
 def test_context_header_supports_other_forms_and_generic_sections():
     # Non-10-K corpus chunks (10-Q / 8-K / earnings PDFs) carry a form field;
     # generic sections carry no item number.
-    chunk = {"company": "Amcor", "ticker": "AMCR", "fiscal_year": 2023,
-             "form": "10-Q", "item": "S2", "title": "Part 2", "text": "x"}
-    assert retrieval.context_header(chunk) == (
-        "Amcor (AMCR) FY2023 10-Q — Item S2: Part 2")
-    no_item = {"company": "3M", "ticker": "MMM", "fiscal_year": 2018,
-               "form": "Earnings", "item": "", "title": "Part 1", "text": "x"}
+    chunk = {
+        "company": "Amcor",
+        "ticker": "AMCR",
+        "fiscal_year": 2023,
+        "form": "10-Q",
+        "item": "S2",
+        "title": "Part 2",
+        "text": "x",
+    }
+    assert retrieval.context_header(chunk) == ("Amcor (AMCR) FY2023 10-Q — Item S2: Part 2")
+    no_item = {
+        "company": "3M",
+        "ticker": "MMM",
+        "fiscal_year": 2018,
+        "form": "Earnings",
+        "item": "",
+        "title": "Part 1",
+        "text": "x",
+    }
     assert retrieval.context_header(no_item) == "3M (MMM) FY2018 Earnings — Part 1"
     assert retrieval.embed_text(no_item).startswith("3M (MMM) FY2018 Earnings — Part 1\n")

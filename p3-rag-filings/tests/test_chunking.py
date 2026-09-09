@@ -16,7 +16,7 @@ META = {
 
 
 def test_fiscal_year_is_period_end_year():
-    assert _fiscal_year(META) == 2026                     # NVDA/WMT shape (Jan FY end)
+    assert _fiscal_year(META) == 2026  # NVDA/WMT shape (Jan FY end)
     assert _fiscal_year({**META, "source_url": ".../aapl-20250927.htm"}) == 2025
     # No parsable period end: fall back to the filing-date heuristic.
     assert _fiscal_year({"filing_date": "2026-02-25"}) == 2025
@@ -33,7 +33,6 @@ def test_fiscal_year_reconciled_home_depot():
         "DocumentFiscalYearFocus": "2025",
     }
     assert _fiscal_year(hd_meta) == 2025
-
 
 
 def _sec(item, text, part="II", title="T", resolved_from=None):
@@ -57,15 +56,15 @@ def test_ids_boundaries_and_lossless_reassembly():
 
 
 def test_table_rows_never_split_and_headers_carry():
-    rows = [f"Segment {i} | ${i},000 | ${i+1},000" for i in range(40)]
+    rows = [f"Segment {i} | ${i},000 | ${i + 1},000" for i in range(40)]
     table = "\n".join(["Revenue | 2025 | 2024", "(In millions) | x | y", *rows])
     secs = [_sec("8", "Intro line.\n" + table + "\nOutro line.")]
     chunks = chunk_sections(secs, META, max_chars=600)
     tabular = [c for c in chunks if c["has_table"]]
-    assert len(tabular) > 1                       # long table forced a split
+    assert len(tabular) > 1  # long table forced a split
     all_lines = [ln for c in tabular for ln in c["text"].split("\n")]
     for row in rows:
-        assert row in all_lines                   # every row intact, never sheared
+        assert row in all_lines  # every row intact, never sheared
     # Continuation chunks repeat the two header rows for readability.
     conts = [c for c in tabular if c["table_continuation"]]
     assert conts and all(c["text"].startswith("Revenue | 2025 | 2024") for c in conts)
@@ -95,8 +94,9 @@ def test_note_metadata_and_note_ref_links():
 
 
 def test_section_metadata_carried():
-    secs = [_sec("8", "Filler content line.\n" * 60, title="Financial Statements",
-                 resolved_from="15")]
+    secs = [
+        _sec("8", "Filler content line.\n" * 60, title="Financial Statements", resolved_from="15")
+    ]
     c = chunk_sections(secs, META, max_chars=500)[0]
     assert c["section_id"] == "Item8" and c["part"] == "II"
     assert c["title"] == "Financial Statements" and c["resolved_from"] == "15"

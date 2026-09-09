@@ -67,11 +67,14 @@ def test_ui_query_endpoint(monkeypatch):
         }
 
     from ragfilings.ui import server
+
     monkeypatch.setattr(server, "ask", mock_ask)
 
     res = client.post(
         "/api/query",
-        json={"query": "Analyze NVIDIA total revenue trajectory across FY2023, FY2024, and FY2025."},
+        json={
+            "query": "Analyze NVIDIA total revenue trajectory across FY2023, FY2024, and FY2025."
+        },
     )
     assert res.status_code == 200
     data = res.json()
@@ -104,7 +107,10 @@ def test_ui_query_ticker_word_boundaries_no_false_match(monkeypatch):
 
     res = client.post(
         "/api/query",
-        json={"query": "Explain balance sheet category classifications in general accounting.", "top_k": 12},
+        json={
+            "query": "Explain balance sheet category classifications in general accounting.",
+            "top_k": 12,
+        },
     )
     assert res.status_code == 200
     data = res.json()
@@ -155,4 +161,3 @@ def test_ui_query_honest_fallback_metric_label(monkeypatch):
     assert chart["ticker"] == "AAPL"
     assert "Alternative History, Operating Income unavailable" in chart["title"]
     assert "Alternative History, Operating Income unavailable" in chart["metric"]
-

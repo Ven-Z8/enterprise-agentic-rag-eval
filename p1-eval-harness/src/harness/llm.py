@@ -59,6 +59,7 @@ class OpenRouterClient:
     def _get_client(self):
         if self._client is None:
             from openai import OpenAI
+
             self._client = OpenAI(
                 base_url=self.base_url, api_key=self.api_key, timeout=self.timeout
             )
@@ -116,16 +117,21 @@ def complete_with_resilience(
     for attempt in range(max_attempts):
         try:
             return active_client.complete(
-                messages=messages, model=model,
-                max_tokens=max_tokens, temperature=temperature,
+                messages=messages,
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature,
             )
         except Exception as e:
             last_exc = e
             retry_after = _retry_after_seconds(e)
-            delay = min(retry_after, 180.0) if retry_after else min(2.0 ** attempt, 60.0)
+            delay = min(retry_after, 180.0) if retry_after else min(2.0**attempt, 60.0)
             logger.warning(
                 "OpenRouter call attempt %d/%d failed (%s); retrying in %.0fs",
-                attempt + 1, max_attempts, e, delay,
+                attempt + 1,
+                max_attempts,
+                e,
+                delay,
             )
             if attempt < max_attempts - 1:
                 time.sleep(delay)

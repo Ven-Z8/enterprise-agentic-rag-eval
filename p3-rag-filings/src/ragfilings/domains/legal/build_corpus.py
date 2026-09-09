@@ -77,18 +77,20 @@ def chunk_contract(code: str, title: str, text: str) -> list[dict]:
             nonlocal cur, cur_len
             if not cur:
                 return
-            chunks.append({
-                "id": f"{code}:{sec.item}:c{len([c for c in chunks if c['section_id'] == sec.item]):03d}",
-                "doc_id": code,
-                "doc_type": "contract",
-                "contract": code,
-                "contract_title": title,
-                "item": sec.item,
-                "section_id": sec.item,
-                "title": title,
-                "text": "\n".join(cur),
-                "n_chars": sum(len(ln) + 1 for ln in cur),
-            })
+            chunks.append(
+                {
+                    "id": f"{code}:{sec.item}:c{len([c for c in chunks if c['section_id'] == sec.item]):03d}",
+                    "doc_id": code,
+                    "doc_type": "contract",
+                    "contract": code,
+                    "contract_title": title,
+                    "item": sec.item,
+                    "section_id": sec.item,
+                    "title": title,
+                    "text": "\n".join(cur),
+                    "n_chars": sum(len(ln) + 1 for ln in cur),
+                }
+            )
             cur, cur_len = [], 0
 
         for ln in lines:
@@ -119,10 +121,10 @@ def main() -> None:
             for c in chunks:
                 f.write(json.dumps(c, ensure_ascii=False) + "\n")
         all_chunks.extend(chunks)
-        manifest_rows.append({"contract": code, "title": title,
-                              "n_chars": len(context), "n_chunks": len(chunks)})
-        print(f"[{i:>3}/{len(docs)}] {code:26} {len(context):>7,} chars "
-              f"-> {len(chunks)} chunks")
+        manifest_rows.append(
+            {"contract": code, "title": title, "n_chars": len(context), "n_chunks": len(chunks)}
+        )
+        print(f"[{i:>3}/{len(docs)}] {code:26} {len(context):>7,} chars -> {len(chunks)} chunks")
 
     with MANIFEST.open("w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["contract", "title", "n_chars", "n_chunks"])
@@ -132,9 +134,12 @@ def main() -> None:
     terms = extract_defined_terms(all_chunks)
     n_terms = sum(len(v) for v in terms.values())
     (FACTS_DIR / "defined_terms.json").write_text(
-        json.dumps(terms, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"\ncontracts: {len(manifest_rows)} | chunks: {len(all_chunks)} "
-          f"| defined terms: {n_terms} across {len(terms)} contracts")
+        json.dumps(terms, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    print(
+        f"\ncontracts: {len(manifest_rows)} | chunks: {len(all_chunks)} "
+        f"| defined terms: {n_terms} across {len(terms)} contracts"
+    )
 
     print(f"embedding {len(all_chunks)} chunks with {EMBED_MODEL} ...")
     retrieval.build_index(all_chunks, INDEX_DIR, EMBED_MODEL)

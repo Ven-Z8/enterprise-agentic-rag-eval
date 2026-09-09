@@ -1,10 +1,10 @@
 """Package init for optimization."""
 
 from optimization.optimizer import (
-    SystemOptimizerEngine,
-    OptimizationTargetReport,
     OptimizationBenchmarkReport,
     OptimizationStepResult,
+    OptimizationTargetReport,
+    SystemOptimizerEngine,
 )
 
 __all__ = [

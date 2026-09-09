@@ -69,8 +69,10 @@ def latest_10k(cik: int) -> tuple[str, str, str] | None:
     data = fetch_json(f"https://data.sec.gov/submissions/CIK{cik:010d}.json")
     recent = data["filings"]["recent"]
     for form, acc, doc, date in zip(
-        recent["form"], recent["accessionNumber"],
-        recent["primaryDocument"], recent["filingDate"],
+        recent["form"],
+        recent["accessionNumber"],
+        recent["primaryDocument"],
+        recent["filingDate"],
     ):
         if form == "10-K":
             return acc.replace("-", ""), doc, date

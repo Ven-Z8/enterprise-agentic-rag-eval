@@ -63,16 +63,21 @@ def main() -> None:
         result = {"answer": item["actual_output"], "hits": item.get("hits", [])}
         verdict = scorer.correctness(case, result)
         judge_label = "correct" if verdict["correct"] else "incorrect"
-        rows.append({
-            **item,
-            "judge_label": judge_label,
-            "judge_score": verdict["score"],
-            "judge_reason": verdict["reason"],
-            "agree": item["human_label"] == judge_label,
-        })
+        rows.append(
+            {
+                **item,
+                "judge_label": judge_label,
+                "judge_score": verdict["score"],
+                "judge_reason": verdict["reason"],
+                "agree": item["human_label"] == judge_label,
+            }
+        )
         mark = "=" if rows[-1]["agree"] else "X"
-        print(f"[{i:>2}/{len(labels)}] {mark} {item['case_id']} "
-              f"human={item['human_label']} judge={judge_label}", flush=True)
+        print(
+            f"[{i:>2}/{len(labels)}] {mark} {item['case_id']} "
+            f"human={item['human_label']} judge={judge_label}",
+            flush=True,
+        )
 
     n = len(rows)
     agree = sum(r["agree"] for r in rows)

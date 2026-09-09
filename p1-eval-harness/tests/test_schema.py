@@ -51,10 +51,14 @@ def test_validate_catches_bad_enum():
 
 def test_validate_enforces_refusal_invariant():
     # unanswerable with a non-null answer is illegal
-    bad = _case(failure_category="unanswerable", expected=Expected(answer="42", citations=[], type="exact"))
+    bad = _case(
+        failure_category="unanswerable", expected=Expected(answer="42", citations=[], type="exact")
+    )
     assert validate(bad)
     # unanswerable with null answer is fine
-    ok = _case(failure_category="unanswerable", expected=Expected(answer=None, citations=[], type="exact"))
+    ok = _case(
+        failure_category="unanswerable", expected=Expected(answer=None, citations=[], type="exact")
+    )
     assert not validate(ok)
 
 
@@ -68,27 +72,63 @@ def test_trace_roundtrips():
 def test_goldencase_pydantic_validation():
     import pytest
     from pydantic import ValidationError
-    from harness.schema import GoldenCase, ExpectedOutcome
+
+    from harness.schema import ExpectedOutcome, GoldenCase
 
     # Bad enum difficulty
     with pytest.raises(ValidationError):
-        GoldenCase(id="c1", input="q", expected=ExpectedOutcome(type="exact", answer="1"), difficulty="ultra", failure_category="lookup", domain="financial")
+        GoldenCase(
+            id="c1",
+            input="q",
+            expected=ExpectedOutcome(type="exact", answer="1"),
+            difficulty="ultra",
+            failure_category="lookup",
+            domain="financial",
+        )
 
     # Bad failure category
     with pytest.raises(ValidationError):
-        GoldenCase(id="c1", input="q", expected=ExpectedOutcome(type="exact", answer="1"), difficulty="easy", failure_category="invalid_cat", domain="financial")
+        GoldenCase(
+            id="c1",
+            input="q",
+            expected=ExpectedOutcome(type="exact", answer="1"),
+            difficulty="easy",
+            failure_category="invalid_cat",
+            domain="financial",
+        )
 
     # Unanswerable with non-null answer
     with pytest.raises(ValidationError):
-        GoldenCase(id="c1", input="q", expected=ExpectedOutcome(type="exact", answer="42"), difficulty="easy", failure_category="unanswerable", domain="financial")
+        GoldenCase(
+            id="c1",
+            input="q",
+            expected=ExpectedOutcome(type="exact", answer="42"),
+            difficulty="easy",
+            failure_category="unanswerable",
+            domain="financial",
+        )
 
     # Ambiguous with non-null answer
     with pytest.raises(ValidationError):
-        GoldenCase(id="c1", input="q", expected=ExpectedOutcome(type="judge", answer="42"), difficulty="easy", failure_category="ambiguous", domain="financial")
+        GoldenCase(
+            id="c1",
+            input="q",
+            expected=ExpectedOutcome(type="judge", answer="42"),
+            difficulty="easy",
+            failure_category="ambiguous",
+            domain="financial",
+        )
 
     # Exact with null answer for lookup
     with pytest.raises(ValidationError):
-        GoldenCase(id="c1", input="q", expected=ExpectedOutcome(type="exact", answer=None), difficulty="easy", failure_category="lookup", domain="financial")
+        GoldenCase(
+            id="c1",
+            input="q",
+            expected=ExpectedOutcome(type="exact", answer=None),
+            difficulty="easy",
+            failure_category="lookup",
+            domain="financial",
+        )
 
 
 if __name__ == "__main__":

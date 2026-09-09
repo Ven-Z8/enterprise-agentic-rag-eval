@@ -31,15 +31,20 @@ sys.path.insert(0, str(SCRIPTS.parent / "src"))
 sys.path.insert(0, str(SCRIPTS.parent.parent / "p3-rag-filings" / "src"))
 
 from bs4 import BeautifulSoup  # noqa: E402
-
 from financebench_common import (  # noqa: E402
-    FB_DIR, load_financebench, parse_doc_name, questions_per_doc, unique_docs,
+    FB_DIR,
+    load_financebench,
+    parse_doc_name,
+    questions_per_doc,
+    unique_docs,
 )
 from ragfilings import ingestion, retrieval  # noqa: E402
 
 USER_AGENT = "Venkis Portfolio Research venkatesh.gtd1@gmail.com"
-BROWSER_UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-              "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36")
+BROWSER_UA = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36"
+)
 
 DOCS_DIR = FB_DIR / "docs"
 CHUNKS_DIR = FB_DIR / "chunks"
@@ -48,23 +53,45 @@ MANIFEST = FB_DIR / "corpus_manifest.json"
 
 # dataset `company` field -> ticker (all 32 FinanceBench companies)
 TICKERS = {
-    "3M": "MMM", "AES Corporation": "AES", "AMD": "AMD",
-    "Activision Blizzard": "ATVI", "Adobe": "ADBE", "Amazon": "AMZN",
-    "Amcor": "AMCR", "American Express": "AXP", "American Water Works": "AWK",
-    "Best Buy": "BBY", "Block": "SQ", "Boeing": "BA", "CVS Health": "CVS",
-    "Coca-Cola": "KO", "Corning": "GLW", "Costco": "COST", "Foot Locker": "FL",
-    "General Mills": "GIS", "JPMorgan": "JPM", "Johnson & Johnson": "JNJ",
-    "Kraft Heinz": "KHC", "Lockheed Martin": "LMT", "MGM Resorts": "MGM",
-    "Microsoft": "MSFT", "Netflix": "NFLX", "Nike": "NKE", "Paypal": "PYPL",
-    "PepsiCo": "PEP", "Pfizer": "PFE", "Ulta Beauty": "ULTA",
-    "Verizon": "VZ", "Walmart": "WMT",
+    "3M": "MMM",
+    "AES Corporation": "AES",
+    "AMD": "AMD",
+    "Activision Blizzard": "ATVI",
+    "Adobe": "ADBE",
+    "Amazon": "AMZN",
+    "Amcor": "AMCR",
+    "American Express": "AXP",
+    "American Water Works": "AWK",
+    "Best Buy": "BBY",
+    "Block": "SQ",
+    "Boeing": "BA",
+    "CVS Health": "CVS",
+    "Coca-Cola": "KO",
+    "Corning": "GLW",
+    "Costco": "COST",
+    "Foot Locker": "FL",
+    "General Mills": "GIS",
+    "JPMorgan": "JPM",
+    "Johnson & Johnson": "JNJ",
+    "Kraft Heinz": "KHC",
+    "Lockheed Martin": "LMT",
+    "MGM Resorts": "MGM",
+    "Microsoft": "MSFT",
+    "Netflix": "NFLX",
+    "Nike": "NKE",
+    "Paypal": "PYPL",
+    "PepsiCo": "PEP",
+    "Pfizer": "PFE",
+    "Ulta Beauty": "ULTA",
+    "Verizon": "VZ",
+    "Walmart": "WMT",
 }
 
 # tickers no longer in SEC's live company_tickers.json (acquired / renamed)
 CIK_FALLBACK = {
-    "ATVI": 718877,     # Activision Blizzard (acquired by Microsoft, 2023)
-    "SQ": 1512673,      # Block Inc (renamed to XYZ in 2025)
-    "FL": 850209,       # Foot Locker (acquired by Dick's Sporting Goods, 2025)
+    "ATVI": 718877,  # Activision Blizzard (acquired by Microsoft, 2023)
+    "SQ": 1512673,  # Block Inc (renamed to XYZ in 2025)
+    "FL": 850209,  # Foot Locker (acquired by Dick's Sporting Goods, 2025)
 }
 
 _cik_cache: dict[str, int] | None = None
@@ -99,11 +126,14 @@ def submissions(cik: int) -> list[dict]:
         # flat column arrays at the top level.
         table = payload["filings"]["recent"] if "filings" in payload else payload
         return [
-            {"form": f, "filing_date": fd, "report_date": rd,
-             "accession": acc, "primary_doc": doc}
+            {"form": f, "filing_date": fd, "report_date": rd, "accession": acc, "primary_doc": doc}
             for f, fd, rd, acc, doc in zip(
-                table["form"], table["filingDate"], table["reportDate"],
-                table["accessionNumber"], table["primaryDocument"])
+                table["form"],
+                table["filingDate"],
+                table["reportDate"],
+                table["accessionNumber"],
+                table["primaryDocument"],
+            )
         ]
 
     data = json.loads(fetch(f"https://data.sec.gov/submissions/CIK{cik:010d}.json"))
@@ -112,8 +142,7 @@ def submissions(cik: int) -> list[dict]:
     out = rows(data)
     for page in data["filings"].get("files", []):
         time.sleep(0.5)
-        page_data = json.loads(
-            fetch(f"https://data.sec.gov/submissions/{page['name']}"))
+        page_data = json.loads(fetch(f"https://data.sec.gov/submissions/{page['name']}"))
         out.extend(rows(page_data))
     _submissions_cache[cik] = out
     time.sleep(0.5)
@@ -132,8 +161,7 @@ def _sub_months(d: dt.date, n: int) -> dt.date:
     return dt.date(year, month, min(d.day, last_day))
 
 
-def _expected_period_end(fye_mmdd: tuple[int, int], year: int,
-                         quarter: int | None) -> dt.date:
+def _expected_period_end(fye_mmdd: tuple[int, int], year: int, quarter: int | None) -> dt.date:
     """FinanceBench's FY label = the fiscal year ENDING in that calendar year.
     The fiscal quarter q ends 3*(4-q) months before the fiscal year end."""
     end = dt.date(year, fye_mmdd[0], fye_mmdd[1])
@@ -142,9 +170,14 @@ def _expected_period_end(fye_mmdd: tuple[int, int], year: int,
     return _sub_months(end, 3 * (4 - quarter))
 
 
-def find_filing(entries: list[dict], form: str, year: int,
-                quarter: int | None, date_str: str | None,
-                fye_mmdd: tuple[int, int]) -> dict | None:
+def find_filing(
+    entries: list[dict],
+    form: str,
+    year: int,
+    quarter: int | None,
+    date_str: str | None,
+    fye_mmdd: tuple[int, int],
+) -> dict | None:
     """Match a filing by form + fiscal period. 10-K/10-Q match on the report
     date closest to the fiscal period end (any fiscal calendar); 8-Ks match
     on the exact filing date from doc_name."""
@@ -154,8 +187,12 @@ def find_filing(entries: list[dict], form: str, year: int,
         if exact:
             return exact[0]
         target = dt.date.fromisoformat(date_str)
-        nearby = [e for e in cands if e["filing_date"] and
-                  abs((dt.date.fromisoformat(e["filing_date"]) - target).days) <= 6]
+        nearby = [
+            e
+            for e in cands
+            if e["filing_date"]
+            and abs((dt.date.fromisoformat(e["filing_date"]) - target).days) <= 6
+        ]
         if not nearby:
             return None
         nearby.sort(key=lambda e: abs((dt.date.fromisoformat(e["filing_date"]) - target).days))
@@ -209,12 +246,15 @@ def download_doc(rec: dict) -> tuple[Path | None, str]:
         return None, f"no CIK for {ticker}"
     entries = submissions(cik)
     fye = _fye_cache.get(cik, (12, 31))
-    hit = find_filing(entries, parsed["form"], parsed["year"],
-                      parsed["quarter"], parsed["date"], fye)
+    hit = find_filing(
+        entries, parsed["form"], parsed["year"], parsed["quarter"], parsed["date"], fye
+    )
     if hit is None:
         return None, f"EDGAR: no {parsed['form']} for period"
-    url = (f"https://www.sec.gov/Archives/edgar/data/{cik}/"
-           f"{hit['accession'].replace('-', '')}/{hit['primary_doc']}")
+    url = (
+        f"https://www.sec.gov/Archives/edgar/data/{cik}/"
+        f"{hit['accession'].replace('-', '')}/{hit['primary_doc']}"
+    )
     try:
         blob = fetch(url, timeout=120)
     except Exception as e:
@@ -238,13 +278,16 @@ def parse_to_sections(path: Path, form: str) -> list:
     return ingestion.sections_from_text(text)
 
 
-def build_chunks(doc_name: str, sections: list, rec: dict,
-                 filing_date: str) -> list[dict]:
+def build_chunks(doc_name: str, sections: list, rec: dict, filing_date: str) -> list[dict]:
     from ragfilings.chunking import _chunk_one
 
     parsed = parse_doc_name(doc_name)
-    meta = {"ticker": TICKERS[rec["company"]], "company": rec["company"],
-            "filing_date": filing_date, "source_url": ""}
+    meta = {
+        "ticker": TICKERS[rec["company"]],
+        "company": rec["company"],
+        "filing_date": filing_date,
+        "source_url": "",
+    }
     chunks: list[dict] = []
     for sec in sections:
         for c in _chunk_one(sec, doc_name, meta, 1800):
@@ -267,14 +310,19 @@ def main() -> None:
     all_chunks: list[dict] = []
     for i, (doc_name, rec) in enumerate(sorted(docs.items()), 1):
         parsed = parse_doc_name(doc_name)
-        print(f"[{i:>2}/{len(docs)}] {doc_name} "
-              f"({parsed['form']}, {per_doc[doc_name]} questions)")
+        print(f"[{i:>2}/{len(docs)}] {doc_name} ({parsed['form']}, {per_doc[doc_name]} questions)")
         path, how = download_doc(rec)
-        entry = {"doc_name": doc_name, "company": rec["company"],
-                 "form": parsed["form"], "fiscal_year": parsed["year"],
-                 "source": how, "questions": per_doc[doc_name],
-                 "local_file": path.name if path else None, "n_chunks": 0,
-                 "n_sections": 0}
+        entry = {
+            "doc_name": doc_name,
+            "company": rec["company"],
+            "form": parsed["form"],
+            "fiscal_year": parsed["year"],
+            "source": how,
+            "questions": per_doc[doc_name],
+            "local_file": path.name if path else None,
+            "n_chunks": 0,
+            "n_sections": 0,
+        }
         if path is None:
             print(f"    UNAVAILABLE ({how})")
             manifest[doc_name] = entry
@@ -299,13 +347,14 @@ def main() -> None:
         manifest[doc_name] = entry
         print(f"    {entry['source']}: {len(sections)} sections, {len(chunks)} chunks")
 
-    MANIFEST.write_text(json.dumps(manifest, indent=2, ensure_ascii=False),
-                        encoding="utf-8")
+    MANIFEST.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
 
     ok = [e for e in manifest.values() if e["n_chunks"]]
     covered_q = sum(e["questions"] for e in ok)
-    print(f"\ndocuments: {len(ok)}/{len(docs)} built | questions with their "
-          f"document indexed: {covered_q}/{len(recs)}")
+    print(
+        f"\ndocuments: {len(ok)}/{len(docs)} built | questions with their "
+        f"document indexed: {covered_q}/{len(recs)}"
+    )
     if not all_chunks:
         raise SystemExit("no chunks built — nothing to index")
 

@@ -21,15 +21,16 @@ _HTML = """
 <p>Item 7. Management's Discussion and Analysis</p>
 <p>{mda}</p>
 </body></html>
-""".format(biz="Apple designs phones. " * 30, risk="Markets are risky. " * 60,
-           mda="Revenue rose. " * 40)
+""".format(
+    biz="Apple designs phones. " * 30, risk="Markets are risky. " * 60, mda="Revenue rose. " * 40
+)
 
 
 def test_toc_deduped_and_ordered():
     secs = parse_html(_HTML, min_section_chars=100)
     items = [s.item for s in secs]
-    assert items == ["1", "1A", "7"], items          # no TOC ghosts, doc order
-    assert all(s.n_chars > 100 for s in secs)         # real bodies, not TOC stubs
+    assert items == ["1", "1A", "7"], items  # no TOC ghosts, doc order
+    assert all(s.n_chars > 100 for s in secs)  # real bodies, not TOC stubs
     assert secs[1].item == "1A" and "risk" in secs[1].text.lower()
 
 
@@ -60,14 +61,18 @@ _BACKREF_HTML = """
 <p>Item 8. Financial Statements and Supplementary Data</p>
 <p>{fin}</p>
 </body></html>
-""".format(biz="We sell things. " * 20, risk="RISKTEXT is dangerous. " * 40,
-           mda1="Revenue grew. " * 20, mda2="MARGINS improved sharply. " * 90,
-           fin="Total assets. " * 30)
+""".format(
+    biz="We sell things. " * 20,
+    risk="RISKTEXT is dangerous. " * 40,
+    mda1="Revenue grew. " * 20,
+    mda2="MARGINS improved sharply. " * 90,
+    fin="Total assets. " * 30,
+)
 
 
 def test_backreference_does_not_hijack_or_truncate():
     secs = {s.item: s for s in parse_html(_BACKREF_HTML, min_section_chars=100)}
-    assert list(secs) == ["1", "1A", "7", "8"]            # monotonic, single 1A
+    assert list(secs) == ["1", "1A", "7", "8"]  # monotonic, single 1A
     # Item 1A is the real early section (risk text), not the MD&A back-reference.
     assert "RISKTEXT" in secs["1A"].text and "MARGINS" not in secs["1A"].text
     # Item 7 keeps the MD&A that follows the back-reference line (not truncated).
@@ -87,14 +92,14 @@ def _find(ticker: str):
 @pytest.mark.skipif(_find("BAC") is None, reason="corpus not downloaded")
 def test_bac_mda_recovered():
     secs = {s.item: s for s in parse_file(_find("BAC"))}
-    assert secs["7"].n_chars > 100_000          # MD&A recovered (was truncated to ~2.7K)
-    assert secs["1A"].n_chars > 50_000          # real Risk Factors present, not the cite
+    assert secs["7"].n_chars > 100_000  # MD&A recovered (was truncated to ~2.7K)
+    assert secs["1A"].n_chars > 50_000  # real Risk Factors present, not the cite
 
 
 @pytest.mark.skipif(_find("XOM") is None, reason="corpus not downloaded")
 def test_xom_properties_not_scrambled():
     secs = {s.item: s for s in parse_file(_find("XOM"))}
-    assert secs["2"].n_chars < 50_000           # Properties not bloated to ~197K by a cross-ref
+    assert secs["2"].n_chars < 50_000  # Properties not bloated to ~197K by a cross-ref
 
 
 # --- Pointer-stub resolution ("incorporated by reference") -----------------
@@ -263,7 +268,7 @@ _RUNNING_HEADER_HTML = """
 def test_running_page_labels_do_not_steal_section_start():
     secs = parse_html(_RUNNING_HEADER_HTML, min_section_chars=100, pointer_chars=1_000)
     by = {s.item: s for s in secs}
-    assert "MDASTART" in by["7"].text            # starts at the titled header
+    assert "MDASTART" in by["7"].text  # starts at the titled header
     assert by["7"].text.count("DATACENTERBOOM") >= 160  # whole MD&A, all pages
     assert "6" not in by or "MDASTART" not in by["6"].text
 
@@ -301,12 +306,12 @@ def test_data_table_rows_preserved_layout_tables_untouched():
     secs = parse_html(_TABLE_HTML, min_section_chars=100, pointer_chars=100_000_000)
     by = {s.item: s for s in secs}
     t = by["8"].text
-    assert "2025 | 2024" in t                     # header row joined
-    assert "Revenue | $130,497 | $60,922" in t    # $ merged into its figure
+    assert "2025 | 2024" in t  # header row joined
+    assert "Revenue | $130,497 | $60,922" in t  # $ merged into its figure
     assert "Net income | 72,880 | 29,760" in t
     assert "Margin note" in t and "Margin note |" not in t  # 1-cell row stays plain
-    assert "Nested inner cell | 77" in t          # nested table flattens into its cell once
-    assert t.count("inner") == 1                  # ...without duplication
+    assert "Nested inner cell | 77" in t  # nested table flattens into its cell once
+    assert t.count("inner") == 1  # ...without duplication
     # Layout table: prose not pipe-joined, paragraphs on separate lines.
     assert "LAYOUTWRAP table cell and must stay prose." in by["1"].text
     assert "prose. | " not in by["1"].text
@@ -321,14 +326,15 @@ def test_nvda_statement_tables_have_rows():
 
 # --- Real-corpus guards for stub resolution (NVDA + JPM fixtures) ----------
 
+
 @pytest.mark.skipif(_find("NVDA") is None, reason="corpus not downloaded")
 def test_nvda_item8_resolved_from_item15():
     by = {s.item: s for s in parse_file(_find("NVDA"))}
     assert by["8"].resolved_from == "15"
-    assert by["8"].n_chars > 50_000              # was a 206-char pointer stub
+    assert by["8"].n_chars > 50_000  # was a 206-char pointer stub
     assert "Report of Independent Registered" in by["8"].text[:3_000]
-    assert by["15"].n_chars < 20_000             # exhibit index kept, F-pages carved out
-    assert "Exhibit Index" in by["15"].text      # tail reattached to host
+    assert by["15"].n_chars < 20_000  # exhibit index kept, F-pages carved out
+    assert "Exhibit Index" in by["15"].text  # tail reattached to host
 
 
 @pytest.mark.skipif(_find("JPM") is None, reason="corpus not downloaded")
@@ -337,13 +343,13 @@ def test_jpm_mda_and_financials_resolved_from_item15():
     # Bank 10-K: MD&A and financial statements both live after Item 15.
     assert by["7"].resolved_from == "15" and by["7"].n_chars > 100_000
     assert by["8"].resolved_from == "15" and by["8"].n_chars > 100_000
-    assert by["15"].n_chars < 40_000             # host keeps exhibits + signatures only
+    assert by["15"].n_chars < 40_000  # host keeps exhibits + signatures only
 
 
 @pytest.mark.skipif(_find("MSFT") is None, reason="corpus not downloaded")
 def test_msft_mda_not_stolen_by_running_labels():
     by = {s.item: s for s in parse_file(_find("MSFT"))}
-    assert by["7"].n_chars > 30_000              # was 9.9K; head sat in Item 6 "[Reserved]"
+    assert by["7"].n_chars > 30_000  # was 9.9K; head sat in Item 6 "[Reserved]"
     assert by["8"].n_chars > 50_000
 
 
@@ -352,7 +358,7 @@ def test_pep_statements_carved_out_of_mda():
     by = {s.item: s for s in parse_file(_find("PEP"))}
     # PEP: statements sit inside Item 7's span; the Item 8 header is a late pointer.
     assert by["8"].resolved_from == "7" and by["8"].n_chars > 100_000
-    assert 50_000 < by["7"].n_chars < 150_000    # MD&A alone (was 241K with statements)
+    assert 50_000 < by["7"].n_chars < 150_000  # MD&A alone (was 241K with statements)
 
 
 def test_sections_from_text_generic_split():

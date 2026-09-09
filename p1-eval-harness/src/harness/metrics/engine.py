@@ -36,8 +36,10 @@ def load_cases(golden_dir: str | Path) -> list[dict[str, Any]]:
     cases: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
     golden_path = Path(golden_dir)
-    paths = [golden_path] if golden_path.is_file() else sorted(
-        p for p in golden_path.glob("golden_set_*.jsonl") if "skeleton" not in p.name
+    paths = (
+        [golden_path]
+        if golden_path.is_file()
+        else sorted(p for p in golden_path.glob("golden_set_*.jsonl") if "skeleton" not in p.name)
     )
     for path in paths:
         with path.open(encoding="utf-8") as f:
@@ -77,7 +79,9 @@ def _norm_text(t: str) -> str:
     return re.sub(r"\s+", " ", t.lower().strip(" .")).strip()
 
 
-def _single_claim_match(exp: dict[str, Any], act_claims: list[dict[str, Any]], tol: float, unit_eq: bool) -> bool:
+def _single_claim_match(
+    exp: dict[str, Any], act_claims: list[dict[str, Any]], tol: float, unit_eq: bool
+) -> bool:
     for act in act_claims:
         if act["is_pct"] != exp["is_pct"]:
             continue
@@ -112,7 +116,7 @@ CITATION_ALIASES: dict[str, str] = {
 def _canonical_citation(cid: str) -> str:
     for old, new in CITATION_ALIASES.items():
         if cid.startswith(old):
-            return new + cid[len(old):]
+            return new + cid[len(old) :]
     return cid
 
 
@@ -136,11 +140,7 @@ def _prefix_hit(produced: list[str], expected: list[str]) -> bool | None:
     if not expected:
         return None
     # Require exact match or colon boundary to prevent c001 matching c0019; supports reconciled aliases
-    return any(
-        _matches_citation(p, e)
-        for p in produced
-        for e in expected
-    )
+    return any(_matches_citation(p, e) for p in produced for e in expected)
 
 
 def score_case(
@@ -255,7 +255,11 @@ def aggregate(rows: list[dict[str, Any]]) -> dict[str, Any]:
     _cov("citation_reference_hit", n, [r["citation_hit"] for r in rows])
     _cov("citation_faithfulness", n, [r["citation_hit"] for r in rows])
     _cov("retrieval_hit_rate", n, [r["retrieval_hit"] for r in rows])
-    _cov("hallucination_rate", len(unanswerable), [r["outcome"] == "hallucination" for r in unanswerable])
+    _cov(
+        "hallucination_rate",
+        len(unanswerable),
+        [r["outcome"] == "hallucination" for r in unanswerable],
+    )
     _cov("refusal_rate", n, [r["refused"] for r in rows])
     _cov("refusal_correctness", len(refusals), [r["correct"] for r in refusals])
     _cov("verified_rate", n, [r.get("verified") for r in rows])

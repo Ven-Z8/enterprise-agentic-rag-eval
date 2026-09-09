@@ -1,7 +1,10 @@
 """Unit tests for Project 5 Cost & Latency Optimization Roadmap Schema."""
 
-import pytest
-from optimization.optimizer import SystemOptimizerEngine, OptimizationTargetReport, OptimizationStepResult
+from optimization.optimizer import (
+    OptimizationStepResult,
+    OptimizationTargetReport,
+    SystemOptimizerEngine,
+)
 
 
 def test_optimization_target_report_schema():
@@ -31,4 +34,3 @@ def test_optimization_backward_compatibility_alias():
     report = engine.run_full_benchmark()
     assert isinstance(report, OptimizationTargetReport)
     assert len(report.optimized_steps) == 4
-

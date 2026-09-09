@@ -11,7 +11,7 @@ def test_schema_models():
         expected=schema.ExpectedOutcome(answer="$416,161M", citations=["c1"], type="exact"),
         variation_rules=["numeric_tolerance:1%"],
         failure_category="table",
-        domain="financial"
+        domain="financial",
     )
     assert case.id == "test-001"
     assert case.expected.answer == "$416,161M"
@@ -27,8 +27,12 @@ def test_score_case_accepts_schema_dump():
         failure_category="lookup",
         domain="financial",
     ).model_dump()
-    result = {"answer": "Revenue was $100 million.", "refused": False,
-              "citations": ["c1"], "hits": []}
+    result = {
+        "answer": "Revenue was $100 million.",
+        "refused": False,
+        "citations": ["c1"],
+        "hits": [],
+    }
     scored = engine.score_case(case, result)
     assert scored["correct"] is True and scored["outcome"] == "answered"
 
@@ -41,18 +45,33 @@ def test_score_case_refusal_outcomes():
         failure_category="unanswerable",
         domain="financial",
     ).model_dump()
-    refused = {"answer": None, "refused": True, "refusal_reason": "not in corpus",
-               "citations": [], "hits": []}
+    refused = {
+        "answer": None,
+        "refused": True,
+        "refusal_reason": "not in corpus",
+        "citations": [],
+        "hits": [],
+    }
     scored = engine.score_case(unanswerable, refused)
     assert scored["correct"] is True and scored["outcome"] == "correct_refusal"
 
 
 def test_summary_from_rows_shape():
     rows = [
-        {"case_id": "a", "correct": True, "outcome": "answered",
-         "input": "q1", "latency_ms": 100.0},
-        {"case_id": "b", "correct": False, "outcome": "hallucination",
-         "input": "q2", "latency_ms": 200.0},
+        {
+            "case_id": "a",
+            "correct": True,
+            "outcome": "answered",
+            "input": "q1",
+            "latency_ms": 100.0,
+        },
+        {
+            "case_id": "b",
+            "correct": False,
+            "outcome": "hallucination",
+            "input": "q2",
+            "latency_ms": 200.0,
+        },
     ]
     s = report.summary_from_rows("hybrid_rerank", rows)
     assert s["strategy"] == "hybrid_rerank"
@@ -72,9 +91,9 @@ def test_report_generation(tmp_path):
                 "case_id": "test-001",
                 "correct": True,
                 "outcome": "correct_answer",
-                "trace": {"query": "What is revenue?", "latency_ms": 1500.0}
+                "trace": {"query": "What is revenue?", "latency_ms": 1500.0},
             }
-        ]
+        ],
     }
     html_p, md_p = report.generate_reports(summary, tmp_path)
     assert html_p.exists()
@@ -93,8 +112,20 @@ def test_write_scorecard_dynamic_provenance_and_coverage(tmp_path):
                 "citation_reference_hit": 0.90,
                 "citation_faithfulness": 0.90,
                 "coverage": {
-                    "accuracy": {"eligible": 25, "evaluated": 25, "successful": 21, "failed": 4, "skipped": 0},
-                    "citation_reference_hit": {"eligible": 25, "evaluated": 20, "successful": 18, "failed": 2, "skipped": 5},
+                    "accuracy": {
+                        "eligible": 25,
+                        "evaluated": 25,
+                        "successful": 21,
+                        "failed": 4,
+                        "skipped": 0,
+                    },
+                    "citation_reference_hit": {
+                        "eligible": 25,
+                        "evaluated": 20,
+                        "successful": 18,
+                        "failed": 2,
+                        "skipped": 5,
+                    },
                 },
                 "by_category": {"lookup": {"n": 10, "correct": 9, "accuracy": 0.9}},
             }

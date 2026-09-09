@@ -14,7 +14,8 @@ from typing import Any
 # A quoted term immediately followed by a definitional verb.
 _DEF_RE = re.compile(
     r'"([^"\n]{2,90}?)"\s+(?:means|shall mean|has the meaning set forth|'
-    r"is defined as|shall have the meaning)\b")
+    r"is defined as|shall have the meaning)\b"
+)
 
 _DEF_SPAN_CAP = 700
 
@@ -37,7 +38,7 @@ def extract_defined_terms(chunks: list[dict[str, Any]]) -> dict[str, dict[str, A
                 continue
             start = m.start()
             end = _sentence_end(chunk["text"], m.end())
-            definition = chunk["text"][start:min(end, start + _DEF_SPAN_CAP)].strip()
+            definition = chunk["text"][start : min(end, start + _DEF_SPAN_CAP)].strip()
             terms[term] = {"definition": definition, "chunk_id": chunk["id"]}
     return facts
 
@@ -51,6 +52,7 @@ def _sentence_end(text: str, from_idx: int) -> int:
 def load_defined_terms(path: str) -> dict[str, dict[str, Any]]:
     import json
     from pathlib import Path
+
     p = Path(path)
     if not p.exists():
         return {}

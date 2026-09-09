@@ -80,8 +80,7 @@ _GRAPH_TOOL = {
                 "tickers": {"type": "array", "items": {"type": "string"}},
                 "metric": {"type": "string"},
                 "fiscal_year": {"type": "integer"},
-                "query": {"type": "string",
-                          "description": "Keywords for the community operation."},
+                "query": {"type": "string", "description": "Keywords for the community operation."},
             },
             "required": ["operation"],
         },
@@ -94,13 +93,13 @@ def _run_graph_query(graph_engine: Any, args: dict[str, Any]) -> str:
     try:
         if op == "metric_value":
             result = graph_engine.get_metric_value(
-                args["ticker"], args["metric"], args["fiscal_year"])
+                args["ticker"], args["metric"], args["fiscal_year"]
+            )
         elif op == "metric_series":
             result = graph_engine.get_metric_history(args["ticker"], args["metric"])
         elif op == "compare":
             tickers = args.get("tickers") or ([args["ticker"]] if args.get("ticker") else [])
-            result = graph_engine.compare_metrics(
-                tickers, args["metric"], args.get("fiscal_year"))
+            result = graph_engine.compare_metrics(tickers, args["metric"], args.get("fiscal_year"))
         elif op == "community":
             result = graph_engine.community_search(str(args.get("query", "")))
         else:
@@ -140,9 +139,7 @@ def run_researcher(
     strat = cfg.get("retrieval", {}).get("strategy", "hybrid_rerank")
     top_k = cfg.get("retrieval", {}).get("top_k", 8)
     rerank_candidates = cfg.get("retrieval", {}).get("rerank_candidates", 25)
-    inventory = {
-        str(c.get("ticker")) for c in index.chunks if c.get("ticker")
-    }
+    inventory = {str(c.get("ticker")) for c in index.chunks if c.get("ticker")}
     chunk_by_id = {c["id"]: c for c in index.chunks if c.get("id")}
 
     collected: dict[str, dict[str, Any]] = {}
@@ -153,9 +150,7 @@ def run_researcher(
             for c in index.chunks:
                 if c.get("ticker"):
                     years.setdefault(str(c["ticker"]), set()).add(str(c.get("fiscal_year")))
-            return json.dumps(
-                sorted(f"{t}: FY{sorted(ys)}" for t, ys in years.items())
-            )
+            return json.dumps(sorted(f"{t}: FY{sorted(ys)}" for t, ys in years.items()))
         if name == "query_graph":
             if graph_engine is None:
                 return "TOOL ERROR: fact graph is not available"
@@ -168,8 +163,7 @@ def run_researcher(
             for row in rows:
                 cid = row.get("chunk_id") if isinstance(row, dict) else None
                 if cid and cid not in collected and cid in chunk_by_id:
-                    collected[cid] = {"chunk": chunk_by_id[cid],
-                                      "score": 1.0, "dense_sim": 1.0}
+                    collected[cid] = {"chunk": chunk_by_id[cid], "score": 1.0, "dense_sim": 1.0}
             return out
         if name != "search_filings":
             return f"TOOL ERROR: unknown tool {name!r}"
@@ -185,16 +179,23 @@ def run_researcher(
             filters["has_table"] = True
 
         hits = index.search(
-            str(args.get("query", query)), strat, top_k,
-            filters=filters or None, rerank_candidates=rerank_candidates,
+            str(args.get("query", query)),
+            strat,
+            top_k,
+            filters=filters or None,
+            rerank_candidates=rerank_candidates,
             reranker_name=cfg.get("retrieval", {}).get("reranker"),
         )
         if not hits and filters:
             # Filtered search found nothing: retry unfiltered so the agent
             # sees evidence (or its absence) rather than a silent empty set.
-            hits = index.search(str(args.get("query", query)), strat, top_k,
-                                rerank_candidates=rerank_candidates,
-                                reranker_name=cfg.get("retrieval", {}).get("reranker"))
+            hits = index.search(
+                str(args.get("query", query)),
+                strat,
+                top_k,
+                rerank_candidates=rerank_candidates,
+                reranker_name=cfg.get("retrieval", {}).get("reranker"),
+            )
         for h in hits:
             collected.setdefault(h["chunk"]["id"], h)
         return json.dumps([_hit_summary(h) for h in hits])
@@ -210,8 +211,10 @@ def run_researcher(
 
     messages = [
         {"role": "system", "content": PromptRegistry.get_researcher()},
-        {"role": "user",
-         "content": f"Original question: {query}\n{scope_line}\n\nRetrieval questions:\n{task}"},
+        {
+            "role": "user",
+            "content": f"Original question: {query}\n{scope_line}\n\nRetrieval questions:\n{task}",
+        },
     ]
 
     client = get_llm_client(cfg=cfg, role="runtime")

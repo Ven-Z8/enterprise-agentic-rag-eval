@@ -59,6 +59,8 @@ def test_bare_magnitude_claims_are_extracted_and_checked():
 
 
 def test_bare_magnitude_matches_table_in_millions():
-    chunk = {"id": "TSLA_2025_10K:Item7:c001",
-             "text": "Consumer vehicle deliveries (in millions) | 1.64 | 1.81"}
+    chunk = {
+        "id": "TSLA_2025_10K:Item7:c001",
+        "text": "Consumer vehicle deliveries (in millions) | 1.64 | 1.81",
+    }
     assert verify("Deliveries were roughly 1.64 million.", [chunk])["verified"]

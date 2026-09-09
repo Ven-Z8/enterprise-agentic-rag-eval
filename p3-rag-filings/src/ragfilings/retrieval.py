@@ -95,6 +95,7 @@ def _get_reranker(model_name: str = "BAAI/bge-reranker-base"):
     global _reranker_model, _reranker_name
     if _reranker_model is None or _reranker_name != model_name:
         from sentence_transformers import CrossEncoder
+
         _reranker_model = CrossEncoder(model_name)
         _reranker_name = model_name
     return _reranker_model
@@ -124,10 +125,15 @@ class Index:
                     mask[i] = False
         return mask
 
-    def search(self, query: str, strategy: str, top_k: int,
-               reranker_name: str | None = None,
-               filters: dict[str, Any] | None = None,
-               rerank_candidates: int = 25) -> list[dict[str, Any]]:
+    def search(
+        self,
+        query: str,
+        strategy: str,
+        top_k: int,
+        reranker_name: str | None = None,
+        filters: dict[str, Any] | None = None,
+        rerank_candidates: int = 25,
+    ) -> list[dict[str, Any]]:
         """Return top_k hits: {chunk, score, dense_sim}, best first.
 
         filters: optional hard metadata filter (see _filter_mask). If the
@@ -151,8 +157,10 @@ class Index:
             if mask is not None:
                 bm25_scores = np.where(mask, bm25_scores, -1.0)
             rrf = np.zeros(len(self.chunks))
-            for ranking in (np.argsort(-dense_sims, kind="stable"),
-                            np.argsort(-bm25_scores, kind="stable")):
+            for ranking in (
+                np.argsort(-dense_sims, kind="stable"),
+                np.argsort(-bm25_scores, kind="stable"),
+            ):
                 for rank, i in enumerate(ranking):
                     rrf[i] += 1.0 / (_RRF_K + rank + 1)
 
@@ -161,8 +169,9 @@ class Index:
                 reranker = _get_reranker(reranker_name or "BAAI/bge-reranker-base")
                 pairs = [(query, embed_text(self.chunks[i])) for i in candidate_order]
                 rerank_scores = reranker.predict(pairs)
-                reranked = sorted(zip(candidate_order, rerank_scores),
-                                  key=lambda x: x[1], reverse=True)[:top_k]
+                reranked = sorted(
+                    zip(candidate_order, rerank_scores), key=lambda x: x[1], reverse=True
+                )[:top_k]
                 scored = [(int(i), float(s)) for i, s in reranked]
             else:
                 order = np.argsort(-rrf, kind="stable")[:top_k]
@@ -170,12 +179,9 @@ class Index:
         else:
             raise ValueError(f"unknown retrieval strategy: {strategy!r}")
         return [
-            {"chunk": self.chunks[i], "score": s,
-             "dense_sim": float(self.embeddings[i] @ q)}
+            {"chunk": self.chunks[i], "score": s, "dense_sim": float(self.embeddings[i] @ q)}
             for i, s in scored
         ]
-
-
 
 
 def confidence(hits: list[dict[str, Any]]) -> float:
@@ -183,31 +189,34 @@ def confidence(hits: list[dict[str, Any]]) -> float:
     return max((h["dense_sim"] for h in hits), default=0.0)
 
 
-def build_index(chunks: list[dict[str, Any]], index_dir: str | Path,
-                model_name: str) -> None:
+def build_index(chunks: list[dict[str, Any]], index_dir: str | Path, model_name: str) -> None:
     """Embed every chunk once and persist the index to index_dir."""
     index_dir = Path(index_dir)
     index_dir.mkdir(parents=True, exist_ok=True)
     model = _load_model(model_name)
-    emb = np.asarray(model.encode(
-        [embed_text(c) for c in chunks],
-        batch_size=64, normalize_embeddings=True, show_progress_bar=True,
-    ), dtype=np.float32)
+    emb = np.asarray(
+        model.encode(
+            [embed_text(c) for c in chunks],
+            batch_size=64,
+            normalize_embeddings=True,
+            show_progress_bar=True,
+        ),
+        dtype=np.float32,
+    )
     np.save(index_dir / "embeddings.npy", emb)
     with (index_dir / "chunks.jsonl").open("w", encoding="utf-8") as f:
         for c in chunks:
             f.write(json.dumps(c, ensure_ascii=False) + "\n")
-    (index_dir / "meta.json").write_text(json.dumps(
-        {"model": model_name, "n_chunks": len(chunks), "dim": int(emb.shape[1])}))
+    (index_dir / "meta.json").write_text(
+        json.dumps({"model": model_name, "n_chunks": len(chunks), "dim": int(emb.shape[1])})
+    )
 
 
 def load_index(index_dir: str | Path, model_name: str) -> Index:
     index_dir = Path(index_dir)
     if not (index_dir / "embeddings.npy").exists():
-        raise FileNotFoundError(
-            f"no index at {index_dir} — build it first with `ragfilings index`")
-    chunks = [json.loads(line)
-              for line in (index_dir / "chunks.jsonl").open(encoding="utf-8")]
+        raise FileNotFoundError(f"no index at {index_dir} — build it first with `ragfilings index`")
+    chunks = [json.loads(line) for line in (index_dir / "chunks.jsonl").open(encoding="utf-8")]
     embeddings = np.load(index_dir / "embeddings.npy")
     bm25 = BM25Okapi([_tokenize(embed_text(c)) for c in chunks])
     return Index(chunks, embeddings, bm25, _load_model(model_name))

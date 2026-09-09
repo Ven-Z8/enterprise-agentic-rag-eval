@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Dict, Any, List
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
 class OptimizationStepResult(BaseModel):
     """Target metrics for a single planned optimization technique."""
+
     technique: str
     description: str
-    eval_accuracy: float = Field(description="Target harness-verified accuracy percentage")
+    eval_accuracy: float = Field(
+        description="Target harness-verified accuracy percentage"
+    )
     cost_per_100_runs_usd: float
     latency_p95_ms: float
     cost_reduction_pct: float
@@ -19,9 +23,10 @@ class OptimizationStepResult(BaseModel):
 
 class OptimizationTargetReport(BaseModel):
     """Illustrative optimization roadmap comparing baseline targets vs planned system steps."""
+
     baseline: OptimizationStepResult
-    optimized_steps: List[OptimizationStepResult]
-    final_summary: Dict[str, Any]
+    optimized_steps: list[OptimizationStepResult]
+    final_summary: dict[str, Any]
 
 
 # Backward compatibility alias
@@ -41,7 +46,7 @@ class SystemOptimizerEngine:
             cost_per_100_runs_usd=14.50,
             latency_p95_ms=4200.0,
             cost_reduction_pct=0.0,
-            latency_reduction_pct=0.0
+            latency_reduction_pct=0.0,
         )
 
         steps = []
@@ -54,7 +59,7 @@ class SystemOptimizerEngine:
             cost_per_100_runs_usd=7.20,
             latency_p95_ms=2800.0,
             cost_reduction_pct=50.3,
-            latency_reduction_pct=33.3
+            latency_reduction_pct=33.3,
         )
         steps.append(s1)
 
@@ -66,7 +71,7 @@ class SystemOptimizerEngine:
             cost_per_100_runs_usd=4.80,
             latency_p95_ms=2100.0,
             cost_reduction_pct=66.9,
-            latency_reduction_pct=50.0
+            latency_reduction_pct=50.0,
         )
         steps.append(s2)
 
@@ -78,7 +83,7 @@ class SystemOptimizerEngine:
             cost_per_100_runs_usd=4.50,
             latency_p95_ms=1600.0,
             cost_reduction_pct=69.0,
-            latency_reduction_pct=61.9
+            latency_reduction_pct=61.9,
         )
         steps.append(s3)
 
@@ -90,7 +95,7 @@ class SystemOptimizerEngine:
             cost_per_100_runs_usd=3.62,
             latency_p95_ms=1550.0,
             cost_reduction_pct=75.0,
-            latency_reduction_pct=63.1
+            latency_reduction_pct=63.1,
         )
         steps.append(s4)
 
@@ -100,15 +105,12 @@ class SystemOptimizerEngine:
             "quality_held": True,
             "baseline_accuracy": 85.0,
             "final_accuracy": 85.0,
-            "cost_delta_per_1k_runs": "$145.00 -> $36.20"
+            "cost_delta_per_1k_runs": "$145.00 -> $36.20",
         }
 
         return OptimizationTargetReport(
-            baseline=baseline,
-            optimized_steps=steps,
-            final_summary=final_summary
+            baseline=baseline, optimized_steps=steps, final_summary=final_summary
         )
 
     # Backward compatibility alias
     run_full_benchmark = get_illustrative_benchmark_targets
-

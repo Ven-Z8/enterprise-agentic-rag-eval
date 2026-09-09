@@ -37,4 +37,3 @@ def load(path: str | Path | None = None) -> dict:
     p = Path(path) if path else DEFAULT_CONFIG
     with p.open("rb") as f:
         return tomllib.load(f)
-

@@ -13,7 +13,11 @@ def build_trace(case: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
     """Emit a trace dictionary in the standard format (Trace.from_dict-compatible)."""
     hits = result.get("hits", [])
     ver = result.get("verification", {"verified": True, "claims": []})
-    final = result.get("answer") if not result.get("refused") else f"[REFUSED] {result.get('refusal_reason')}"
+    final = (
+        result.get("answer")
+        if not result.get("refused")
+        else f"[REFUSED] {result.get('refusal_reason')}"
+    )
     steps = [
         {
             "index": 0,
@@ -61,23 +65,26 @@ def build_trace(case: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
     ]
     rescue = result.get("graph_rescue")
     if rescue:
-        steps.insert(1, {
-            "index": 1,
-            "kind": "tool_call",
-            "content": None,
-            "retry_of": None,
-            "tool_call": {
-                "name": "graph_rescue",
-                "arguments": {"queries": rescue.get("queries", [])},
-                "result": {
-                    "facts": rescue.get("facts", []),
-                    "chunks_added": rescue.get("chunks_added", []),
-                    "rescued": rescue.get("rescued", False),
+        steps.insert(
+            1,
+            {
+                "index": 1,
+                "kind": "tool_call",
+                "content": None,
+                "retry_of": None,
+                "tool_call": {
+                    "name": "graph_rescue",
+                    "arguments": {"queries": rescue.get("queries", [])},
+                    "result": {
+                        "facts": rescue.get("facts", []),
+                        "chunks_added": rescue.get("chunks_added", []),
+                        "rescued": rescue.get("rescued", False),
+                    },
+                    "error": None,
+                    "latency_ms": None,
                 },
-                "error": None,
-                "latency_ms": None,
             },
-        })
+        )
         for i, step in enumerate(steps):
             step["index"] = i
     u = result.get("usage", {})
@@ -108,9 +115,12 @@ def build_trace(case: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
                 or ("v1 proven" if str(case.get("id", "")).startswith("fin-") else "diagnostic")
             ),
             "graph_rescue": (
-                {"rescued": result["graph_rescue"].get("rescued", False),
-                 "chunks_added": result["graph_rescue"].get("chunks_added", [])}
-                if result.get("graph_rescue") else None
+                {
+                    "rescued": result["graph_rescue"].get("rescued", False),
+                    "chunks_added": result["graph_rescue"].get("chunks_added", []),
+                }
+                if result.get("graph_rescue")
+                else None
             ),
         },
     }

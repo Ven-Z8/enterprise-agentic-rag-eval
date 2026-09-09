@@ -46,9 +46,9 @@ class RAGFilingsAdapter:
         self.domain = domain
 
         from ragfilings.domains import get_pack
+
         pack = get_pack(domain)
-        index_path = Path(getattr(pack, "index_dir", None)
-                          or self.cfg["embedding"]["index_dir"])
+        index_path = Path(getattr(pack, "index_dir", None) or self.cfg["embedding"]["index_dir"])
         if not index_path.is_absolute():
             index_path = P3_ROOT / index_path
         self.index = retrieval.load_index(str(index_path), self.cfg["embedding"]["model"])

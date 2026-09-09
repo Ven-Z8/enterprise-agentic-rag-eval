@@ -85,8 +85,7 @@ def _md_table(view: dict[str, Any]) -> str:
     for cat in sorted(view["by_category"]):
         c = view["by_category"][cat]
         lines.append(f"| {cat} | {c['n']} | {c['accuracy']:.0%} |")
-    lines.append(f"| **overall** | {view['n']} | "
-                 f"{(view['accuracy'] or 0):.0%} |")
+    lines.append(f"| **overall** | {view['n']} | {(view['accuracy'] or 0):.0%} |")
     return "\n".join(lines)
 
 
@@ -147,7 +146,12 @@ def run_regression(
     run_dir = out_root / f"{stamp}-{git_sha()[:8]}-{strategy}"
 
     all_results = run_eval(
-        cfg, adapter, golden_set, [strategy], out_dir=run_dir, limit=limit,
+        cfg,
+        adapter,
+        golden_set,
+        [strategy],
+        out_dir=run_dir,
+        limit=limit,
         skip_judge_metrics=skip_judge_metrics,
     )
 

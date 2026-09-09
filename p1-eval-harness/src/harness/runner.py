@@ -21,9 +21,12 @@ from harness.traces.build import build_trace
 
 def git_sha() -> str:
     try:
-        return subprocess.run(
-            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=5
-        ).stdout.strip() or "unknown"
+        return (
+            subprocess.run(
+                ["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=5
+            ).stdout.strip()
+            or "unknown"
+        )
     except Exception:
         return "unknown"
 
@@ -107,7 +110,10 @@ def run_eval(
                         case, strategy=strategy, refusal_log=out_dir / "refusals.jsonl"
                     )
                     scored = score_case(
-                        case, result, cfg, scorer=scorer,
+                        case,
+                        result,
+                        cfg,
+                        scorer=scorer,
                         include_deepeval_metrics=not skip_judge_metrics,
                     )
                     consecutive_errors = 0
@@ -128,8 +134,12 @@ def run_eval(
                         "error": f"{type(e).__name__}: {e}"[:400],
                     }
                     result = {
-                        "latency_ms": result.get("latency_ms", elapsed_ms) if result else elapsed_ms,
-                        "usage": result.get("usage", {"cost_usd": None}) if result else {"cost_usd": None},
+                        "latency_ms": result.get("latency_ms", elapsed_ms)
+                        if result
+                        else elapsed_ms,
+                        "usage": result.get("usage", {"cost_usd": None})
+                        if result
+                        else {"cost_usd": None},
                         "verification": {"verified": False},
                         "answer": result.get("answer") if result else None,
                         "refusal_reason": None,
@@ -147,7 +157,11 @@ def run_eval(
                     "input": case["input"],
                     "latency_ms": result.get("latency_ms", 0.0),
                     "cost_usd": result.get("usage", {}).get("cost_usd"),
-                    "verified": bool(result.get("verified", result.get("verification", {}).get("verified", False))),
+                    "verified": bool(
+                        result.get(
+                            "verified", result.get("verification", {}).get("verified", False)
+                        )
+                    ),
                     "answer": result.get("answer"),
                     "refusal_reason": result.get("refusal_reason"),
                     "citations": result.get("citations", []),
@@ -163,14 +177,23 @@ def run_eval(
                     "total_cases": len(cases),
                     "completed": [r["case_id"] for r in rows if r.get("outcome") != "error"],
                     "failed": [r["case_id"] for r in rows if r.get("outcome") == "error"],
-                    "unattempted": [c["id"] for c in cases if c["id"] not in {r["case_id"] for r in rows}],
+                    "unattempted": [
+                        c["id"] for c in cases if c["id"] not in {r["case_id"] for r in rows}
+                    ],
                     "consecutive_errors": consecutive_errors,
-                    "status": "aborted" if consecutive_errors >= 5 else ("completed" if len(rows) == len(cases) else "in_progress"),
+                    "status": "aborted"
+                    if consecutive_errors >= 5
+                    else ("completed" if len(rows) == len(cases) else "in_progress"),
                 }
-                (out_dir / f"manifest_{strategy}.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+                (out_dir / f"manifest_{strategy}.json").write_text(
+                    json.dumps(manifest, indent=2), encoding="utf-8"
+                )
 
                 mark = "+" if scored["correct"] else "-"
-                print(f"[{strategy} {i:>2}/{len(cases)}] {mark} {case['id']} {scored['outcome']}", flush=True)
+                print(
+                    f"[{strategy} {i:>2}/{len(cases)}] {mark} {case['id']} {scored['outcome']}",
+                    flush=True,
+                )
 
                 if consecutive_errors >= 5:
                     raise RuntimeError(

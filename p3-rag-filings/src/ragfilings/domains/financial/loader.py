@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 def graph_path(cfg: dict[str, Any] | None = None):
     from ... import config as cfg_mod
+
     return cfg_mod.ROOT / "corpus" / "graph" / "financial_graph.json"
 
 
@@ -42,8 +43,7 @@ def load_rescue(cfg: dict[str, Any], index: Any) -> Any:
     """
     from .builder import FinancialGraphBuilder
     from .query import GraphQueryEngine
-    from .rescue import (GraphRescue, load_company_aliases, load_company_names,
-                         load_excluded_facts)
+    from .rescue import GraphRescue, load_company_aliases, load_company_names, load_excluded_facts
 
     path = graph_path(cfg)
     try:

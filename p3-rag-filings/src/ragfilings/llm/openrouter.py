@@ -68,7 +68,10 @@ class OpenRouterClient(BaseLLMClient):
     def _get_client(self):
         if self._client is None:
             from openai import OpenAI
-            self._client = OpenAI(base_url=self.base_url, api_key=self.api_key, timeout=self.timeout)
+
+            self._client = OpenAI(
+                base_url=self.base_url, api_key=self.api_key, timeout=self.timeout
+            )
         return self._client
 
     def complete(
@@ -101,5 +104,6 @@ class OpenRouterClient(BaseLLMClient):
         choice = resp.choices[0]
         content = choice.message.content or getattr(choice.message, "reasoning", "") or ""
 
-        return LLMResponse(content=content, usage=parse_usage(resp.usage),
-                           model=target_model, raw_response=resp)
+        return LLMResponse(
+            content=content, usage=parse_usage(resp.usage), model=target_model, raw_response=resp
+        )

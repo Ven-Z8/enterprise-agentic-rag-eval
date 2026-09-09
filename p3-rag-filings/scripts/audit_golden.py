@@ -60,8 +60,9 @@ def load_sections() -> tuple[dict[str, dict[str, str]], dict[str, str], dict[str
 def load_cases() -> list[dict]:
     cases = []
     for path in sorted(GOLDEN_DIR.glob("*.jsonl")):
-        if any(s in path.name for s in
-               ("skeleton", "candidates", "handcrafted", "judge_calibration")):
+        if any(
+            s in path.name for s in ("skeleton", "candidates", "handcrafted", "judge_calibration")
+        ):
             continue
         with path.open(encoding="utf-8") as f:
             for line in f:

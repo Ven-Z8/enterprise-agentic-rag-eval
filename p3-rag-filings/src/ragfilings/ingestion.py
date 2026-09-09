@@ -55,11 +55,15 @@ _AUDIT_PROOF_RE = re.compile(r"^(to the |opinion on|we have audited)", re.I)
 _STMT_RE = re.compile(
     r"consolidated (balance sheets?|statements? of (income|operations|earnings|"
     r"comprehensive income|cash flows|financial position|(stock|share)holders[’']? equity|"
-    r"equity))\s*(\((continued|unaudited)\))?", re.I)
+    r"equity))\s*(\((continued|unaudited)\))?",
+    re.I,
+)
 # Units / registrant subtitle that follows a REAL statement title.
 _STMT_PROOF_RE = re.compile(
     r"^\(?(in|millions of|thousands of) (millions|thousands|billions|dollars)"
-    r"|and subsidiaries", re.I)
+    r"|and subsidiaries",
+    re.I,
+)
 _MDA_RE = re.compile(r"management[’']s discussion and analysis", re.I)
 # Block end markers: signatures / exhibit index that FOLLOW the F-pages return
 # to the host section, so Item 15 keeps its exhibit list.
@@ -128,33 +132,47 @@ def _serialize_tables(soup: BeautifulSoup) -> None:
                 rows.append(cells)
         flat = [c for r in rows for c in r]
         n_multi = sum(len(r) >= 2 for r in rows)
-        if n_multi >= 2 and flat and (
-            sum(bool(_NUMCELL_RE.fullmatch(c)) for c in flat) / len(flat) >= 0.25
+        if (
+            n_multi >= 2
+            and flat
+            and (sum(bool(_NUMCELL_RE.fullmatch(c)) for c in flat) / len(flat) >= 0.25)
         ):
             # 1-cell rows (statement titles, units lines) stay plain lines.
             table.replace_with("\n" + "\n".join(" | ".join(r) for r in rows) + "\n")
 
+
 # Fallback titles when the detected header line is mangled/empty.
 _STD_TITLES = {
-    "1": "Business", "1A": "Risk Factors", "1B": "Unresolved Staff Comments",
-    "1C": "Cybersecurity", "2": "Properties", "3": "Legal Proceedings",
-    "4": "Mine Safety Disclosures", "5": "Market for Registrant's Common Equity",
-    "6": "[Reserved] / Selected Financial Data", "7": "Management's Discussion and Analysis",
+    "1": "Business",
+    "1A": "Risk Factors",
+    "1B": "Unresolved Staff Comments",
+    "1C": "Cybersecurity",
+    "2": "Properties",
+    "3": "Legal Proceedings",
+    "4": "Mine Safety Disclosures",
+    "5": "Market for Registrant's Common Equity",
+    "6": "[Reserved] / Selected Financial Data",
+    "7": "Management's Discussion and Analysis",
     "7A": "Quantitative and Qualitative Disclosures About Market Risk",
     "8": "Financial Statements and Supplementary Data",
-    "9": "Changes in and Disagreements with Accountants", "9A": "Controls and Procedures",
-    "9B": "Other Information", "9C": "Foreign Jurisdiction Inspections",
+    "9": "Changes in and Disagreements with Accountants",
+    "9A": "Controls and Procedures",
+    "9B": "Other Information",
+    "9C": "Foreign Jurisdiction Inspections",
     "10": "Directors, Executive Officers and Corporate Governance",
-    "11": "Executive Compensation", "12": "Security Ownership",
-    "13": "Certain Relationships and Related Transactions", "14": "Principal Accountant Fees",
-    "15": "Exhibits, Financial Statement Schedules", "16": "Form 10-K Summary",
+    "11": "Executive Compensation",
+    "12": "Security Ownership",
+    "13": "Certain Relationships and Related Transactions",
+    "14": "Principal Accountant Fees",
+    "15": "Exhibits, Financial Statement Schedules",
+    "16": "Form 10-K Summary",
 }
 
 
 @dataclass
 class Section:
-    item: str      # "1", "1A", "7A", ...
-    part: str      # "I" | "II" | "III" | "IV"
+    item: str  # "1", "1A", "7A", ...
+    part: str  # "I" | "II" | "III" | "IV"
     title: str
     text: str
     resolved_from: str | None = None  # item that physically held this body ("15")
@@ -186,8 +204,9 @@ def _clean_title(item: str, raw: str) -> str:
     return title
 
 
-def parse_html(html: str, min_section_chars: int = 200,
-               pointer_chars: int = 5_000) -> list[Section]:
+def parse_html(
+    html: str, min_section_chars: int = 200, pointer_chars: int = 5_000
+) -> list[Section]:
     """Parse 10-K HTML into ordered top-level Item sections.
 
     Item 7/8 bodies under `pointer_chars` are treated as pointer stubs and
@@ -251,8 +270,7 @@ def parse_html(html: str, min_section_chars: int = 200,
     def _pick(occs: list[tuple[int, str]]) -> tuple[int, str]:
         winner = max(occs, key=lambda lr: body_len(lr[0]))
         if not winner[1].strip():
-            titled = [lr for lr in occs
-                      if lr[1].strip() and body_len(lr[0]) >= min_section_chars]
+            titled = [lr for lr in occs if lr[1].strip() and body_len(lr[0]) >= min_section_chars]
             if titled:
                 return max(titled, key=lambda lr: body_len(lr[0]))
         return winner
@@ -269,8 +287,14 @@ def parse_html(html: str, min_section_chars: int = 200,
     # LEAVE it as chosen — that is a genuinely messy layout (Days 3-5), not a
     # back-reference, and dropping it would lose content. Already-monotonic filings
     # (the common case) are left exactly as chosen above.
-    chosen = sorted(((item, ln, rest) for item, (ln, rest) in best.items()
-                     if body_len(ln) >= min_section_chars), key=lambda c: c[1])
+    chosen = sorted(
+        (
+            (item, ln, rest)
+            for item, (ln, rest) in best.items()
+            if body_len(ln) >= min_section_chars
+        ),
+        key=lambda c: c[1],
+    )
     keys = [_item_key(c[0]) for c in chosen]
     m = len(chosen)
     length = [1] * m
@@ -305,8 +329,7 @@ def parse_html(html: str, min_section_chars: int = 200,
     spine = sorted(((item, ln, rest) for item, (ln, rest) in best.items()), key=lambda c: c[1])
     bounds = [c[1] for c in spine] + [len(lines)]
     entries: list[list] = [  # [item, title_rest, ranges, resolved_from]
-        [item, rest, [(ln, bounds[pos + 1])], None]
-        for pos, (item, ln, rest) in enumerate(spine)
+        [item, rest, [(ln, bounds[pos + 1])], None] for pos, (item, ln, rest) in enumerate(spine)
     ]
 
     _resolve_pointer_stubs(entries, lines, cum, pointer_chars)
@@ -316,13 +339,17 @@ def parse_html(html: str, min_section_chars: int = 200,
         text = "\n".join("\n".join(lines[a:b]) for a, b in ranges)
         if len(text) < min_section_chars:  # drop pointer/ghost stubs with no real body
             continue
-        sections.append(Section(item, _part_for(_item_key(item)[0]),
-                                 _clean_title(item, rest), text, resolved_from))
+        sections.append(
+            Section(
+                item, _part_for(_item_key(item)[0]), _clean_title(item, rest), text, resolved_from
+            )
+        )
     return sections
 
 
-def _resolve_pointer_stubs(entries: list[list], lines: list[str],
-                            cum: list[int], pointer_chars: int) -> None:
+def _resolve_pointer_stubs(
+    entries: list[list], lines: list[str], cum: list[int], pointer_chars: int
+) -> None:
     """Attach the real MD&A / financial-statements block to Item 7/8 pointer stubs.
 
     Item 8 resolves first: when both items point into the same back-matter block
@@ -330,6 +357,7 @@ def _resolve_pointer_stubs(entries: list[list], lines: list[str],
     A carved range moves — never copies — so no line lands in two sections; text
     after a block-end marker (signatures, exhibit index) stays with the host.
     """
+
     def span(a: int, b: int) -> int:
         return cum[b] - cum[a]
 
@@ -367,21 +395,22 @@ def _resolve_pointer_stubs(entries: list[list], lines: list[str],
         i, host, r = hit
         a, b = host[2][r]
         end = next((j for j in range(i + 1, b) if _is_block_end(lines, j)), b)
-        host[2][r:r + 1] = [rng for rng in ((a, i), (end, b)) if rng[0] < rng[1]]
+        host[2][r : r + 1] = [rng for rng in ((a, i), (end, b)) if rng[0] < rng[1]]
         if ent:
             ent[2].append((i, end))  # pointer text stays as the section's preamble
             ent[3] = host[0]
         else:
             tkey = _item_key(target)
-            pos = max((k + 1 for k, e in enumerate(entries) if _item_key(e[0]) < tkey),
-                      default=0)
+            pos = max((k + 1 for k, e in enumerate(entries) if _item_key(e[0]) < tkey), default=0)
             entries.insert(pos, [target, "", [(i, end)], host[0]])
 
 
-def parse_file(path: str | Path, min_section_chars: int = 200,
-               pointer_chars: int = 5_000) -> list[Section]:
-    return parse_html(Path(path).read_text(encoding="utf-8", errors="replace"),
-                      min_section_chars, pointer_chars)
+def parse_file(
+    path: str | Path, min_section_chars: int = 200, pointer_chars: int = 5_000
+) -> list[Section]:
+    return parse_html(
+        Path(path).read_text(encoding="utf-8", errors="replace"), min_section_chars, pointer_chars
+    )
 
 
 def parse_pdf(path: str | Path) -> str:
@@ -407,9 +436,14 @@ def sections_from_text(text: str, max_section_chars: int = 6_000) -> list[Sectio
     def flush() -> None:
         nonlocal cur, cur_len
         if cur:
-            sections.append(Section(item=f"S{len(sections) + 1}", part="I",
-                                    title=f"Part {len(sections) + 1}",
-                                    text="\n".join(cur)))
+            sections.append(
+                Section(
+                    item=f"S{len(sections) + 1}",
+                    part="I",
+                    title=f"Part {len(sections) + 1}",
+                    text="\n".join(cur),
+                )
+            )
             cur, cur_len = [], 0
 
     for ln in lines:
