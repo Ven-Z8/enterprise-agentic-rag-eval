@@ -43,10 +43,13 @@ verify_retries = 1
 model = "openai/gpt-5.6-luna"
 
 [runtime]
-model = "qwen/qwen3.8-flash"
+model = "google/gemini-2.5-flash"
 
 [extraction]
-model = "qwen/qwen3.8-flash"
+model = "google/gemini-2.5-flash"
+
+[converse]
+model = "google/gemini-2.5-flash"
 
 [eval]
 # Keep aligned with ../p1-eval-harness/config.toml. Recalibrate before scoring.

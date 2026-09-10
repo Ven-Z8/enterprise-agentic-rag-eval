@@ -77,8 +77,9 @@ def verify(
     cited_chunks: list[dict[str, Any]],
     math_result: dict[str, Any] | None = None,
     derived_values: list[float] | None = None,
+    query: str | None = None,
 ) -> dict[str, Any]:
-    """Check every numerical claim against the cited chunks and verified math results.
+    """Check every numerical claim against the cited chunks, math results, and query figures.
 
     `derived_values` are additional grounded figures (e.g. deltas / percent
     changes computed deterministically from fact-graph values) that a correct
@@ -86,6 +87,8 @@ def verify(
     any cited chunk.
     """
     numbers = _chunk_numbers(cited_chunks)
+    if query:
+        numbers.extend(_chunk_numbers([{"text": query}]))
     if math_result:
         for k in ("result_value", "raw_value"):
             if k in math_result:

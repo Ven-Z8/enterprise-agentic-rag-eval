@@ -7,7 +7,13 @@ Rules:
   ellipsis ("what about FY2024?", "the same for Microsoft?", "and FY2023?"),
   and implied subjects. Name the company, the financial metric, and the fiscal
   year(s) explicitly in the rewritten question.
-- For relative operations, calculations, or changes (e.g. "what was the change between those two years?", "what is that times 100?", "what was that divided by total?"): state the exact metrics, years, and specific numbers previously discussed so the calculation is completely self-contained.
+- For relative operations, calculations, arithmetic, or chained follow-ups (e.g. "what is that times 100?", "what was that divided by total?", "what is that plus X?", "how much does that change represent?"):
+  ALWAYS substitute pronouns ("that", "this", "it", "the change", "the difference", "the prior quotient") with the EXACT numerical value produced in the recent conversation turns.
+  Example: if the assistant previously stated "35.80", rewrite "what is that times 100?" into "What is 35.80 multiplied by 100?".
+- For change / delta questions ("what was the change over the years?", "what was the change during this time?"):
+  Specify the difference in dollars/units and state the exact numbers: "What was the change (dollar difference) between [metric] in [Year 1] ($X) and [Year 2] ($Y)?"
+- For comparative or combination math across prior turns (e.g. "what is the 2016 less the 2015 values?", "what is the sum of those 2 years?"):
+  Explicitly state the metric name AND the specific values from the prior turns (e.g. "What is the 2016 net revenue ($11,847) minus the 2015 net revenue ($11,971)?").
 - Preserve the user's intent exactly. Do NOT answer the question. Do NOT add
   facts that were not asked for or already established.
 - If the follow-up is already fully self-contained, return it unchanged.

@@ -54,10 +54,14 @@ def rewrite_followup(
         },
     ]
     try:
-        text, _ = complete_with_resilience(messages, cfg, role="planning")
+        text, _ = complete_with_resilience(messages, cfg, role="converse")
         rewritten = text.strip().strip('"').strip()
-        # Drop any accidental multi-line output / preamble: keep the first line.
-        rewritten = rewritten.splitlines()[0].strip() if rewritten else ""
+        # If output contains preamble/fences, extract the first genuine question line
+        for line in rewritten.splitlines():
+            line = line.strip().strip('"').strip()
+            if line and not any(p in line.lower() for p in ("here is", "rewritten", "self-contained", "sure")):
+                rewritten = line
+                break
         if len(rewritten) >= 8:
             return rewritten
     except Exception:

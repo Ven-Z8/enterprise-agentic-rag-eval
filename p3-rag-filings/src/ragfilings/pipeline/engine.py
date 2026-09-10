@@ -36,11 +36,42 @@ def _parse_json(text: str) -> dict[str, Any] | None:
     start, end = clean_text.find("{"), clean_text.rfind("}")
     if start == -1 or end <= start:
         return None
+    snippet = clean_text[start : end + 1]
+    data = None
     try:
-        data = json.loads(clean_text[start : end + 1])
+        data = json.loads(snippet)
     except json.JSONDecodeError:
+        cleaned_snippet = re.sub(r',\s*([\]\}])', r'\1', snippet)
+        cleaned_snippet = re.sub(r'//[^\n]*', '', cleaned_snippet)
+        try:
+            data = json.loads(cleaned_snippet)
+        except json.JSONDecodeError:
+            try:
+                import ast
+
+                data = ast.literal_eval(cleaned_snippet)
+            except Exception:
+                m = re.search(
+                    r'"(?:answer|result|value|output|percentage_change|change)"\s*:\s*(?:"([^"]*)"?|([^,\n}]+))',
+                    snippet,
+                )
+                if m:
+                    ans_val = (m.group(1) or m.group(2) or "").strip()
+                    if ans_val and ans_val != "null":
+                        return {"answer": ans_val, "citations": [], "reason": None}
+                return None
+
+    if not isinstance(data, dict):
         return None
-    return data if isinstance(data, dict) and "answer" in data else None
+    if "answer" in data:
+        return data
+    for k in ("result", "final_answer", "response", "output", "value", "percentage_change", "change"):
+        if k in data:
+            data["answer"] = data[k]
+            data.setdefault("citations", [])
+            data.setdefault("reason", None)
+            return data
+    return None
 
 
 def _complete(
@@ -217,17 +248,46 @@ def answer(
                 if attempt == 0:
                     msgs = msgs + [
                         {"role": "assistant", "content": text},
-                        {"role": "user", "content": "Reply with ONLY the JSON object."},
+                        {
+                            "role": "user",
+                            "content": (
+                                'Reply with ONLY a valid JSON object matching:\n'
+                                '{"answer": "<exact_number_or_null>", "citations": ["<chunk_id>"], "reason": null}'
+                            ),
+                        },
                     ]
                 else:
                     clean = text.strip()
                     if clean:
-                        m = re.search(r'"answer"\s*:\s*(?:"([^"]*)"?|([^,\n}]+))', clean)
+                        m = re.search(
+                            r'"(?:answer|result|value|output|percentage_change|change)"\s*:\s*(?:"([^"]*)"?|([^,\n}]+))',
+                            clean,
+                        )
                         if m:
                             ans_val = (m.group(1) or m.group(2) or "").strip()
-                            if ans_val and ans_val != "null":
+                            if ans_val.lower() in ("null", "none", ""):
                                 return {
-                                    "answer": ans_val,
+                                    "answer": None,
+                                    "citations": [],
+                                    "reason": "model refused in raw json",
+                                }
+                            return {
+                                "answer": ans_val,
+                                "citations": [h["chunk"]["id"] for h in active_hits[:1]],
+                                "reason": None,
+                            }
+                        # Soft fallback for concluding financial prose with numeric answer
+                        if not any(
+                            marker in clean.lower()
+                            for marker in ("no json", "invalid", "error", '"answer": null', '"answer":null')
+                        ):
+                            num_match = re.search(r'([-+]?\$?\d[\d,]*(?:\.\d+)?%?)', clean)
+                            if num_match and any(
+                                word in clean.lower()
+                                for word in ("is", "was", "increase", "decrease", "change", "total", "percent")
+                            ):
+                                return {
+                                    "answer": clean,
                                     "citations": [h["chunk"]["id"] for h in active_hits[:1]],
                                     "reason": None,
                                 }
@@ -248,7 +308,11 @@ def answer(
             cited = [by_id[c] for c in valid] or [h["chunk"] for h in active_hits]
 
             checked = pack.verify(
-                str(data["answer"]), cited, math_result=math_result, derived_values=derived_values
+                str(data["answer"]),
+                cited,
+                math_result=math_result,
+                derived_values=derived_values,
+                query=query,
             )
             checked["citations"] = valid
             checked["invalid_citations"] = invalid

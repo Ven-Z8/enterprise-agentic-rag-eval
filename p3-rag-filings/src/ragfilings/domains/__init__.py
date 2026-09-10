@@ -92,6 +92,7 @@ class DomainPack(ABC):
         chunks: list[dict[str, Any]],
         math_result: dict[str, Any] | None = None,
         derived_values: list[float] | None = None,
+        query: str | None = None,
     ) -> dict[str, Any]:
         """Check every domain claim in the answer against the cited chunks.
 

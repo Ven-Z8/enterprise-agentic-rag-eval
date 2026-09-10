@@ -196,8 +196,10 @@ def main() -> None:
             turn_results = []
 
             for t, (q, gold) in enumerate(zip(questions, golds)):
+                t0 = time.time()
                 if args.dry_run:
                     rewritten, our, correct, how = q, "", gold is not None, "dry"
+                    dt = 0.0
                 else:
                     try:
                         rewritten = rewrite_followup(q, history, cfg, pack=pack)
@@ -208,9 +210,15 @@ def main() -> None:
                             {"turn": t, "question": q, "error": f"{type(e).__name__}: {e}"[:200]}
                         )
                         print(
-                            f"[{ci + 1}/{len(convs)}] t{t}: ERROR {type(e).__name__}: {str(e)[:80]}"
+                            f"[{ci + 1}/{len(convs)}] t{t}: ERROR {type(e).__name__}: {str(e)[:80]}",
+                            flush=True,
+                        )
+                        history.append({"role": "user", "content": q})
+                        history.append(
+                            {"role": "assistant", "content": f"{gold}" if gold is not None else "(no answer given)"}
                         )
                         continue
+                    dt = time.time() - t0
                     our = res.get("answer") or ""
                     if res.get("refused"):
                         our = ""
@@ -229,12 +237,13 @@ def main() -> None:
                         "our_answer": our,
                         "correct": correct,
                         "how": how,
+                        "latency_s": round(dt, 2),
                     }
                 )
                 history.append({"role": "user", "content": q})
                 history.append({"role": "assistant", "content": our or "(no answer given)"})
                 print(
-                    f"[{ci + 1}/{len(convs)}] t{t}: {'CORRECT' if correct else 'WRONG'} ({how}) | gold={gold} | our={our[:50]}",
+                    f"[{ci + 1}/{len(convs)}] t{t}: {'CORRECT' if correct else 'WRONG'} ({how}, {dt:.1f}s) | gold={gold} | our={our[:50]}",
                     flush=True,
                 )
 

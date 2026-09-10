@@ -78,6 +78,7 @@ class LegalPack(DomainPack):
         chunks: list[dict[str, Any]],
         math_result: dict[str, Any] | None = None,
         derived_values: list[float] | None = None,
+        query: str | None = None,
     ) -> dict[str, Any]:
         return verify_claims(
             answer_text, chunks, math_result=math_result, derived_values=derived_values

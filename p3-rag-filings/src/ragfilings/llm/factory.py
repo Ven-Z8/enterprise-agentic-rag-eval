@@ -20,7 +20,7 @@ from .types import ChatMessage
 
 logger = logging.getLogger(__name__)
 
-_ROLES = ("generation", "extraction", "planning", "runtime", "judge")
+_ROLES = ("generation", "extraction", "planning", "runtime", "judge", "converse")
 
 
 def get_model_for_role(cfg: dict[str, Any] | None, role: str = "generation") -> str | None:
@@ -31,8 +31,8 @@ def get_model_for_role(cfg: dict[str, Any] | None, role: str = "generation") -> 
     model = (section or {}).get("model") if section else None
     if model is None and role == "judge":
         model = cfg.get("eval", {}).get("judge_model")
-    if model is None and role in ("planning", "runtime"):
-        model = cfg.get("extraction", {}).get("model")
+    if model is None and role in ("planning", "runtime", "converse"):
+        model = cfg.get("runtime", {}).get("model") or cfg.get("extraction", {}).get("model")
     if model is None and role != "generation":
         model = cfg.get("generation", {}).get("model")
     return model

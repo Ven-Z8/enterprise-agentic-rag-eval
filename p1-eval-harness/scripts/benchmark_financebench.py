@@ -184,7 +184,8 @@ def main() -> None:
             flag = "" if not doc_unavailable else " [doc-not-indexed]"
             print(
                 f"[{i + 1}/{len(recs)}] {qid}: "
-                f"{'CORRECT' if correct else 'WRONG'}{flag} ({dt:.1f}s)"
+                f"{'CORRECT' if correct else 'WRONG'}{flag} ({dt:.1f}s)",
+                flush=True,
             )
             out.write(
                 json.dumps(
