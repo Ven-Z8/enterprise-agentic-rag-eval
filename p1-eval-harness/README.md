@@ -35,11 +35,9 @@ trends — answers that live in no single chunk):
 | Retrieval-only (no graph) | 37.8% |
 | + fact-graph augmentation | **84.4%** |
 
-**External benchmark:** 81.3% (122/150) on **FinanceBench** in
-reasoning-over-evidence mode (each question is handed its official evidence
-excerpt, and the system grounds + verifies + computes on top of it; the
-retrieval step is the one thing isolated out) —
-`scripts/benchmark_financebench.py`.
+**External benchmarks:**
+- **FinanceBench**: **84.0% (126/150)** in reasoning-over-evidence mode (official evidence excerpt provided; system grounds + verifies + computes on top of it; retrieval step isolated) — `scripts/benchmark_financebench.py`.
+- **ConvFinQA**: **69.7% turn accuracy (129/185)** and **52.0% full conversation accuracy (26/50)** over chained arithmetic & follow-up dialogues with 0 JSON errors — `scripts/benchmark_convfinqa.py`.
 
 **Judge calibration:** the G-Eval judge agrees with hand labels on
 **45/52 = 86.5%** of cases (Cohen's kappa 0.669) — measured on 52

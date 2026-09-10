@@ -10,9 +10,7 @@ on genuinely messy documents — 25 real SEC 10-K filings full of nested tables,
 footnotes, incorporated-by-reference sections, 53-week fiscal years, and column
 orders that flip between companies — **measured, with the failures included.**
 
-> **External benchmark:** 81.3% (122/150) on **FinanceBench** (real
-> public-company questions) in reasoning-over-evidence mode — see
-> [`docs/financebench_v1.md`](docs/financebench_v1.md).
+> **External benchmarks:** **84.0% (126/150)** on **FinanceBench** (real public-company questions in reasoning-over-evidence mode) and **69.7% turn accuracy (52.0% all-correct conversations)** on **ConvFinQA** (multi-turn conversational financial reasoning with chained calculations).
 
 ## Headline (measured 2026-09-03, all-free models, $0.00)
 
