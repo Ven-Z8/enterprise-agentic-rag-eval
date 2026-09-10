@@ -42,8 +42,13 @@ def rewrite_followup(
     if not history or not query:
         return query
 
+    system_prompt = (
+        pack.get_phase_instructions("converse")
+        if hasattr(pack, "get_phase_instructions")
+        else pack.prompt("converse_rewrite")
+    )
     messages = [
-        {"role": "system", "content": pack.prompt("converse_rewrite")},
+        {"role": "system", "content": system_prompt},
         {
             "role": "user",
             "content": (
@@ -53,6 +58,17 @@ def rewrite_followup(
             ),
         },
     ]
+    try:
+        from ..llm import complete_structured
+        from ..schemas import RewrittenQuery
+
+        resp, _ = complete_structured(messages, RewrittenQuery, cfg, role="converse")
+        rewritten = resp.rewritten_query.strip().strip('"').strip()
+        if len(rewritten) >= 8:
+            return rewritten
+    except Exception:
+        pass
+
     try:
         text, _ = complete_with_resilience(messages, cfg, role="converse")
         rewritten = text.strip().strip('"').strip()

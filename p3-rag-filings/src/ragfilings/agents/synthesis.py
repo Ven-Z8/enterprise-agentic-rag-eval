@@ -16,6 +16,7 @@ def synthesize(
     usage: dict[str, Any],
     math_result: dict[str, Any] | None = None,
     feedback: str | None = None,
+    system_prompt: str | None = None,
 ) -> SynthesizedAnswer:
     """Synthesize a cited answer from hits. Adds real usage into `usage`."""
     context = "\n\n".join(f"[{h['chunk']['id']}]\n{h['chunk']['text']}" for h in hits)
@@ -30,8 +31,9 @@ def synthesize(
     if feedback:
         user_content += f"\n\nAUDITOR FEEDBACK (fix these issues):\n{feedback}"
 
+    system = system_prompt or PromptRegistry.get_system_synthesis()
     messages = [
-        {"role": "system", "content": PromptRegistry.get_system_synthesis()},
+        {"role": "system", "content": system},
         {"role": "user", "content": user_content},
     ]
     instance, u = complete_structured(messages, SynthesizedAnswer, cfg, role="generation")

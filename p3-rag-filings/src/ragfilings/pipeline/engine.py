@@ -15,8 +15,15 @@ from pathlib import Path
 from typing import Any
 
 from ..domains import DomainPack, get_pack
-from ..llm import BaseLLMClient, complete_with_resilience, get_llm_client
+from ..llm import (
+    BaseLLMClient,
+    OpenRouterClient,
+    complete_structured,
+    complete_with_resilience,
+    get_llm_client,
+)
 from ..retrieval import Index, confidence, embed_text, load_index
+from ..schemas import SynthesisResponse
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +33,7 @@ class GenerationError(RuntimeError):
 
 
 def _parse_json(text: str) -> dict[str, Any] | None:
-    """Tolerantly extract and parse a JSON object from model prose."""
+    """Tolerantly extract and validate a SynthesisResponse from model prose."""
     clean_text = text
     if "```json" in clean_text:
         clean_text = clean_text.split("```json")[1].split("```")[0]
@@ -51,25 +58,15 @@ def _parse_json(text: str) -> dict[str, Any] | None:
 
                 data = ast.literal_eval(cleaned_snippet)
             except Exception:
-                m = re.search(
-                    r'"(?:answer|result|value|output|percentage_change|change)"\s*:\s*(?:"([^"]*)"?|([^,\n}]+))',
-                    snippet,
-                )
-                if m:
-                    ans_val = (m.group(1) or m.group(2) or "").strip()
-                    if ans_val and ans_val != "null":
-                        return {"answer": ans_val, "citations": [], "reason": None}
                 return None
 
     if not isinstance(data, dict):
         return None
     if "answer" in data:
         return data
-    for k in ("result", "final_answer", "response", "output", "value", "percentage_change", "change"):
+    for k in ("result", "final_answer", "response", "output", "value"):
         if k in data:
             data["answer"] = data[k]
-            data.setdefault("citations", [])
-            data.setdefault("reason", None)
             return data
     return None
 
@@ -126,8 +123,12 @@ def _query_to_dict(q: Any) -> dict[str, Any]:
 
 
 def _is_real_answer(data: dict[str, Any]) -> bool:
+    if data.get("status") == "refused":
+        return False
     ans = data.get("answer")
-    return ans is not None and not _is_refusal_text(str(ans))
+    if ans is None or "<exact" in str(ans).lower():
+        return False
+    return not _is_refusal_text(str(ans))
 
 
 def answer(
@@ -227,13 +228,38 @@ def answer(
         if graph_block:
             context += f"\n\n{graph_block}"
 
+        system_prompt = (
+            pack.get_phase_instructions("synthesis")
+            if hasattr(pack, "get_phase_instructions")
+            else pack.prompt("synthesis")
+        )
         msgs = [
-            {"role": "system", "content": pack.prompt("synthesis")},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"Context chunks:\n\n{context}\n\nQuestion: {query}"},
         ]
 
         def _call_model() -> dict[str, Any]:
             nonlocal msgs
+            if isinstance(llm_client, OpenRouterClient) and _complete is complete_with_resilience:
+                try:
+                    resp, u = complete_structured(
+                        msgs,
+                        SynthesisResponse,
+                        cfg,
+                        role="generation",
+                        client=llm_client,
+                        max_retries=2,
+                    )
+                    for k in ("input_tokens", "output_tokens", "cost_usd"):
+                        usage[k] += u.get(k, 0)
+                    usage["calls"] += u.get("calls", 1)
+                    data = resp.model_dump()
+                    if resp.status == "refused" or _is_refusal_text(str(resp.answer or "")):
+                        data["answer"] = None
+                    return data
+                except Exception as exc:
+                    logger.warning("complete_structured fallback due to: %s", exc)
+
             for attempt in range(2):
                 text, u = _complete(msgs, cfg, client=llm_client)
                 for k in ("input_tokens", "output_tokens", "cost_usd"):
@@ -260,33 +286,32 @@ def answer(
                     clean = text.strip()
                     if clean:
                         m = re.search(
-                            r'"(?:answer|result|value|output|percentage_change|change)"\s*:\s*(?:"([^"]*)"?|([^,\n}]+))',
+                            r'"(?:answer|result|value|output)"\s*:\s*(?:"([^"]*)"?|([^,\n}]+))',
                             clean,
                         )
                         if m:
                             ans_val = (m.group(1) or m.group(2) or "").strip()
                             if ans_val.lower() in ("null", "none", ""):
                                 return {
+                                    "status": "refused",
                                     "answer": None,
                                     "citations": [],
                                     "reason": "model refused in raw json",
                                 }
                             return {
+                                "status": "answered",
                                 "answer": ans_val,
                                 "citations": [h["chunk"]["id"] for h in active_hits[:1]],
                                 "reason": None,
                             }
-                        # Soft fallback for concluding financial prose with numeric answer
                         if not any(
                             marker in clean.lower()
                             for marker in ("no json", "invalid", "error", '"answer": null', '"answer":null')
                         ):
                             num_match = re.search(r'([-+]?\$?\d[\d,]*(?:\.\d+)?%?)', clean)
-                            if num_match and any(
-                                word in clean.lower()
-                                for word in ("is", "was", "increase", "decrease", "change", "total", "percent")
-                            ):
+                            if num_match:
                                 return {
+                                    "status": "answered",
                                     "answer": clean,
                                     "citations": [h["chunk"]["id"] for h in active_hits[:1]],
                                     "reason": None,
@@ -449,69 +474,23 @@ def ask(
     top_k: int | None = None,
     memory: Any = None,
 ) -> dict[str, Any]:
-    """End-to-end RAG pipeline execution for one domain pack."""
-    pack = get_pack(domain)
+    """Execute RAG pipeline via the unified LangGraph MultiAgentOrchestrator."""
     if index is None:
         index = load_index(cfg["embedding"]["index_dir"], cfg["embedding"]["model"])
 
-    strat = strategy or cfg.get("retrieval", {}).get("strategy", "dense")
-    base_strat, use_graph = split_graph_strategy(strat)
+    strat = strategy or cfg.get("retrieval", {}).get("strategy", "hybrid_rerank")
+    from .orchestrator import MultiAgentOrchestrator
 
-    if base_strat == "agent_react":
-        from .orchestrator import MultiAgentOrchestrator
-
-        orch = MultiAgentOrchestrator(cfg, memory=memory)
-        res = orch.run(query, index, strategy="hybrid_rerank")
-        res["strategy"] = "agent_react"
-        res["model"] = cfg.get("generation", {}).get("model", "")
-        if res.get("refused"):
-            log_refusal(refusal_log, query, res, strat)
-        return res
-
-    rescuer = None
-    if use_graph:
-        rescuer = pack.load_rescue(cfg, index)
-
-    t0 = time.perf_counter()
-    effective_top_k = top_k if top_k is not None else cfg.get("retrieval", {}).get("top_k", 8)
-    rerank_candidates = cfg.get("retrieval", {}).get("rerank_candidates", 25)
-
-    if pack.needs_decomposition(query):
-        sub_queries = pack.decompose_query(query, cfg)
-        hits: list[dict[str, Any]] = []
-        seen_ids: set[str] = set()
-        for sq in sub_queries:
-            sq_hits = index.search(
-                sq,
-                base_strat,
-                effective_top_k,
-                filters=filters,
-                rerank_candidates=rerank_candidates,
-                reranker_name=cfg.get("retrieval", {}).get("reranker"),
-            )
-            for h in sq_hits:
-                cid = h["chunk"]["id"]
-                if cid not in seen_ids:
-                    hits.append(h)
-                    seen_ids.add(cid)
-        hits = sorted(hits, key=lambda x: x["score"], reverse=True)[:effective_top_k]
-    else:
-        hits = index.search(
-            query,
-            base_strat,
-            effective_top_k,
-            filters=filters,
-            rerank_candidates=rerank_candidates,
-            reranker_name=cfg.get("retrieval", {}).get("reranker"),
-        )
-
-    result = answer(query, hits, cfg, graph_rescue=rescuer, pack=pack)
-    result["latency_ms"] = (time.perf_counter() - t0) * 1000.0
-    result["strategy"] = strat
-    result["hits"] = result.pop("hits", hits)
-    result["model"] = cfg.get("generation", {}).get("model", "")
-
-    if result.get("refused"):
-        log_refusal(refusal_log, query, result, strat)
-
-    return result
+    orch = MultiAgentOrchestrator(cfg, memory=memory)
+    res = orch.run(
+        query,
+        index,
+        strategy=strat,
+        domain=domain,
+        filters=filters,
+        top_k=top_k,
+    )
+    res["model"] = cfg.get("generation", {}).get("model", "")
+    if res.get("refused"):
+        log_refusal(refusal_log, query, res, strat)
+    return res

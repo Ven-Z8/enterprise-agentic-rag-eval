@@ -186,7 +186,7 @@ class Index:
 
 def confidence(hits: list[dict[str, Any]]) -> float:
     """Retrieval confidence = best dense cosine among the hits."""
-    return max((h["dense_sim"] for h in hits), default=0.0)
+    return max((h.get("dense_sim", h.get("score", 0.0)) for h in hits), default=0.0)
 
 
 def build_index(chunks: list[dict[str, Any]], index_dir: str | Path, model_name: str) -> None:

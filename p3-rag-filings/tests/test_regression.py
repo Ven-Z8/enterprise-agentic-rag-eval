@@ -79,10 +79,26 @@ class LowConfidenceIndex:
 
 
 def test_unanswerable_low_confidence_refuses_and_logs(tmp_path, monkeypatch):
+    from ragfilings.pipeline import orchestrator as orch_mod
+    from ragfilings.schemas import QueryPlan
+
     def boom(*a, **k):
         raise AssertionError("model must not be called on a gate refusal")
 
     monkeypatch.setattr(generation, "_complete", boom)
+
+    # Mock plan_query to avoid LLM call — return a simple plan
+    fake_plan = QueryPlan(
+        intent="question",
+        reasoning="test",
+        sub_questions=[],
+        ticker=None,
+        fiscal_year=None,
+    )
+    monkeypatch.setattr(
+        orch_mod, "plan_query", lambda *a, **kw: (fake_plan, None)
+    )
+
     cfg = load()
     log = tmp_path / "refusals.jsonl"
     result = generation.ask(
@@ -96,3 +112,4 @@ def test_unanswerable_low_confidence_refuses_and_logs(tmp_path, monkeypatch):
     entry = json.loads(log.read_text().strip())
     assert entry["reason"] == result["refusal_reason"]
     assert entry["strategy"] == "dense" and "Tesla" in entry["query"]
+

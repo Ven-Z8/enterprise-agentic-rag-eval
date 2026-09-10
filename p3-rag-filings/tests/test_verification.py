@@ -5,7 +5,7 @@ financial tables — so the matcher must handle unit scaling ($416.2 billion vs
 a table row in millions) without matching everything (years, list counts).
 """
 
-from ragfilings.tools.verification import extract_claims, verify
+from ragfilings.domains.financial.verification import extract_claims, verify
 
 CHUNK = {
     "id": "AAPL_2025_10K:Item8:c007",

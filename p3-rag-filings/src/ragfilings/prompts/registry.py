@@ -12,7 +12,7 @@ _PROMPT_ROOT = Path(__file__).resolve().parent
 # Prompt templates live with the domain pack that owns them; the financial
 # pack's set is the engine default. Other packs load their own templates via
 # their DomainPack.prompt() implementation.
-_TEMPLATES_DIR = _PROMPT_ROOT.parent / "domains" / "financial" / "prompts"
+_SKILLS_PHASES_DIR = _PROMPT_ROOT.parent / "skills" / "financial" / "phases"
 
 
 class PromptRegistry:
@@ -20,18 +20,28 @@ class PromptRegistry:
 
     _cache: dict[str, str] = {}
 
+    _ALIASES: dict[str, str] = {
+        "query_decompose": "planning",
+        "converse_rewrite": "converse",
+    }
+
     @classmethod
     def get_raw(cls, name: str) -> str:
         """Load raw prompt template string by name."""
         if name in cls._cache:
             return cls._cache[name]
 
-        candidates = [
-            _TEMPLATES_DIR / f"{name}.prompt",
-            _TEMPLATES_DIR / f"{name}.txt",
-            _PROMPT_ROOT / f"{name}.prompt",
-            _PROMPT_ROOT / f"{name}.txt",
-        ]
+        target_names = [name]
+        if name in cls._ALIASES:
+            target_names.append(cls._ALIASES[name])
+
+        candidates = []
+        for n in target_names:
+            candidates.extend([
+                _SKILLS_PHASES_DIR / f"{n}.md",
+                _SKILLS_PHASES_DIR / f"{n}.prompt",
+                _SKILLS_PHASES_DIR / f"{n}.txt",
+            ])
 
         for p in candidates:
             if p.exists():

@@ -32,8 +32,8 @@ must change.
 ## History
 
 - **v0 (retired 2026-08-30):** 91 cases across `golden_set_v0_batch1..4`,
-  `brutal_20`, `financebench_10k`, `benchmarks/`. An audit
-  (`audit_v0_retired.json`) found the expected answers were never verified
+  `brutal_20`, `financebench_10k`, `benchmarks/`. A systematic audit
+  found the expected answers were never verified
   against the filings: fabricated figures (AMZN net sales $637,982 — actual
   FY2025: $716,924M), wrong-year figures (JNJ R&D $17,175 — actual FY2025:
   $14,665M), transcription errors (WMT $680,984 — actual: $680,985M). The

@@ -70,6 +70,8 @@ def test_qwen_structured_requests_disable_thinking(monkeypatch):
 @pytest.mark.parametrize("decompose", [False, True])
 def test_standard_pipeline_passes_configured_reranker(monkeypatch, decompose):
     from ragfilings.pipeline import engine
+    from ragfilings.pipeline import orchestrator as orch_mod
+    from ragfilings.schemas import QueryPlan
 
     calls = []
 
@@ -85,6 +87,21 @@ def test_standard_pipeline_passes_configured_reranker(monkeypatch, decompose):
     monkeypatch.setattr(
         engine, "answer", lambda *args, **kwargs: {"refused": False, "answer": "ok"}
     )
+
+    # Mock plan_query to control sub-question decomposition
+    sub_qs = ["part one", "part two"] if decompose else []
+    fake_plan = QueryPlan(
+        intent="question",
+        reasoning="test",
+        sub_questions=sub_qs,
+        ticker=None,
+        fiscal_year=None,
+    )
+
+    monkeypatch.setattr(
+        orch_mod, "plan_query", lambda *a, **kw: (fake_plan, None)
+    )
+
     engine.ask(
         "question",
         {"retrieval": {"reranker": "test/selected"}},
@@ -92,3 +109,4 @@ def test_standard_pipeline_passes_configured_reranker(monkeypatch, decompose):
         strategy="hybrid_rerank",
     )
     assert calls == ["test/selected"] * (2 if decompose else 1)
+

@@ -14,8 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from ..config import load as load_cfg
-from ..graph.builder import FinancialGraphBuilder
-from ..graph.query import GraphQueryEngine
+from ..graph import FinancialGraphBuilder, GraphQueryEngine
 from ..pipeline.converse import rewrite_followup
 from ..pipeline.engine import ask
 from ..pipeline.memory import SessionMemoryManager

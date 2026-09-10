@@ -22,6 +22,7 @@ def audit_answer(
     cfg: dict[str, Any],
     usage: dict[str, Any],
     math_result: dict[str, Any] | None = None,
+    system_prompt: str | None = None,
 ) -> AuditResult:
     """Audit a candidate answer against its cited chunks. Adds real usage."""
     by_id = {h["chunk"]["id"]: h["chunk"] for h in hits}
@@ -49,8 +50,9 @@ def audit_answer(
             "computation are acceptable."
         )
 
+    system = system_prompt or PromptRegistry.get_auditor()
     messages = [
-        {"role": "system", "content": PromptRegistry.get_auditor()},
+        {"role": "system", "content": system},
         {"role": "user", "content": "\n".join(user_parts)},
     ]
     instance, u = complete_structured(messages, AuditResult, cfg, role="runtime")

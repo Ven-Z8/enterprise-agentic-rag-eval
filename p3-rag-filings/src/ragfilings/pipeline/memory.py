@@ -50,16 +50,6 @@ class SessionMemoryManager:
                 )
                 """
             )
-            conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS entity_memory (
-                    entity_key TEXT PRIMARY KEY,
-                    entity_type TEXT NOT NULL,
-                    value_json TEXT NOT NULL,
-                    updated_at TEXT NOT NULL
-                )
-                """
-            )
             conn.commit()
 
     def save_session(

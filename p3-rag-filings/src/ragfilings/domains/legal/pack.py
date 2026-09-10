@@ -12,7 +12,7 @@ from .facts import load_defined_terms
 from .rescue import LegalRescue
 
 _PACK_ROOT = Path(__file__).resolve().parent
-_PROMPTS_DIR = _PACK_ROOT / "prompts"
+_SKILLS_PHASES_DIR = _PACK_ROOT.parent.parent / "skills" / "legal" / "phases"
 _CORPUS_DIR = _PACK_ROOT / "corpus"
 
 _prompt_cache: dict[str, str] = {}
@@ -28,10 +28,17 @@ class LegalPack(DomainPack):
 
     def prompt(self, name: str) -> str:
         if name not in _prompt_cache:
-            path = _PROMPTS_DIR / f"{name}.prompt"
-            if not path.exists():
-                path = _PROMPTS_DIR / f"{name}.txt"
-            _prompt_cache[name] = path.read_text(encoding="utf-8").strip()
+            candidates = [
+                _SKILLS_PHASES_DIR / f"{name}.md",
+                _SKILLS_PHASES_DIR / f"{name}.prompt",
+                _SKILLS_PHASES_DIR / f"{name}.txt",
+            ]
+            for path in candidates:
+                if path.exists():
+                    _prompt_cache[name] = path.read_text(encoding="utf-8").strip()
+                    break
+            else:
+                raise FileNotFoundError(f"Legal prompt '{name}' not found. Searched {candidates}")
         return _prompt_cache[name]
 
     def format_prompt(self, name: str, **kwargs: Any) -> str:

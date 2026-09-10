@@ -8,8 +8,8 @@ prove the financial pack satisfies it with unchanged behavior.
 import pytest
 
 from ragfilings.domains import DomainPack, available_packs, get_pack
-from ragfilings.graph.rescue import GraphRescue
-from ragfilings.tools.verification import verify
+from ragfilings.domains.financial.rescue import GraphRescue
+from ragfilings.domains.financial.verification import verify
 
 
 def test_financial_pack_satisfies_contract():

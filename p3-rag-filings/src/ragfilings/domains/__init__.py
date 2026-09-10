@@ -101,7 +101,13 @@ class DomainPack(ABC):
 
 
 def get_pack(name: str) -> DomainPack:
-    """Load a pack by name (`ragfilings.domains.<name>.PACK`)."""
+    """Load a pack by name (`ragfilings.domains.<name>.PACK` or `ragfilings.skills.<name>`)."""
+    try:
+        from ..skills import get_skill
+
+        return get_skill(name)
+    except Exception:
+        pass
     if name not in _KNOWN_PACKS:
         raise ValueError(f"unknown domain pack {name!r} — available: {', '.join(_KNOWN_PACKS)}")
     module = import_module(f"ragfilings.domains.{name}")
