@@ -435,12 +435,17 @@ def answer(
     }
 
 
-def split_graph_strategy(strategy: str) -> tuple[str, bool]:
-    """`hybrid_rerank_graph` -> ("hybrid_rerank", True): base retrieval plus
-    deterministic fact-graph augmentation of the synthesis context."""
+def split_graph_strategy(strategy: str | None) -> tuple[str, bool]:
+    """Map any strategy to the internal LangGraph pipeline.
+    Internally, the pipeline always uses hybrid_rerank with fact-graph augmentation."""
+    if not strategy or strategy in ("langgraph", "agent", "default", "multi_agent", "pipeline"):
+        return "hybrid_rerank", True
     if strategy.endswith("_graph"):
-        return strategy[: -len("_graph")], True
-    return strategy, False
+        base = strategy[: -len("_graph")]
+        return (base if base in ("dense", "hybrid", "hybrid_rerank") else "hybrid_rerank"), True
+    if strategy in ("dense", "hybrid", "hybrid_rerank"):
+        return strategy, False
+    return "hybrid_rerank", True
 
 
 def log_refusal(path: str | Path, query: str, result: dict[str, Any], strategy: str) -> None:

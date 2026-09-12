@@ -37,7 +37,7 @@ class OpenRouterClient(BaseLLMClient):
     """OpenRouter API client with dynamic usage cost parsing."""
 
     DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
-    DEFAULT_MODEL = "anthropic/claude-sonnet-4.5"
+    DEFAULT_MODEL = "google/gemini-2.5-flash"
 
     def __init__(
         self,

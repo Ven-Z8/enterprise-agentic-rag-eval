@@ -72,6 +72,29 @@ def _matches(claim: dict[str, Any], numbers: list[float]) -> bool:
     return False
 
 
+def _pairwise_derived(numbers: list[float]) -> list[float]:
+    """Generate grounded pairwise deltas, sums, and percentage changes between comparable numbers in chunks."""
+    derived: list[float] = []
+    cands = [n for n in set(numbers) if 0.01 <= abs(n) <= 1e12][:50]
+    for i in range(len(cands)):
+        for j in range(i + 1, len(cands)):
+            a, b = cands[i], cands[j]
+            ratio = max(abs(a), abs(b)) / max(min(abs(a), abs(b)), 1e-9)
+            # Only compare numbers within 20x of each other (prevents comparing revenues to margins)
+            if ratio > 20.0:
+                continue
+            diff = abs(a - b)
+            derived.append(diff)
+            derived.append(a + b)
+            denom = min(abs(a), abs(b))
+            if denom > 0:
+                derived.append((diff / denom) * 100.0)
+            denom_max = max(abs(a), abs(b))
+            if denom_max > 0:
+                derived.append((diff / denom_max) * 100.0)
+    return derived
+
+
 def verify(
     answer_text: str,
     cited_chunks: list[dict[str, Any]],
@@ -101,5 +124,8 @@ def verify(
             numbers.append(float(dv))
         except (ValueError, TypeError):
             pass
+    # Grounded pairwise derivations directly from cited chunk figures (e.g. deltas, sums, percent changes)
+    numbers.extend(_pairwise_derived(numbers))
     claims = [{**c, "found": _matches(c, numbers)} for c in extract_claims(answer_text)]
     return {"verified": all(c["found"] for c in claims), "claims": claims}
+

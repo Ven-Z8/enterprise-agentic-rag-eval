@@ -25,6 +25,8 @@ from abc import ABC, abstractmethod
 from importlib import import_module
 from typing import Any, ClassVar
 
+from pathlib import Path
+
 __all__ = ["DomainPack", "get_pack", "available_packs"]
 
 # Packs that ship in this checkout. Add the module under
@@ -38,15 +40,39 @@ class DomainPack(ABC):
     name: ClassVar[str]
     display_name: ClassVar[str]
 
+    def __init__(self, pack_dir: str | Path | None = None) -> None:
+        self.pack_dir = Path(pack_dir).resolve() if pack_dir else Path(__file__).resolve().parent
+        self._phase_cache: dict[str, str] = {}
+
     # ------------------------------------------------------------- prompts
 
-    @abstractmethod
+    def get_phase_instructions(self, phase: str) -> str:
+        """Load markdown instructions for a specific pipeline phase (e.g. 'synthesis')."""
+        if phase in self._phase_cache:
+            return self._phase_cache[phase]
+
+        phase_path = self.pack_dir / "phases" / f"{phase}.md"
+        if phase_path.exists():
+            text = phase_path.read_text(encoding="utf-8").strip()
+            self._phase_cache[phase] = text
+            return text
+        return ""
+
     def prompt(self, name: str) -> str:
         """Raw prompt template by name (e.g. 'synthesis')."""
+        return self.get_phase_instructions(name)
 
-    @abstractmethod
     def format_prompt(self, name: str, **kwargs: Any) -> str:
         """Prompt template formatted with kwargs."""
+        raw = self.prompt(name)
+        if not kwargs:
+            return raw
+        if name == "verification_retry" and isinstance(kwargs.get("failed_claims"), list):
+            kwargs["failed_claims"] = ", ".join(kwargs["failed_claims"])
+        try:
+            return raw.format(**kwargs)
+        except KeyError:
+            return raw
 
     # ------------------------------------------- retrieval-time query shape
 
@@ -101,13 +127,7 @@ class DomainPack(ABC):
 
 
 def get_pack(name: str) -> DomainPack:
-    """Load a pack by name (`ragfilings.domains.<name>.PACK` or `ragfilings.skills.<name>`)."""
-    try:
-        from ..skills import get_skill
-
-        return get_skill(name)
-    except Exception:
-        pass
+    """Load a pack by name (`ragfilings.domains.<name>.PACK`)."""
     if name not in _KNOWN_PACKS:
         raise ValueError(f"unknown domain pack {name!r} — available: {', '.join(_KNOWN_PACKS)}")
     module = import_module(f"ragfilings.domains.{name}")

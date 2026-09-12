@@ -27,7 +27,6 @@ from langgraph.graph import END, StateGraph
 
 from ..agents.auditor import audit_answer
 from ..agents.planner import plan_query
-from ..agents.researcher import run_researcher
 from ..agents.synthesis import synthesize
 from ..domains import get_pack
 from ..domains.financial.math_tool import compute_financial_math
@@ -35,6 +34,7 @@ from ..domains.financial.query_decompose import needs_decomposition
 from ..domains.financial.verification import verify
 from ..retrieval import Index, confidence
 from ..schemas import QueryPlan
+from .engine import split_graph_strategy
 from .memory import SessionMemoryManager
 
 logger = logging.getLogger(__name__)
@@ -51,6 +51,8 @@ class OrchestratorState(TypedDict, total=False):
     filters: dict[str, Any] | None
     top_k: int | None
     graph_engine: Any
+    graph_block: str | None
+    derived_values: list[float]
     plan: dict[str, Any]
     hits: list[dict[str, Any]]
     math_result: dict[str, Any] | None
@@ -84,6 +86,42 @@ def _merge_usage(state: OrchestratorState, u: dict[str, Any] | None) -> None:
 
 def build_workflow() -> StateGraph:
     def plan_node(state: OrchestratorState) -> dict[str, Any]:
+        graph_rescue = state.get("graph_engine")
+
+        # 1. Deterministic clarification upfront for ambiguous queries
+        if graph_rescue and hasattr(graph_rescue, "clarification"):
+            clarification = graph_rescue.clarification(state["query"])
+            if clarification is not None:
+                return {
+                    "answer": clarification,
+                    "refused": False,
+                    "verified": True,
+                    "citations": [],
+                    "steps": [
+                        _step("Planner", "clarification", {"query": state["query"]}, clarification)
+                    ],
+                }
+
+        # 2. Fast-path deterministic plan for clean-scope queries
+        if graph_rescue and hasattr(graph_rescue, "extract_queries"):
+            rqs = graph_rescue.extract_queries(state["query"])
+            if rqs:
+                tickers = list(dict.fromkeys(r.ticker for r in rqs))
+                years = list(dict.fromkeys(r.fiscal_year for r in rqs))
+                plan_d = {
+                    "intent": "synthesis" if len(rqs) > 1 else "lookup",
+                    "ticker": tickers[0] if len(tickers) == 1 else None,
+                    "fiscal_year": years[0] if len(years) == 1 else None,
+                    "sub_questions": [state["query"]],
+                    "needs_math": False,
+                    "reasoning": f"deterministic scope extraction: {tickers} FY{years}",
+                }
+                return {
+                    "plan": plan_d,
+                    "steps": [_step("Planner", "fast_path_plan", {"query": state["query"]}, plan_d)],
+                }
+
+        # 3. Fallback to Instructor LLM query planning
         pack = state.get("pack")
         plan_prompt = (
             pack.get_phase_instructions("planning")
@@ -116,85 +154,85 @@ def build_workflow() -> StateGraph:
         strat = state.get("strategy") or state["cfg"].get("retrieval", {}).get(
             "strategy", "hybrid_rerank"
         )
+        base_strat, use_graph = split_graph_strategy(strat)
 
-        if strat in ("agent_react", "agent_tool_loop"):
-            res = run_researcher(
-                state["query"],
-                plan,
-                state["index"],
-                state["cfg"],
-                state["usage"],
-                graph_engine=state.get("graph_engine"),
+        # Deterministic multi-query hybrid_rerank (0 LLM tokens, maximum speed & recall)
+        sub_queries = plan.sub_questions or [state["query"]]
+        top_k = state.get("top_k") or state["cfg"].get("retrieval", {}).get("top_k", 8)
+        rerank_candidates = state["cfg"].get("retrieval", {}).get("rerank_candidates", 25)
+        reranker_name = state["cfg"].get("retrieval", {}).get("reranker")
+
+        filters = dict(state.get("filters") or {})
+        inventory = {str(c.get("ticker")) for c in getattr(state["index"], "chunks", []) if c.get("ticker")}
+        if plan.ticker and str(plan.ticker).upper() in inventory and "ticker" not in filters:
+            filters["ticker"] = str(plan.ticker).upper()
+        if plan.fiscal_year and "fiscal_year" not in filters:
+            filters["fiscal_year"] = plan.fiscal_year
+
+        all_hits: list[dict[str, Any]] = []
+        seen_ids: set[str] = set()
+        for sq in sub_queries:
+            sq_hits = state["index"].search(
+                sq,
+                base_strat,
+                top_k,
+                filters=filters or None,
+                rerank_candidates=rerank_candidates,
+                reranker_name=reranker_name,
             )
-            hits = res["hits"]
-            events = res.get("events", [])
-            notes = res.get("notes", "")
-        else:
-            # Deterministic multi-query hybrid_rerank (0 LLM tokens, maximum speed & recall)
-            sub_queries = plan.sub_questions or [state["query"]]
-            top_k = state.get("top_k") or state["cfg"].get("retrieval", {}).get("top_k", 8)
-            rerank_candidates = state["cfg"].get("retrieval", {}).get("rerank_candidates", 25)
-            reranker_name = state["cfg"].get("retrieval", {}).get("reranker")
-
-            filters = dict(state.get("filters") or {})
-            inventory = {str(c.get("ticker")) for c in getattr(state["index"], "chunks", []) if c.get("ticker")}
-            if plan.ticker and str(plan.ticker).upper() in inventory and "ticker" not in filters:
-                filters["ticker"] = str(plan.ticker).upper()
-            if plan.fiscal_year and "fiscal_year" not in filters:
-                filters["fiscal_year"] = plan.fiscal_year
-
-            all_hits: list[dict[str, Any]] = []
-            seen_ids: set[str] = set()
-            for sq in sub_queries:
+            if not sq_hits and filters:
                 sq_hits = state["index"].search(
                     sq,
-                    strat,
+                    base_strat,
                     top_k,
-                    filters=filters or None,
                     rerank_candidates=rerank_candidates,
                     reranker_name=reranker_name,
                 )
-                if not sq_hits and filters:
-                    sq_hits = state["index"].search(
-                        sq,
-                        strat,
-                        top_k,
-                        rerank_candidates=rerank_candidates,
-                        reranker_name=reranker_name,
-                    )
-                for h in sq_hits:
-                    cid = h["chunk"]["id"]
-                    if cid not in seen_ids:
-                        all_hits.append(h)
-                        seen_ids.add(cid)
+            for h in sq_hits:
+                cid = h["chunk"]["id"]
+                if cid not in seen_ids:
+                    all_hits.append(h)
+                    seen_ids.add(cid)
 
-            hits = sorted(all_hits, key=lambda x: x["score"], reverse=True)[:top_k]
-            events = [{"tool": "hybrid_rerank", "sub_queries": sub_queries}]
-            notes = f"Retrieved {len(hits)} chunks via {strat}"
+        hits = sorted(all_hits, key=lambda x: x["score"], reverse=True)[:top_k]
+        events = [{"tool": "hybrid_rerank", "sub_queries": sub_queries}]
+        notes = f"Retrieved {len(hits)} chunks via {strat}"
 
         # Augment with graph engine if available
         graph_rescue = state.get("graph_engine")
-        if graph_rescue and hasattr(graph_rescue, "rescue"):
+        graph_block = None
+        derived_values: list[float] = []
+        if graph_rescue and hasattr(graph_rescue, "rescue") and use_graph:
             outcome = graph_rescue.rescue(state["query"])
             if outcome is not None:
                 seen = {h["chunk"]["id"]: h for h in hits}
-                for cid in outcome.chunk_ids:
-                    if cid not in seen:
-                        c = next((ch for ch in getattr(state["index"], "chunks", []) if ch.get("id") == cid), None)
-                        if c:
+                outcome_chunks = getattr(outcome, "chunks", [])
+                if outcome_chunks:
+                    for c in outcome_chunks:
+                        cid = c.get("id")
+                        if cid and cid not in seen:
                             hits.append({"chunk": c, "score": 1.0, "dense_sim": 1.0})
                             seen[cid] = hits[-1]
+                else:
+                    for cid in getattr(outcome, "chunk_ids", []):
+                        if cid not in seen:
+                            c = next((ch for ch in getattr(state["index"], "chunks", []) if ch.get("id") == cid), None)
+                            if c:
+                                hits.append({"chunk": c, "score": 1.0, "dense_sim": 1.0})
+                                seen[cid] = hits[-1]
+                graph_block = getattr(outcome, "facts_block", None)
+                derived_values = list(getattr(outcome, "derived_values", []) or [])
 
         conf = confidence(hits)
         min_conf = state["cfg"].get("verification", {}).get("min_confidence", 0.35)
         update: dict[str, Any] = {
             "hits": hits,
+            "graph_block": graph_block,
+            "derived_values": derived_values,
             "steps": [
                 _step(
                     "Researcher",
-                    "hybrid_rerank"
-                    if strat not in ("agent_react", "agent_tool_loop")
-                    else "tool_loop",
+                    "hybrid_rerank",
                     {
                         "sub_questions": plan.sub_questions,
                         "ticker": plan.ticker,
@@ -237,10 +275,18 @@ def build_workflow() -> StateGraph:
             else compute_financial_math
         )
         math_res = math_fn(state["query"], chunks, state["cfg"])
+        derived = list(state.get("derived_values", []))
         if math_res:
             _merge_usage(state, math_res.pop("usage", {}))
+            for k in ("result_value", "raw_value"):
+                if k in math_res:
+                    try:
+                        derived.append(float(math_res[k]))
+                    except (ValueError, TypeError):
+                        pass
         return {
             "math_result": math_res,
+            "derived_values": derived,
             "steps": [
                 _step(
                     "DataAnalyst",
@@ -266,6 +312,7 @@ def build_workflow() -> StateGraph:
             math_result=state.get("math_result"),
             feedback=state.get("feedback"),
             system_prompt=synthesis_prompt,
+            graph_block=state.get("graph_block"),
         )
         is_refusal = (
             instance.status == "refused"
@@ -309,38 +356,58 @@ def build_workflow() -> StateGraph:
         cited_chunks = [by_id[c] for c in valid] or [h["chunk"] for h in state["hits"]]
 
         verify_fn = getattr(pack, "verify", verify) if pack else verify
-        checked = verify_fn(str(state["answer"]), cited_chunks, math_result=state.get("math_result"))
-
-        audit_prompt = (
-            pack.get_phase_instructions("auditor")
-            if hasattr(pack, "get_phase_instructions")
-            else None
-        )
-        audit_res = audit_answer(
-            state["query"],
+        derived_vals = state.get("derived_values", [])
+        checked = verify_fn(
             str(state["answer"]),
-            citations,
-            state["hits"],
-            state["cfg"],
-            state["usage"],
+            cited_chunks,
             math_result=state.get("math_result"),
-            system_prompt=audit_prompt,
+            derived_values=derived_vals,
+            query=state["query"],
         )
-        audit_d = audit_res.model_dump()
-        llm_ok = bool(audit_d.get("verified")) and not audit_d.get("refuse")
 
-        problems: list[str] = []
-        if not checked.get("verified", False):
-            failed = [c["raw"] for c in checked.get("claims", []) if not c.get("found")]
-            if failed:
-                problems.append(f"figures not found in cited chunks: {', '.join(failed)}")
-        if invalid:
-            problems.append(f"nonexistent citation ids: {', '.join(invalid)}")
-        for claim in audit_d.get("audit_claims", []):
-            if claim.get("status") == "UNVERIFIED":
-                problems.append(f"auditor: {claim.get('figure')} unverified")
-        if audit_d.get("refuse"):
-            problems.append("auditor: context too thin to answer")
+        # Fast audit: if deterministic check is 100% verified and citations are valid,
+        # skip redundant LLM auditor overhead on verified facts
+        has_graph = bool(state.get("graph_block"))
+        det_ok = checked.get("verified", False) and not invalid
+        skip_llm_audit = det_ok and (
+            has_graph or state["cfg"].get("verification", {}).get("fast_audit", True)
+        )
+
+        if skip_llm_audit:
+            llm_ok = True
+            audit_d = {"verified": True, "refuse": False, "audit_claims": []}
+            problems: list[str] = []
+        else:
+            audit_prompt = (
+                pack.get_phase_instructions("auditor")
+                if hasattr(pack, "get_phase_instructions")
+                else None
+            )
+            audit_res = audit_answer(
+                state["query"],
+                str(state["answer"]),
+                citations,
+                state["hits"],
+                state["cfg"],
+                state["usage"],
+                math_result=state.get("math_result"),
+                system_prompt=audit_prompt,
+            )
+            audit_d = audit_res.model_dump()
+            llm_ok = bool(audit_d.get("verified")) and not audit_d.get("refuse")
+
+            problems = []
+            if not checked.get("verified", False):
+                failed = [c["raw"] for c in checked.get("claims", []) if not c.get("found")]
+                if failed:
+                    problems.append(f"figures not found in cited chunks: {', '.join(failed)}")
+            if invalid:
+                problems.append(f"nonexistent citation ids: {', '.join(invalid)}")
+            for claim in audit_d.get("audit_claims", []):
+                if claim.get("status") == "UNVERIFIED":
+                    problems.append(f"auditor: {claim.get('figure')} unverified")
+            if audit_d.get("refuse"):
+                problems.append("auditor: context too thin to answer")
 
         all_ok = checked.get("verified", False) and llm_ok and not invalid
         update: dict[str, Any] = {
@@ -356,6 +423,7 @@ def build_workflow() -> StateGraph:
                     {
                         "deterministic": checked.get("verified", False),
                         "llm": llm_ok,
+                        "fast_path": skip_llm_audit,
                         "problems": problems,
                     },
                 )
@@ -383,7 +451,9 @@ def build_workflow() -> StateGraph:
         return END
 
     def route_after_plan(state: OrchestratorState) -> str:
-        return END if state.get("refused") else "retrieve"
+        if state.get("refused") or state.get("answer"):
+            return END
+        return "retrieve"
 
     def route_after_retrieve(state: OrchestratorState) -> str:
         return END if state.get("refused") else "analyze"
@@ -432,8 +502,9 @@ class MultiAgentOrchestrator:
         t0 = time.perf_counter()
         session_id = f"sess_{uuid.uuid4().hex[:12]}"
 
+        base_strat, use_graph = split_graph_strategy(strategy)
         graph_engine = None
-        if hasattr(pack, "load_rescue"):
+        if use_graph and hasattr(pack, "load_rescue"):
             try:
                 graph_engine = pack.load_rescue(self.cfg, index)
             except Exception:
@@ -450,6 +521,8 @@ class MultiAgentOrchestrator:
             "filters": filters,
             "top_k": top_k,
             "graph_engine": graph_engine,
+            "graph_block": None,
+            "derived_values": [],
             "plan": {},
             "hits": [],
             "math_result": None,

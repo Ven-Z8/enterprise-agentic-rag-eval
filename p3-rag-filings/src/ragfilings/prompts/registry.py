@@ -9,10 +9,7 @@ from pathlib import Path
 from typing import Any
 
 _PROMPT_ROOT = Path(__file__).resolve().parent
-# Prompt templates live with the domain pack that owns them; the financial
-# pack's set is the engine default. Other packs load their own templates via
-# their DomainPack.prompt() implementation.
-_SKILLS_PHASES_DIR = _PROMPT_ROOT.parent / "skills" / "financial" / "phases"
+_PHASES_DIR = _PROMPT_ROOT.parent / "domains" / "financial" / "phases"
 
 
 class PromptRegistry:
@@ -21,6 +18,7 @@ class PromptRegistry:
     _cache: dict[str, str] = {}
 
     _ALIASES: dict[str, str] = {
+        "planner": "planning",
         "query_decompose": "planning",
         "converse_rewrite": "converse",
     }
@@ -38,9 +36,9 @@ class PromptRegistry:
         candidates = []
         for n in target_names:
             candidates.extend([
-                _SKILLS_PHASES_DIR / f"{n}.md",
-                _SKILLS_PHASES_DIR / f"{n}.prompt",
-                _SKILLS_PHASES_DIR / f"{n}.txt",
+                _PHASES_DIR / f"{n}.md",
+                _PHASES_DIR / f"{n}.prompt",
+                _PHASES_DIR / f"{n}.txt",
             ])
 
         for p in candidates:
@@ -59,10 +57,10 @@ class PromptRegistry:
         raw = cls.get_raw(name)
         if not kwargs:
             return raw
-        try:
-            return raw.format(**kwargs)
-        except KeyError as e:
-            raise ValueError(f"Missing required prompt format variable {e} for prompt '{name}'")
+        res = raw
+        for k, v in kwargs.items():
+            res = res.replace(f"{{{k}}}", str(v))
+        return res
 
     @classmethod
     def get_system_synthesis(cls) -> str:

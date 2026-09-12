@@ -2,7 +2,8 @@
 
 import json
 
-from ragfilings.graph import FinancialGraphBuilder, GraphQueryEngine
+from ragfilings.domains.financial.builder import FinancialGraphBuilder
+from ragfilings.domains.financial.query import GraphQueryEngine
 from ragfilings.domains.financial.rescue import (
     GraphRescue,
     RescueQuery,

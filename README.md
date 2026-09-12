@@ -14,7 +14,7 @@ Production-grade Agentic AI Systems, RAG Architecture, and Domain-Adaptive Evalu
 | :--- | :--- | :--- |
 | **[P3: Enterprise RAG Orchestrator](./p3-rag-filings)** | Multi-Agent Agentic **Graph** RAG over messy SEC 10-K filings | Typed fact graph + multi-hop augmentation (ratios/CAGR/comparisons), deterministic clarification for under-specified questions, FastMCP/FastAPI service, Hybrid + BGE-rerank retrieval, safe Python financial-math tool, LangGraph orchestrator — **84.0% Canonical Enterprise-50 (42/50) · 84.0% FinanceBench (126/150) · 69.7% ConvFinQA (129/185 turns)**, < 0.9¢/query |
 | **[P1: Agent Evaluation Harness](./p1-eval-harness)** | "Proving Ground" evaluation harness for Agent & RAG systems | Audited canonical 50-case dataset, two-tier scoring (deterministic + calibrated G-Eval judge, 88.5% human agreement / κ 0.723, DeepEval integration), full trajectory traces, regression diffs, scorecards — measured P3's 84.0% Enterprise-50, 84.0% FinanceBench, and 69.7% ConvFinQA |
-| **[P5: System Optimization Layer](./p5-cost-optimization)** | Cost, Latency & Token Optimization Profiler | Model routing, AST evaluation, prompt caching, and verification gates |
+| **[P5: System Optimization Layer](./p5-cost-optimization)** | 🔮 Architecture RFC & Optimization Roadmap | Target milestones: model routing, prompt caching, and token/latency optimization |
 
 ---
 

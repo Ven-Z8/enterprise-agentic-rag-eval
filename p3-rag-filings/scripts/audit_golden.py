@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from ragfilings.tools import extract_claims  # noqa: E402
+from ragfilings.domains.financial.verification import extract_claims  # noqa: E402
 
 # Canonical golden data lives in the sibling p1-eval-harness project.
 GOLDEN_DIR = ROOT.parent / "p1-eval-harness" / "data" / "domain_a_financial"

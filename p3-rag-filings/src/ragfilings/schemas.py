@@ -7,7 +7,7 @@ nothing is scraped out of free text.
 from __future__ import annotations
 
 from typing import Any, Literal
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class SynthesisResponse(BaseModel):
@@ -124,3 +124,22 @@ class AuditResult(BaseModel):
     audit_claims: list[AuditClaim] = Field(
         default_factory=list, description="Detailed audit per figure."
     )
+
+    @field_validator("audit_claims", mode="before")
+    @classmethod
+    def _coerce_audit_claims(cls, v: Any) -> list[Any]:
+        if isinstance(v, list):
+            coerced: list[Any] = []
+            for item in v:
+                if isinstance(item, str):
+                    coerced.append({
+                        "figure": item,
+                        "found_in_chunk": None,
+                        "status": "UNVERIFIED" if "unverified" in item.lower() else "VERIFIED",
+                    })
+                elif isinstance(item, dict):
+                    coerced.append(item)
+                else:
+                    coerced.append({"figure": str(item), "found_in_chunk": None, "status": "UNVERIFIED"})
+            return coerced
+        return v

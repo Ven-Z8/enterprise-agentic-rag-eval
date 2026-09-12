@@ -55,7 +55,7 @@ def test_pack_verify_matches_claim_checker():
 
 
 def test_pack_math_compute_delegates(monkeypatch):
-    from ragfilings.tools import compute_financial_math
+    from ragfilings.domains.financial.math_tool import compute_financial_math
 
     pack = get_pack("financial")
     chunks = [{"id": "c0", "text": "Revenue | $100 | $80"}]

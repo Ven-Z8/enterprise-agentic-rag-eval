@@ -32,13 +32,11 @@ def plan_query(
 ) -> tuple[QueryPlan, dict[str, Any]]:
     """Plan retrieval for `query`. Returns (plan, usage_dict)."""
     inventory = corpus_inventory(chunks)
+    inv_str = "\n".join(inventory)
     if system_prompt:
-        try:
-            system = system_prompt.format(inventory="\n".join(inventory))
-        except KeyError:
-            system = system_prompt
+        system = system_prompt.replace("{inventory}", inv_str)
     else:
-        system = PromptRegistry.format("planner", inventory="\n".join(inventory))
+        system = PromptRegistry.format("planner", inventory=inv_str)
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": query},

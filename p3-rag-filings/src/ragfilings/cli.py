@@ -90,7 +90,7 @@ def _cmd_ask(args: argparse.Namespace) -> None:
 def _cmd_graph(args: argparse.Namespace) -> None:
     """Build (and optionally LLM-summarize) the fact graph + communities."""
     from . import retrieval
-    from .graph import FinancialGraphBuilder
+    from .domains.financial.builder import FinancialGraphBuilder
 
     cfg = cfg_mod.load(args.config)
     root = cfg_mod.ROOT
@@ -137,6 +137,7 @@ def main() -> None:
     ask_cmd.add_argument(
         "--strategy",
         choices=[
+            "langgraph",
             "dense",
             "hybrid",
             "hybrid_rerank",
@@ -145,7 +146,7 @@ def main() -> None:
             "hybrid_graph",
             "hybrid_rerank_graph",
         ],
-        default=None,
+        default="langgraph",
         help="override config [retrieval] strategy; *_graph adds fact-graph augmentation",
     )
     from .domains import available_packs
