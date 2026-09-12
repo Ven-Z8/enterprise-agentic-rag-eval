@@ -12,8 +12,8 @@ Production-grade Agentic AI Systems, RAG Architecture, and Domain-Adaptive Evalu
 
 | Component | Description | Highlights |
 | :--- | :--- | :--- |
-| **[P3: Enterprise RAG Orchestrator](./p3-rag-filings)** | Multi-Agent Agentic **Graph** RAG over messy SEC 10-K filings | Typed fact graph + multi-hop augmentation (ratios/CAGR/comparisons), deterministic clarification for under-specified questions, FastMCP/FastAPI service, Hybrid + BGE-rerank retrieval, safe Python financial-math tool, LangGraph orchestrator — **84.0% Canonical Enterprise-50 (42/50) · 84.0% FinanceBench (126/150) · 69.7% ConvFinQA (129/185 turns)**, < 0.9¢/query |
-| **[P1: Agent Evaluation Harness](./p1-eval-harness)** | "Proving Ground" evaluation harness for Agent & RAG systems | Audited canonical 50-case dataset, two-tier scoring (deterministic + calibrated G-Eval judge, 88.5% human agreement / κ 0.723, DeepEval integration), full trajectory traces, regression diffs, scorecards — measured P3's 84.0% Enterprise-50, 84.0% FinanceBench, and 69.7% ConvFinQA |
+| **[P3: Enterprise RAG Orchestrator](./p3-rag-filings)** | Multi-Agent Agentic **Graph** RAG over messy SEC 10-K filings | Typed fact graph + multi-hop augmentation (ratios/CAGR/comparisons), deterministic clarification for under-specified questions, FastMCP/FastAPI service, Hybrid + BGE-rerank retrieval, safe Python financial-math tool, LangGraph orchestrator — **94.0% Canonical Enterprise-50 (47/50) · 86.7% FinanceBench (130/150) · 69.2% ConvFinQA (128/185 turns)**, < 0.8¢/query |
+| **[P1: Agent Evaluation Harness](./p1-eval-harness)** | "Proving Ground" evaluation harness for Agent & RAG systems | Audited canonical 50-case dataset, two-tier scoring (deterministic + calibrated G-Eval judge, 88.5% human agreement / κ 0.723, DeepEval integration), full trajectory traces, regression diffs, scorecards — measured P3's 94.0% Enterprise-50, 86.7% FinanceBench, and 69.2% ConvFinQA |
 | **[P5: System Optimization Layer](./p5-cost-optimization)** | 🔮 Architecture RFC & Optimization Roadmap | Target milestones: model routing, prompt caching, and token/latency optimization |
 
 ---
@@ -174,21 +174,25 @@ Evaluated using calibrated G-Eval judges (`openai/gpt-5.6-luna`, 88.5% human agr
 
 | Benchmark / Evaluation Surface | Mode / Task Type | Accuracy | Key Reliability Metrics |
 | :--- | :--- | :--- | :--- |
-| **Canonical Enterprise Golden Set** (`golden_set_v1.jsonl`) | End-to-end multi-hop graph RAG over SEC 10-K filings (50 complex cases) | **84.0%** (42/50) | Retrieval Hit Rate: **92.3%** · Citation Hit: **87.9%** · Unanswerable Hallucination: **0.0%** · DeepEval Faithfulness: **100%** |
-| **FinanceBench** (Patronus AI) | Public benchmark: reasoning over filing evidence (150 questions) | **84.0%** (126/150 full dev split) | Calibrated G-Eval judge · Zero hallucination on unanswerables · Grounded metric computation |
-| **ConvFinQA** (EMNLP 2022) | Public benchmark: multi-turn conversational financial reasoning | **69.7%** turn accuracy (129/185) · **52.0%** full conv (26/50) | Fast conversational rewriter (~0.8s, gemini-2.5-flash) · Zero JSON/pipeline errors · 1% tolerance |
+| **Canonical Enterprise Golden Set** (`golden_set_v1.jsonl`) | End-to-end multi-hop graph RAG over SEC 10-K filings (50 complex cases) | **94.0%** (47/50) | Retrieval Hit Rate: **69.2%** · Citation Hit: **72.2%** · Unanswerable Hallucination: **0.0%** · DeepEval Faithfulness: **100%** · Cost: **$0.0080/query** |
+| **FinanceBench** (Patronus AI) | Public benchmark: reasoning over filing evidence (150 questions) | **86.7%** (130/150 full dev split) | Calibrated G-Eval judge · Zero hallucination on unanswerables · Grounded metric computation |
+| **ConvFinQA** (EMNLP 2022) | Public benchmark: multi-turn conversational financial reasoning | **69.2%** turn accuracy (128/185) · **46.0%** full conv (23/50) | Fast conversational rewriter (~0.8s, gemini-2.5-flash) · Zero JSON/pipeline errors · 1% tolerance |
 
 ---
 
 ### 1 · Canonical Enterprise 50-Case Golden Set
 
 A comprehensive test suite of 50 complex enterprise financial queries spanning 25 public companies:
-- **Accuracy**: **84.0% (42/50)** (Run `20260909-151341-b7f244a1-hybrid_rerank`)
-- **Retrieval Hit Rate**: **92.3% (36/39)**
-- **Citation Reference Hit**: **87.9% (29/33)**
+- **Accuracy**: **94.0% (47/50)** (Run `20260911-214856-bc4e9a1d-langgraph`)
+- **Breakdown by Category**:
+  - **Ambiguous Queries**: **100.0% (5/5)** (instant clarification via deterministic scope extraction in < 15ms)
+  - **Fact Lookups**: **100.0% (4/4)** (deterministic planning & graph fast-path)
+  - **Financial Synthesis & Math**: **91.2% (31/34)** (grounded pairwise derivation verification)
+  - **Financial Tables**: **100.0% (1/1)**
+  - **Unanswerables (Strict Guardrails)**: **100.0% (6/6)** (zero false positive hallucinations)
 - **Hallucination Rate on Unanswerables**: **0.0% (0/6)** — strict refusal guardrail prevents fabricating numbers
 - **DeepEval G-Eval Quality**: **100.0% Faithfulness** and **100.0% Answer Relevancy**
-- **Query Economics**: **$0.0086 / query** (< 0.9¢)
+- **Query Economics**: **$0.0080 / query** (< 0.8¢) with **8.6s** p50 latency (down from 11.8s)
 
 Representative test cases from [`golden_set_v1.jsonl`](./p1-eval-harness/data/domain_a_financial/golden_set_v1.jsonl):
 
@@ -203,15 +207,15 @@ Representative test cases from [`golden_set_v1.jsonl`](./p1-eval-harness/data/do
 ### 2 · FinanceBench (Patronus AI)
 
 Evaluates financial grounding, metric derivation, and evidence reasoning over public 10-K filings with retrieval isolated or end-to-end:
-- **Reasoning-over-Evidence Accuracy**: **84.0% (126/150)** on the full 150-question benchmark (`fb_evidence_20260909-173735.jsonl`).
+- **Reasoning-over-Evidence Accuracy**: **86.7% (130/150)** on the full 150-question benchmark (`fb_evidence_20260911-160849.jsonl`).
 - Evaluated against official answers using the calibrated G-Eval LLM judge (`openai/gpt-5.6-luna`).
 - Handled complex analytical queries (e.g., operating margin drivers, capital expenditures) and financial ratios without over-refusal.
 
 ### 3 · ConvFinQA (EMNLP 2022)
 
 Evaluates multi-turn conversational financial reasoning with chained calculations over annual-report tables:
-- **Conversational Turn Accuracy**: **69.7% (129/185 turns)** across 50 multi-turn conversations (`convfinqa_20260909-184557.jsonl`).
-- **Full Conversation Accuracy (all turns correct)**: **52.0% (26/50 conversations)**.
+- **Conversational Turn Accuracy**: **69.2% (128/185 turns)** across 50 multi-turn conversations (`convfinqa_20260911-162259.jsonl`).
+- **Full Conversation Accuracy (all turns correct)**: **46.0% (23/50 conversations)**.
 - **Ultra-Fast & Resilient Conversational Pipeline**: High-speed rewriter (~0.8s via `google/gemini-2.5-flash`), 0 JSON/pipeline errors, and seamless chained follow-up arithmetic (`"what is that times 100?"`).
 
 ---
