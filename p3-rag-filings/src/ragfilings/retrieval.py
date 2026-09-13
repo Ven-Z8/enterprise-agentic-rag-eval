@@ -67,7 +67,21 @@ def context_header(chunk: dict[str, Any]) -> str:
     fact-graph builder parses unchanged).
 
     Contract chunks (doc_type == "contract"): contract code + agreement title.
+    Biomedical chunks (doc_type in ("biomedical", "pubmed")): PMID, year, title, and section.
     """
+    if chunk.get("doc_type") in ("biomedical", "pubmed"):
+        pmid = chunk.get("pmid") or chunk.get("doc_id") or ""
+        year = chunk.get("year") or ""
+        title = chunk.get("title") or ""
+        section = chunk.get("section") or chunk.get("item") or ""
+        head = f"PMID {pmid}"
+        if year:
+            head += f" ({year})"
+        if title:
+            head += f" — {title}"
+        if section:
+            head += f" — Section: {section}"
+        return head
     if chunk.get("doc_type") == "contract":
         head = f"Contract {chunk.get('contract', '')}: {chunk.get('contract_title', '')}"
         title = chunk.get("title") or ""

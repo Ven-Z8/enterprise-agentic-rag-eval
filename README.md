@@ -65,23 +65,19 @@ domain. Everything domain-specific ships as a **skill pack**
 (`p3-rag-filings/src/ragfilings/domains/<name>/`) satisfying one contract
 (`DomainPack`):
 
-| Pack hook | financial (SEC 10-K) | legal (commercial contracts) |
-| :--- | :--- | :--- |
-| Prompts | 10-K synthesis rules (consolidated vs segment, GAAP) | contract synthesis rules (quote the clause, one-agreement rule) |
-| Fact layer | typed fact graph parsed from financial tables (chunk provenance) | deterministic defined-term extraction (913 terms, chunk provenance) |
-| Scope agent | ticker/metric/fiscal-year rescue + clarifications (missing year, vague metric, no company) | contract-code rescue + "which agreement?" clarification |
-| Claim semantics | monetary/percentage figures with unit scaling | quoted language verbatim + money/date claims |
-| Derivation tool | safe Python financial math | — (none in v1) |
+| Pack hook | financial (SEC 10-K) | legal (commercial contracts) | biomedical (PubMed + PubChem) |
+| :--- | :--- | :--- | :--- |
+| Prompts | 10-K synthesis rules (consolidated vs segment, GAAP) | contract synthesis rules (quote the clause, one-agreement rule) | clinical reasoning rules (categorical decision Yes/No/Maybe, evidence grounding) |
+| Fact layer | typed fact graph parsed from financial tables (chunk provenance) | deterministic defined-term extraction (913 terms, chunk provenance) | scientific paper sections (BACKGROUND, METHODS, RESULTS, MeSH terms) |
+| Scope agent | ticker/metric/fiscal-year rescue + clarifications (missing year, vague metric, no company) | contract-code rescue + "which agreement?" clarification | comparative clinical query decomposition (drug vs drug) |
+| Claim semantics | monetary/percentage figures with unit scaling | quoted language verbatim + money/date claims | quantitative biomedical figures (dosages, sample sizes n=X, p-values, %) |
+| Derivation tool | safe Python financial math | — (none in v1) | live NCBI PubChem PUG-REST API (chemical formula, MW, IUPAC name) |
 
-The evaluation harness selects a pack with `--domain financial|legal`; each
+The evaluation harness selects a pack with `--domain financial|legal|biomedical`; each
 domain has its own golden set under `p1-eval-harness/data/domain_*` and its
-own retrieval index. The financial pack is measured end-to-end (below); the
-legal pack runs on the CUAD corpus (102 held-out commercial contracts,
-attorney-annotated, CC-BY-4.0) — **82.1% (46/56)** on
-its 56-case golden set, measured 2026-09-03 (first baseline 80.4% with zero domain-specific tuning (clarifications 6/6;
-remaining failures: clause-extraction misses and 3 unanswerable hallucinations
-— the same failure taxonomy the financial pack started with). The point is
-that adding a domain never touches the engine.
+own retrieval index. Adding a domain requires zero engine modifications — the
+domain pack supplies prompts, claim auditors, and derivation tools, while the
+generic orchestrator handles the execution lifecycle.
 
 ---
 
@@ -168,9 +164,9 @@ python scripts/benchmark_financebench.py
 
 ---
 
-## 📊 Measured Results — The 6-Pillar Multi-Domain Evaluation Suite
+## 📊 Measured Results — The 7-Pillar Multi-Domain Evaluation Suite
 
-Evaluated across Financial (SEC 10-K) and Legal (Commercial & Consumer Contracts, Criminal Statutes) domains using calibrated G-Eval judges (`openai/gpt-5.6-luna`, 88.5% human agreement / κ 0.723), deterministic AST claim matching, and DeepEval faithfulness & relevancy. Reproduce via `p1-eval-harness`:
+Evaluated across Financial (SEC 10-K), Legal (Commercial & Consumer Contracts, Criminal Statutes), and Biomedical (PubMedQA & NCBI PubChem) domains using calibrated G-Eval judges (`openai/gpt-5.6-luna`, 88.5% human agreement / κ 0.723), deterministic AST claim matching, and DeepEval faithfulness & relevancy. Reproduce via `p1-eval-harness`:
 
 | Benchmark | Scope & Dataset | System Accuracy | Key Highlights |
 | :--- | :--- | :--- | :--- |
@@ -180,6 +176,7 @@ Evaluated across Financial (SEC 10-K) and Legal (Commercial & Consumer Contracts
 | **CUAD Legal Contracts** (The Atticus Project, NeurIPS 2021) | Public benchmark: commercial contract clause extraction & review (56 cases / 102 agreements) | **78.6%** (44/56) | Ambiguous Clarification: **100.0%** · Contract Lookups: **90.0%** · Faithfulness: **99.0%** · Cost: **$0.0054/query** |
 | **Stanford LegalBench** (Guha et al., NeurIPS 2023) | Public benchmark: Consumer Terms of Service QA (Microsoft, eBay, Netflix, Zoom, Google) | **98.2%** (389/396 full test split) | Clause Citation Rate: **100.0%** · Full 396-case test set · Latency: **3.10s** · Cost: **$0.0018/query** ($0.71 total) |
 | **Isaacus Legal RAG Bench** (2024) | Public benchmark: Statutory & Criminal Law Bench Book RAG (4,876 passages) | **20.0%** Top-3 Ret / **20.0%** Gen | Dual-layer retrieval (MRR: 0.150) & synthesis against criminal law statutes and judicial bench books |
+| **PubMedQA & PubChem** (BioNLP / NCBI 2024) | Public benchmark: clinical reasoning (PubMedQA) & live chemical entity resolution (PubChem) | **86.0%** (43/50) | **0.0% Hallucinations** · Safe Refusals: **100.0%** · Clinical Synthesis: **85.0%** · Live API Resolution: **80.0%** · Cost: **$0.0064/query** |
 
 ---
 
@@ -243,6 +240,15 @@ Evaluates end-to-end statutory and criminal bench book retrieval and multi-step 
 - **Retrieval Layer**: **20.0% Hit@3 / Hit@5** with MRR of **0.150** on reasoning-intensive statutory scenarios.
 - **Zero Hallucination Guardrail**: Safe refusal behavior on absent statutory elements without fabricating precedent or legal criteria.
 - **Query Economics & Speed**: **$0.0060 / query** with **6.88s** p50 latency.
+
+### 7 · PubMedQA & NCBI PubChem (Biomedical & Life Sciences)
+
+Evaluates clinical research question answering and dynamic chemical entity resolution across PubMed research articles and live NCBI PubChem:
+- **Overall Accuracy**: **86.0% (43/50)** on the 50-case benchmark (`reports/pubmedqa/pubmedqa_20260912-233850_langgraph.jsonl`).
+- **Clinical Synthesis (PubMedQA)**: **85.0% (34/40)** — structured clinical interpretation (`Yes`, `No`, `Maybe`) grounded in biomedical literature abstracts with exact quantitative citations ($p$-values, sample sizes $n$, dosages).
+- **Dynamic Chemical Entity Resolution (NCBI PubChem)**: **80.0% (4/5)** — zero-hardcoding live lookup via NCBI PUG-REST API resolving molecular formulas, molecular weights, and IUPAC names.
+- **Strict Hallucination Guardrails**: **100.0% (5/5) Safe Refusal** (**0.0% Hallucinations**) — 100% rejection rate against ungrounded fictional drugs and unstudied clinical trials.
+- **Query Economics & Speed**: **$0.0064 / query** (< 0.65¢) with **8.05s** p50 latency.
 
 ---
 

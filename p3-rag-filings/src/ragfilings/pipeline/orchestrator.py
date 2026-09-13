@@ -87,6 +87,7 @@ def _merge_usage(state: OrchestratorState, u: dict[str, Any] | None) -> None:
 def build_workflow() -> StateGraph:
     def plan_node(state: OrchestratorState) -> dict[str, Any]:
         graph_rescue = state.get("graph_engine")
+        pack = state.get("pack")
 
         # 1. Deterministic clarification upfront for ambiguous queries
         if graph_rescue and hasattr(graph_rescue, "clarification"):
@@ -138,8 +139,23 @@ def build_workflow() -> StateGraph:
                     "steps": [_step("Planner", "fast_path_plan", {"query": state["query"]}, plan_d)],
                 }
 
+        # 2c. Fast-path deterministic plan for biomedical queries
+        if state.get("domain") == "biomedical" or getattr(pack, "name", None) == "biomedical":
+            sub_qs = pack.decompose_query(state["query"], state["cfg"]) if pack else [state["query"]]
+            plan_d = {
+                "intent": "synthesis",
+                "ticker": None,
+                "fiscal_year": None,
+                "sub_questions": sub_qs,
+                "needs_math": False,
+                "reasoning": "deterministic biomedical literature retrieval",
+            }
+            return {
+                "plan": plan_d,
+                "steps": [_step("Planner", "fast_path_plan", {"query": state["query"]}, plan_d)],
+            }
+
         # 3. Fallback to Instructor LLM query planning
-        pack = state.get("pack")
         plan_prompt = (
             pack.get_phase_instructions("planning")
             if hasattr(pack, "get_phase_instructions")
@@ -264,16 +280,25 @@ def build_workflow() -> StateGraph:
                 )
             ],
         }
+        pack = state.get("pack")
         if not hits or conf < min_conf:
-            reason = (
-                "no retrieval hits"
-                if not hits
-                else f"low retrieval confidence: {conf:.3f} < {min_conf}"
-            )
-            update.update({"refused": True, "refusal_reason": reason})
+            tool_res = pack.compute(state["query"], [], state["cfg"]) if pack and hasattr(pack, "compute") else None
+            if tool_res:
+                update["math_result"] = tool_res
+                update["refused"] = False
+            else:
+                reason = (
+                    "no retrieval hits"
+                    if not hits
+                    else f"low retrieval confidence: {conf:.3f} < {min_conf}"
+                )
+                update.update({"refused": True, "refusal_reason": reason})
         return update
 
     def analyze_node(state: OrchestratorState) -> dict[str, Any]:
+        if state.get("math_result"):
+            return {"steps": [_step("DataAnalyst", "tool_result_preserved", {}, state["math_result"])]}
+
         plan = state.get("plan", {})
         pack = state.get("pack")
         needs_math_fn = (
@@ -282,16 +307,17 @@ def build_workflow() -> StateGraph:
             else needs_decomposition
         )
         needs_math = bool(plan.get("needs_math")) or needs_math_fn(state["query"])
-        if not needs_math or not state.get("hits"):
+        chunks = [h["chunk"] for h in state.get("hits", [])]
+
+        compute_fn = (
+            getattr(pack, "compute", None)
+            or getattr(pack, "compute_math", None)
+            or compute_financial_math
+        )
+        math_res = compute_fn(state["query"], chunks, state["cfg"]) if (needs_math or hasattr(pack, "compute")) else None
+        if not math_res and (not needs_math or not chunks):
             return {"steps": [_step("DataAnalyst", "skipped", {}, "no computation needed")]}
 
-        chunks = [h["chunk"] for h in state["hits"]]
-        math_fn = (
-            getattr(pack, "compute_math", compute_financial_math)
-            if pack
-            else compute_financial_math
-        )
-        math_res = math_fn(state["query"], chunks, state["cfg"])
         derived = list(state.get("derived_values", []))
         if math_res:
             _merge_usage(state, math_res.pop("usage", {}))
@@ -371,6 +397,8 @@ def build_workflow() -> StateGraph:
         valid = [c for c in citations if c in by_id]
         invalid = [c for c in citations if c not in by_id]
         cited_chunks = [by_id[c] for c in valid] or [h["chunk"] for h in state["hits"]]
+        if not cited_chunks and state.get("math_result"):
+            cited_chunks = [{"id": "TOOL", "text": state["math_result"].get("formatted", "")}]
 
         verify_fn = getattr(pack, "verify", verify) if pack else verify
         derived_vals = state.get("derived_values", [])

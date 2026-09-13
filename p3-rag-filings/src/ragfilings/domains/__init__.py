@@ -31,7 +31,7 @@ __all__ = ["DomainPack", "get_pack", "available_packs"]
 
 # Packs that ship in this checkout. Add the module under
 # `ragfilings/domains/<name>/` exporting PACK, then register the name here.
-_KNOWN_PACKS = ("financial", "legal")
+_KNOWN_PACKS = ("financial", "legal", "biomedical")
 
 
 class DomainPack(ABC):

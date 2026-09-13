@@ -100,7 +100,11 @@ def _figures_match(expected_text: str, actual_text: str, tol: float, unit_eq: bo
     """Does the actual answer state all expected figures within rules?"""
     exp_claims = extract_claims(expected_text)
     if not exp_claims:
-        return _norm_text(expected_text) in _norm_text(actual_text)
+        norm_exp = _norm_text(expected_text)
+        norm_act = _norm_text(actual_text)
+        if len(norm_exp) <= 5 and norm_exp.isalpha():
+            return bool(re.search(rf"\b{re.escape(norm_exp)}\b", norm_act))
+        return norm_exp in norm_act
 
     act_claims = extract_claims(actual_text)
     # Every material claim in expected_text must have a matching claim in actual_text

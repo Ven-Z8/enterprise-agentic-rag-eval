@@ -448,8 +448,10 @@ def split_graph_strategy(strategy: str | None) -> tuple[str, bool]:
     return "hybrid_rerank", True
 
 
-def log_refusal(path: str | Path, query: str, result: dict[str, Any], strategy: str) -> None:
+def log_refusal(path: str | Path | None, query: str, result: dict[str, Any], strategy: str) -> None:
     """Persist refusal event for analysis."""
+    if not path:
+        return
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     with p.open("a", encoding="utf-8") as f:
