@@ -1,9 +1,10 @@
-"""Run all 3 benchmark pillars sequentially:
+"""Run all 4 benchmark pillars sequentially:
 1. Canonical Golden SEC 10-K (50 cases)
 2. FinanceBench (150 questions)
 3. ConvFinQA (50 multi-turn dialogues / 185 turns)
+4. CUAD Legal Contract Understanding (56 cases / 102 agreements)
 
-Generates a unified summary scorecard upon completion.
+Generates unified summary scorecards upon completion across Financial and Legal domains.
 """
 
 from __future__ import annotations
@@ -73,8 +74,18 @@ def main():
         desc="Pillar 3: ConvFinQA (50 Dialogues / 185 Turns)",
     )
 
+    # 4. CUAD Legal Contract Understanding (56 cases / 102 agreements)
+    run_cmd(
+        [
+            "uv", "run", "--project", str(P3),
+            "python", "scripts/benchmark_cuad.py",
+        ],
+        cwd=P1,
+        desc="Pillar 4: CUAD Legal Contract Understanding (56 cases / 102 agreements)",
+    )
+
     print("\n" + "="*60)
-    print("🎉 ALL 3 BENCHMARK PILLARS COMPLETED SUCCESSFULLY!")
+    print("🎉 ALL 4 BENCHMARK PILLARS COMPLETED SUCCESSFULLY!")
     print("="*60 + "\n")
 
 
