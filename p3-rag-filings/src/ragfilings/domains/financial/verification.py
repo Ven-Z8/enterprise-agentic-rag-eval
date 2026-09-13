@@ -73,25 +73,32 @@ def _matches(claim: dict[str, Any], numbers: list[float]) -> bool:
 
 
 def _pairwise_derived(numbers: list[float]) -> list[float]:
-    """Generate grounded pairwise deltas, sums, and percentage changes between comparable numbers in chunks."""
+    """Generate grounded pairwise deltas, sums, margins, and percentage changes between comparable numbers in chunks."""
     derived: list[float] = []
-    cands = [n for n in set(numbers) if 0.01 <= abs(n) <= 1e12][:50]
+    cands = [n for n in set(numbers) if 0.01 <= abs(n) <= 1e12]
+    # Keep up to 150 numbers (sorted by absolute magnitude to prevent arbitrary hash-order truncation)
+    if len(cands) > 150:
+        cands = sorted(cands, key=lambda x: abs(x), reverse=True)[:150]
     for i in range(len(cands)):
         for j in range(i + 1, len(cands)):
             a, b = cands[i], cands[j]
-            ratio = max(abs(a), abs(b)) / max(min(abs(a), abs(b)), 1e-9)
-            # Only compare numbers within 20x of each other (prevents comparing revenues to margins)
-            if ratio > 20.0:
-                continue
-            diff = abs(a - b)
-            derived.append(diff)
-            derived.append(a + b)
-            denom = min(abs(a), abs(b))
-            if denom > 0:
-                derived.append((diff / denom) * 100.0)
-            denom_max = max(abs(a), abs(b))
-            if denom_max > 0:
-                derived.append((diff / denom_max) * 100.0)
+            mn = min(abs(a), abs(b))
+            mx = max(abs(a), abs(b))
+            ratio = mx / max(mn, 1e-9)
+            # 1. Deltas and sums for comparable numbers (within 25x)
+            if ratio <= 25.0:
+                diff = abs(a - b)
+                derived.extend([diff, a + b])
+                if mn > 0:
+                    pct_delta = (diff / mn) * 100.0
+                    derived.extend([pct_delta, round(pct_delta, 1), round(pct_delta, 2)])
+                if mx > 0:
+                    pct_delta_mx = (diff / mx) * 100.0
+                    derived.extend([pct_delta_mx, round(pct_delta_mx, 1), round(pct_delta_mx, 2)])
+            # 2. Margins and financial ratios (e.g. FCF / Revenue * 100, Operating Margin)
+            if ratio <= 200.0 and mx > 0:
+                margin = (mn / mx) * 100.0
+                derived.extend([margin, round(margin, 1), round(margin, 2), mn / mx, round(mn / mx, 3)])
     return derived
 
 

@@ -121,6 +121,23 @@ def build_workflow() -> StateGraph:
                     "steps": [_step("Planner", "fast_path_plan", {"query": state["query"]}, plan_d)],
                 }
 
+        # 2b. Fast-path deterministic plan for legal contract queries
+        if graph_rescue and hasattr(graph_rescue, "find_contracts"):
+            contracts = graph_rescue.find_contracts(state["query"])
+            if contracts:
+                plan_d = {
+                    "intent": "synthesis" if len(contracts) > 1 else "lookup",
+                    "ticker": None,
+                    "fiscal_year": None,
+                    "sub_questions": [state["query"]],
+                    "needs_math": False,
+                    "reasoning": f"deterministic contract scope: {contracts}",
+                }
+                return {
+                    "plan": plan_d,
+                    "steps": [_step("Planner", "fast_path_plan", {"query": state["query"]}, plan_d)],
+                }
+
         # 3. Fallback to Instructor LLM query planning
         pack = state.get("pack")
         plan_prompt = (
