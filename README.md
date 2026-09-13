@@ -92,8 +92,8 @@ generic orchestrator handles the execution lifecycle.
 
 Clone the repository and enter the directory:
 ```bash
-git clone https://github.com/Ven-Z8/FreeLance-Potfolio.git
-cd FreeLance-Potfolio
+git clone https://github.com/Ven-Z8/enterprise-agentic-rag-eval.git
+cd enterprise-agentic-rag-eval
 ```
 
 Copy the sample environment configuration and add your API credentials:
@@ -255,7 +255,7 @@ Evaluates clinical research question answering and dynamic chemical entity resol
 ## 📂 Repository Structure
 
 ```
-FreeLance-Potfolio/
+enterprise-agentic-rag-eval/
 ├── README.md                      # Global setup & portfolio overview
 ├── .env.example                   # Environment keys template
 ├── p3-rag-filings/                # Project 3: Multi-Agent RAG Orchestrator
