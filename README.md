@@ -178,7 +178,7 @@ Evaluated across Financial (SEC 10-K) and Legal (Commercial & Consumer Contracts
 | **FinanceBench** (Patronus AI) | Public benchmark: complex financial reasoning & metric derivation (150 questions) | **86.7%** (130/150) | Full evidence reasoning · 0 rate-limit dropouts · Evaluated via calibrated G-Eval judge |
 | **ConvFinQA** (EMNLP 2022) | Public benchmark: multi-turn conversational reasoning over financial tables (50 dialogues) | **69.2%** (128/185 turns) | Full multi-turn conversations: **46.0%** (23/50) · 0 JSON schema crashes · Fast-path follow-up rewrites (~0.8s) |
 | **CUAD Legal Contracts** (The Atticus Project, NeurIPS 2021) | Public benchmark: commercial contract clause extraction & review (56 cases / 102 agreements) | **78.6%** (44/56) | Ambiguous Clarification: **100.0%** · Contract Lookups: **90.0%** · Faithfulness: **99.0%** · Cost: **$0.0054/query** |
-| **Stanford LegalBench** (Guha et al., NeurIPS 2023) | Public benchmark: Consumer Terms of Service QA (Microsoft, eBay, Netflix, Zoom, Google) | **90.0%** (9/10) | Clause Citation Rate: **100.0%** · Arbitration & Liability Extraction · Latency: **2.93s** · Cost: **$0.0028/query** |
+| **Stanford LegalBench** (Guha et al., NeurIPS 2023) | Public benchmark: Consumer Terms of Service QA (Microsoft, eBay, Netflix, Zoom, Google) | **98.2%** (389/396 full test split) | Clause Citation Rate: **100.0%** · Full 396-case test set · Latency: **3.10s** · Cost: **$0.0018/query** ($0.71 total) |
 | **Isaacus Legal RAG Bench** (2024) | Public benchmark: Statutory & Criminal Law Bench Book RAG (4,876 passages) | **20.0%** Top-3 Ret / **20.0%** Gen | Dual-layer retrieval (MRR: 0.150) & synthesis against criminal law statutes and judicial bench books |
 
 ---
@@ -233,9 +233,9 @@ Evaluates legal contract review, clause extraction, and defined-term lookup acro
 ### 5 · Stanford LegalBench (NeurIPS 2023)
 
 Evaluates automated interpretation of consumer contracts and Terms of Service agreements across major online platforms (Microsoft, eBay, Netflix, Zoom, Google):
-- **Overall Accuracy**: **90.0% (9/10)** on audited consumer contracts QA split (`reports/legalbench/legalbench_20260912-192932_langgraph.jsonl`).
-- **Citation Provenance Rate**: **100.0% (10/10)** — grounds every decision in verbatim contract sentences.
-- **Query Economics & Speed**: **$0.0028 / query** (< 0.3¢) with **2.93s** p50 latency using OpenRouter Gemini 3.8 Flash.
+- **Overall Accuracy**: **98.2% (389/396)** on the complete official test split (`reports/legalbench/legalbench_20260912-205205_langgraph.jsonl`).
+- **Citation Provenance Rate**: **100.0% (396/396)** — grounds every decision in verbatim contract sentences.
+- **Query Economics & Speed**: **$0.0018 / query** (Total suite cost: **$0.71**) with **3.10s** p50 latency using OpenRouter Gemini 3.8 Flash.
 
 ### 6 · Isaacus Legal RAG Bench (2024)
 

@@ -111,7 +111,7 @@ def main() -> None:
         lat_ms = (time.perf_counter() - t0) * 1000.0
         latencies.append(lat_ms)
 
-        ans_text = synth_res.answer.strip()
+        ans_text = (synth_res.answer or synth_res.reason or "").strip()
         citations = synth_res.citations
         pred = extract_binary_decision(ans_text)
         is_cor = (pred == gold)
@@ -159,7 +159,7 @@ def main() -> None:
     cite_rate = (cited_count / n) * 100.0 if n else 0.0
 
     p50_lat = statistics.median(latencies) / 1000.0 if latencies else 0.0
-    p95_lat = statistics.quantiles(latencies, nquantiles=20)[18] / 1000.0 if len(latencies) >= 20 else p50_lat
+    p95_lat = statistics.quantiles(latencies, n=20)[18] / 1000.0 if len(latencies) >= 20 else p50_lat
     avg_cost = sum(costs) / n if n else 0.0
 
     # Faithfulness
