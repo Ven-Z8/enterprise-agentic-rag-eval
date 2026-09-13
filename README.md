@@ -168,15 +168,16 @@ python scripts/benchmark_financebench.py
 
 ---
 
-## 📊 Measured Results — The 3-Pillar Evaluation Suite
+## 📊 Measured Results — The 4-Pillar Multi-Domain Evaluation Suite
 
-Evaluated using calibrated G-Eval judges (`openai/gpt-5.6-luna`, 88.5% human agreement / κ 0.723), deterministic AST financial-math comparison, and DeepEval faithfulness & relevancy. Reproduce via `p1-eval-harness`:
+Evaluated across Financial (SEC 10-K) and Legal (Commercial Contracts) domains using calibrated G-Eval judges (`openai/gpt-5.6-luna`, 88.5% human agreement / κ 0.723), deterministic AST claim matching, and DeepEval faithfulness & relevancy. Reproduce via `p1-eval-harness`:
 
 | Benchmark / Evaluation Surface | Mode / Task Type | Accuracy | Key Reliability Metrics |
 | :--- | :--- | :--- | :--- |
 | **Canonical Enterprise Golden Set** (`golden_set_v1.jsonl`) | End-to-end multi-hop graph RAG over SEC 10-K filings (50 complex cases) | **94.0%** (47/50) | Retrieval Hit Rate: **69.2%** · Citation Hit: **72.2%** · Unanswerable Hallucination: **0.0%** · DeepEval Faithfulness: **100%** · Cost: **$0.0080/query** |
 | **FinanceBench** (Patronus AI) | Public benchmark: reasoning over filing evidence (150 questions) | **86.7%** (130/150 full dev split) | Calibrated G-Eval judge · Zero hallucination on unanswerables · Grounded metric computation |
 | **ConvFinQA** (EMNLP 2022) | Public benchmark: multi-turn conversational financial reasoning | **69.2%** turn accuracy (128/185) · **46.0%** full conv (23/50) | Fast conversational rewriter (~0.8s, gemini-2.5-flash) · Zero JSON/pipeline errors · 1% tolerance |
+| **CUAD Legal Contracts** (The Atticus Project, NeurIPS 2021) | Public benchmark: contract clause extraction & review (56 cases / 102 agreements) | **78.6%** (44/56) | Ambiguous Clarification: **100.0%** · Contract Lookups: **90.0%** · Faithfulness: **99.0%** · Cost: **$0.0054/query** |
 
 ---
 
@@ -217,6 +218,15 @@ Evaluates multi-turn conversational financial reasoning with chained calculation
 - **Conversational Turn Accuracy**: **69.2% (128/185 turns)** across 50 multi-turn conversations (`convfinqa_20260911-162259.jsonl`).
 - **Full Conversation Accuracy (all turns correct)**: **46.0% (23/50 conversations)**.
 - **Ultra-Fast & Resilient Conversational Pipeline**: High-speed rewriter (~0.8s via `google/gemini-2.5-flash`), 0 JSON/pipeline errors, and seamless chained follow-up arithmetic (`"what is that times 100?"`).
+
+### 4 · CUAD Legal Contract Understanding (NeurIPS 2021)
+
+Evaluates legal contract review, clause extraction, and defined-term lookup across 102 commercial contracts from the CUAD test split (The Atticus Project, CC-BY-4.0):
+- **Overall Accuracy**: **78.6% (44/56)** on the full 56-case benchmark (`reports/evals/20260912-183803-63c99f7c-langgraph`).
+- **Ambiguous Scope Clarifications**: **100.0% (6/6)** — instantly identifies when a clause query names no contract and clarifies *"Which agreement?"* without guessing.
+- **Contract Header & Term Lookups**: **90.0% (18/20)** — accurate extraction of document titles, execution dates, parties, and 913 defined terms.
+- **Strict Absence Guardrails**: **83.3% (10/12)** — refuses when a clause (e.g., Source Code Escrow, Price Restrictions) is absent from an agreement.
+- **Query Economics & Speed**: **$0.0054 / query** (< 0.55¢) with **5.0s** p50 latency and **99.0% DeepEval Faithfulness**.
 
 ---
 
