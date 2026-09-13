@@ -28,10 +28,15 @@ def plan_query(
     query: str,
     cfg: dict[str, Any],
     chunks: list[dict[str, Any]],
+    system_prompt: str | None = None,
 ) -> tuple[QueryPlan, dict[str, Any]]:
     """Plan retrieval for `query`. Returns (plan, usage_dict)."""
     inventory = corpus_inventory(chunks)
-    system = PromptRegistry.format("planner", inventory="\n".join(inventory))
+    inv_str = "\n".join(inventory)
+    if system_prompt:
+        system = system_prompt.replace("{inventory}", inv_str)
+    else:
+        system = PromptRegistry.format("planner", inventory=inv_str)
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": query},

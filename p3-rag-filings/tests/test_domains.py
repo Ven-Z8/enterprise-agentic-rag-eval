@@ -8,8 +8,8 @@ prove the financial pack satisfies it with unchanged behavior.
 import pytest
 
 from ragfilings.domains import DomainPack, available_packs, get_pack
-from ragfilings.graph.rescue import GraphRescue
-from ragfilings.tools.verification import verify
+from ragfilings.domains.financial.rescue import GraphRescue
+from ragfilings.domains.financial.verification import verify
 
 
 def test_financial_pack_satisfies_contract():
@@ -55,7 +55,7 @@ def test_pack_verify_matches_claim_checker():
 
 
 def test_pack_math_compute_delegates(monkeypatch):
-    from ragfilings.tools import compute_financial_math
+    from ragfilings.domains.financial.math_tool import compute_financial_math
 
     pack = get_pack("financial")
     chunks = [{"id": "c0", "text": "Revenue | $100 | $80"}]

@@ -2,8 +2,9 @@
 
 import json
 
-from ragfilings.graph import FinancialGraphBuilder, GraphQueryEngine
-from ragfilings.graph.rescue import (
+from ragfilings.domains.financial.builder import FinancialGraphBuilder
+from ragfilings.domains.financial.query import GraphQueryEngine
+from ragfilings.domains.financial.rescue import (
     GraphRescue,
     RescueQuery,
     _derived_values,
@@ -12,10 +13,10 @@ from ragfilings.graph.rescue import (
     _strip_years,
     load_excluded_facts,
 )
+from ragfilings.domains.financial.verification import verify
 from ragfilings.llm.base import BaseLLMClient
 from ragfilings.llm.types import LLMResponse, TokenUsage
 from ragfilings.pipeline.engine import answer, split_graph_strategy
-from ragfilings.tools.verification import verify
 
 # A consolidated-statement chunk; the graph extracts one fact per
 # (ticker, metric, year) with provenance back to this chunk id.

@@ -23,13 +23,19 @@ tokenizing 8.4K chunks takes ~1s, not worth a persistence format.
 from __future__ import annotations
 
 import json
+import logging
+import os
 import re
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 from rank_bm25 import BM25Okapi
+
+logger = logging.getLogger(__name__)
 
 # BGE models are trained with this query-side instruction; passages get none.
 _BGE_QUERY_PREFIX = "Represent this sentence for searching relevant passages: "
@@ -61,7 +67,21 @@ def context_header(chunk: dict[str, Any]) -> str:
     fact-graph builder parses unchanged).
 
     Contract chunks (doc_type == "contract"): contract code + agreement title.
+    Biomedical chunks (doc_type in ("biomedical", "pubmed")): PMID, year, title, and section.
     """
+    if chunk.get("doc_type") in ("biomedical", "pubmed"):
+        pmid = chunk.get("pmid") or chunk.get("doc_id") or ""
+        year = chunk.get("year") or ""
+        title = chunk.get("title") or ""
+        section = chunk.get("section") or chunk.get("item") or ""
+        head = f"PMID {pmid}"
+        if year:
+            head += f" ({year})"
+        if title:
+            head += f" — {title}"
+        if section:
+            head += f" — Section: {section}"
+        return head
     if chunk.get("doc_type") == "contract":
         head = f"Contract {chunk.get('contract', '')}: {chunk.get('contract_title', '')}"
         title = chunk.get("title") or ""
@@ -99,6 +119,56 @@ def _get_reranker(model_name: str = "BAAI/bge-reranker-base"):
         _reranker_model = CrossEncoder(model_name)
         _reranker_name = model_name
     return _reranker_model
+
+
+def _rerank_openrouter(
+    query: str,
+    documents: list[str],
+    model: str = "cohere/rerank-v3.5",
+    api_key: str | None = None,
+    timeout: float = 15.0,
+) -> list[float]:
+    """Call OpenRouter /api/v1/rerank endpoint to score query-document pairs in batch."""
+    key = api_key or os.environ.get("OPENROUTER_API_KEY")
+    if not key:
+        raise ValueError("OPENROUTER_API_KEY not set in environment")
+
+    url = "https://openrouter.ai/api/v1/rerank"
+    payload = json.dumps({
+        "model": model,
+        "query": query,
+        "documents": documents,
+        "top_n": len(documents),
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://github.com/ragfilings",
+            "X-Title": "ragfilings",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        results = data.get("results", [])
+        scores = [0.0] * len(documents)
+        for item in results:
+            idx = item.get("index")
+            score = item.get("relevance_score", 0.0)
+            if idx is not None and 0 <= idx < len(scores):
+                scores[idx] = float(score)
+        return scores
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="ignore")
+        raise RuntimeError(f"OpenRouter rerank HTTP {e.code}: {body}") from e
+    except Exception as e:
+        raise RuntimeError(f"OpenRouter rerank request failed: {e}") from e
 
 
 @dataclass
@@ -144,6 +214,9 @@ class Index:
         if mask is not None and not mask.any():
             return []
 
+        if strategy.endswith("_graph"):
+            strategy = strategy[:-6]
+
         q = self.model.encode([_BGE_QUERY_PREFIX + query], normalize_embeddings=True)[0]
         dense_sims = self.embeddings @ q
         if mask is not None:
@@ -166,9 +239,27 @@ class Index:
 
             if strategy == "hybrid_rerank":
                 candidate_order = np.argsort(-rrf, kind="stable")[:rerank_candidates]
-                reranker = _get_reranker(reranker_name or "BAAI/bge-reranker-base")
-                pairs = [(query, embed_text(self.chunks[i])) for i in candidate_order]
-                rerank_scores = reranker.predict(pairs)
+                docs = [embed_text(self.chunks[i]) for i in candidate_order]
+                r_name = reranker_name or "cohere/rerank-v3.5"
+
+                # Check if this is an OpenRouter / cloud model (e.g. cohere/..., qwen/...)
+                if "/" in r_name and not r_name.startswith("BAAI/"):
+                    try:
+                        rerank_scores = _rerank_openrouter(query, docs, model=r_name)
+                    except Exception as exc:
+                        logger.warning(
+                            "Cloud rerank (%s) failed: %s; falling back to local BGE reranker",
+                            r_name,
+                            exc,
+                        )
+                        reranker = _get_reranker("BAAI/bge-reranker-base")
+                        pairs = [(query, d) for d in docs]
+                        rerank_scores = reranker.predict(pairs)
+                else:
+                    reranker = _get_reranker(r_name)
+                    pairs = [(query, d) for d in docs]
+                    rerank_scores = reranker.predict(pairs)
+
                 reranked = sorted(
                     zip(candidate_order, rerank_scores), key=lambda x: x[1], reverse=True
                 )[:top_k]
@@ -186,7 +277,7 @@ class Index:
 
 def confidence(hits: list[dict[str, Any]]) -> float:
     """Retrieval confidence = best dense cosine among the hits."""
-    return max((h["dense_sim"] for h in hits), default=0.0)
+    return max((h.get("dense_sim", h.get("score", 0.0)) for h in hits), default=0.0)
 
 
 def build_index(chunks: list[dict[str, Any]], index_dir: str | Path, model_name: str) -> None:

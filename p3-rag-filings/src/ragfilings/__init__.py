@@ -14,24 +14,18 @@ from .agents import (
     audit_answer,
     corpus_inventory,
     plan_query,
-    run_researcher,
-    run_tool_loop,
     synthesize,
 )
 from .domains import DomainPack, available_packs, get_pack
-from .graph import FinancialGraphBuilder, GraphQueryEngine
+from .domains.financial.builder import FinancialGraphBuilder
+from .domains.financial.math_tool import compute_financial_math, safe_eval
+from .domains.financial.query import GraphQueryEngine
+from .domains.financial.query_decompose import decompose_query, needs_decomposition
+from .domains.financial.verification import extract_claims, verify
 from .ingestion import Section, parse_file, render_tree
 from .llm import BaseLLMClient, LLMFactory, OpenRouterClient, get_llm_client
 from .pipeline import GenerationError, MultiAgentOrchestrator, SessionMemoryManager, answer, ask
 from .prompts import PromptRegistry, load_prompt
-from .tools import (
-    compute_financial_math,
-    decompose_query,
-    extract_claims,
-    needs_decomposition,
-    safe_eval,
-    verify,
-)
 
 __version__ = "0.5.0"
 
@@ -63,8 +57,6 @@ __all__ = [
     "verify",
     "plan_query",
     "corpus_inventory",
-    "run_researcher",
     "synthesize",
     "audit_answer",
-    "run_tool_loop",
 ]

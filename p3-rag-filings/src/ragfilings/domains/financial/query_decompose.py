@@ -78,6 +78,17 @@ def decompose_query(query: str, cfg: dict[str, Any]) -> list[str]:
     ]
 
     try:
+        from ...llm import complete_structured
+        from ...pipeline.schemas import DecompositionPlan
+
+        plan, _ = complete_structured(messages, DecompositionPlan, cfg, role="planning")
+        if plan.sub_queries:
+            cleaned = [str(sq).strip() for sq in plan.sub_queries if sq and sq.strip()]
+            return [query] + cleaned
+    except Exception:
+        pass
+
+    try:
         text, _ = complete_with_resilience(messages, cfg, role="planning")
         start, end = text.find("["), text.rfind("]")
         if start != -1 and end > start:

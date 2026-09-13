@@ -60,7 +60,7 @@ class RAGFilingsAdapter:
     def run_case(
         self,
         case: dict[str, Any],
-        strategy: str = "hybrid_rerank",
+        strategy: str = "langgraph",
         refusal_log: str | Path | None = None,
     ) -> dict[str, Any]:
         from ragfilings.pipeline import ask

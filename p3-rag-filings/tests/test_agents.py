@@ -7,13 +7,9 @@ and usage accounting, filtered-retry behavior, and usage aggregation.
 
 from __future__ import annotations
 
-from types import SimpleNamespace
-
 from ragfilings.agents import auditor as auditor_mod
 from ragfilings.agents import planner as planner_mod
-from ragfilings.agents import researcher as researcher_mod
 from ragfilings.agents import synthesis as synthesis_mod
-from ragfilings.agents.tool_loop import run_tool_loop
 from ragfilings.schemas import AuditResult, QueryPlan, SynthesizedAnswer
 
 CFG = {
@@ -97,156 +93,6 @@ def test_planner_keeps_valid_filters_and_defaults_subquestions(monkeypatch):
     assert plan.sub_questions == ["Apple net sales?"]
 
 
-# -------------------------------------------------------------- tool loop
-
-
-def _msg(content=None, tool_calls=None):
-    return SimpleNamespace(content=content, tool_calls=tool_calls)
-
-
-def _tc(name, args_json, tc_id="call_1"):
-    return SimpleNamespace(id=tc_id, function=SimpleNamespace(name=name, arguments=args_json))
-
-
-def _resp(content=None, tool_calls=None, tokens=(100, 20), cost=0.001):
-    usage = SimpleNamespace(prompt_tokens=tokens[0], completion_tokens=tokens[1], cost=cost)
-    return SimpleNamespace(
-        usage=usage, choices=[SimpleNamespace(message=_msg(content, tool_calls))]
-    )
-
-
-class FakeChatClient:
-    def __init__(self, responses):
-        self._responses = list(responses)
-        self.requests = []
-        self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
-
-    def _create(self, **kwargs):
-        self.requests.append(kwargs)
-        return self._responses.pop(0)
-
-
-def test_tool_loop_executes_tools_and_accumulates_real_usage():
-    responses = [
-        _resp(
-            tool_calls=[_tc("search_filings", '{"query": "net sales"}')],
-            tokens=(100, 10),
-            cost=0.001,
-        ),
-        _resp(content="found evidence", tokens=(200, 15), cost=0.002),
-    ]
-    client = FakeChatClient(responses)
-    executed = []
-
-    def executor(name, args):
-        executed.append((name, args))
-        return "RESULT"
-
-    usage = {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0, "calls": 0}
-    final_text, events = run_tool_loop(
-        client=client,
-        model="test/model",
-        messages=[{"role": "user", "content": "go"}],
-        tools=[{"type": "function", "function": {"name": "search_filings"}}],
-        executor=executor,
-        usage=usage,
-    )
-    assert executed == [("search_filings", {"query": "net sales"})]
-    assert final_text == "found evidence"
-    assert len(events) == 1 and events[0]["tool"] == "search_filings"
-    assert usage == {"input_tokens": 300, "output_tokens": 25, "cost_usd": 0.003, "calls": 2}
-
-
-def test_tool_loop_reports_tool_errors_to_model_instead_of_crashing():
-    responses = [
-        _resp(tool_calls=[_tc("search_filings", "not-json")]),
-        _resp(content="done"),
-    ]
-    client = FakeChatClient(responses)
-
-    def executor(name, args):
-        raise RuntimeError("boom")
-
-    usage = {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0}
-    _, events = run_tool_loop(
-        client=client, model="m", messages=[], tools=[], executor=executor, usage=usage
-    )
-    tool_msgs = [m for m in client.requests[1]["messages"] if m.get("role") == "tool"]
-    assert "TOOL ERROR" in tool_msgs[0]["content"]
-    assert events[0]["result_preview"].startswith("TOOL ERROR")
-
-
-# -------------------------------------------------------------- researcher
-
-
-class FakeOpenRouterClient:
-    def __init__(self, chat_client):
-        self.default_model = "test/extract"
-        self.openai_client = chat_client
-
-
-def _scripted_researcher(monkeypatch, responses, index):
-    chat = FakeChatClient(responses)
-    monkeypatch.setattr(
-        researcher_mod,
-        "get_llm_client",
-        lambda cfg=None, role="generation": FakeOpenRouterClient(chat),
-    )
-    monkeypatch.setattr(researcher_mod, "get_model_for_role", lambda cfg, role: "test/extract")
-    return chat
-
-
-def test_researcher_runs_search_tool_and_merges_hits(monkeypatch):
-    index = FakeIndex([CHUNK_AAPL, CHUNK_MSFT])
-    responses = [
-        _resp(tool_calls=[_tc("search_filings", '{"query": "net sales", "ticker": "AAPL"}')]),
-        _resp(content="retrieved AAPL evidence"),
-    ]
-    _scripted_researcher(monkeypatch, responses, index)
-
-    plan = QueryPlan(
-        intent="lookup",
-        ticker="AAPL",
-        fiscal_year=2025,
-        sub_questions=["What were net sales?"],
-        needs_math=False,
-    )
-    usage = {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0, "calls": 0}
-    res = researcher_mod.run_researcher("AAPL net sales?", plan, index, CFG, usage)
-
-    assert index.calls and index.calls[0]["filters"] == {"ticker": "AAPL"}
-    assert [h["chunk"]["id"] for h in res["hits"]] == ["AAPL_2025_10K:Item8:c007"]
-    assert res["events"][0]["tool"] == "search_filings"
-    assert usage["calls"] == 2  # real usage from both loop rounds
-
-
-def test_researcher_retries_unfiltered_when_filter_yields_nothing(monkeypatch):
-    # AAPL exists in the corpus inventory (different year) but has no chunk
-    # matching the fiscal_year filter, forcing the unfiltered retry.
-    aapl_other_year = {**CHUNK_AAPL, "id": "AAPL_2024_10K:Item8:c001", "fiscal_year": 2024}
-    index = FakeIndex([CHUNK_MSFT], extra_chunks=[aapl_other_year])
-    responses = [
-        _resp(
-            tool_calls=[
-                _tc(
-                    "search_filings",
-                    '{"query": "net sales", "ticker": "AAPL", "fiscal_year": 2025}',
-                )
-            ]
-        ),
-        _resp(content="no AAPL 2025, found MSFT instead"),
-    ]
-    _scripted_researcher(monkeypatch, responses, index)
-
-    plan = QueryPlan(intent="lookup", ticker="AAPL", sub_questions=["net sales?"], needs_math=False)
-    usage = {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0, "calls": 0}
-    res = researcher_mod.run_researcher("AAPL FY2025 net sales?", plan, index, CFG, usage)
-
-    assert index.calls[0]["filters"] == {"ticker": "AAPL", "fiscal_year": 2025}
-    assert index.calls[1]["filters"] is None  # unfiltered retry
-    assert res["hits"] and res["hits"][0]["chunk"]["ticker"] == "MSFT"
-
-
 # -------------------------------------------------------- synthesis/auditor
 
 
@@ -306,41 +152,6 @@ def test_audit_answer_flags_nonexistent_citations(monkeypatch):
     assert usage["cost_usd"] == 0.001
 
 
-def test_researcher_routes_runtime_and_reranker_on_both_searches(monkeypatch):
-    from ragfilings.llm.factory import get_model_for_role
-
-    class RerankerIndex(FakeIndex):
-        def search(self, query, strategy, top_k, reranker_name=None, **kwargs):
-            assert reranker_name == "test/reranker"
-            self.calls.append(kwargs)
-            return []
-
-    index = RerankerIndex([CHUNK_AAPL])
-    chat = _scripted_researcher(
-        monkeypatch,
-        [
-            _resp(tool_calls=[_tc("search_filings", '{"query":"sales","ticker":"AAPL"}')]),
-            _resp(content="no evidence"),
-        ],
-        index,
-    )
-    monkeypatch.setattr(researcher_mod, "get_model_for_role", get_model_for_role)
-    cfg = {
-        **CFG,
-        "runtime": {"model": "test/runtime"},
-        "retrieval": {**CFG["retrieval"], "reranker": "test/reranker"},
-    }
-    researcher_mod.run_researcher(
-        "sales",
-        QueryPlan(intent="lookup"),
-        index,
-        cfg,
-        {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0, "calls": 0},
-    )
-    assert len(index.calls) == 2
-    assert all(request["model"] == "test/runtime" for request in chat.requests)
-
-
 def test_orchestrator_audit_exhaustion_marks_refused_and_unverified(monkeypatch):
     from ragfilings.pipeline.orchestrator import MultiAgentOrchestrator
     from ragfilings.schemas import AuditClaim, AuditResult, SynthesizedAnswer
@@ -348,15 +159,6 @@ def test_orchestrator_audit_exhaustion_marks_refused_and_unverified(monkeypatch)
     monkeypatch.setattr(
         "ragfilings.pipeline.orchestrator.plan_query",
         lambda *args, **kwargs: (QueryPlan(intent="lookup", ticker="AAPL"), {"calls": 1}),
-    )
-    monkeypatch.setattr(
-        "ragfilings.pipeline.orchestrator.run_researcher",
-        lambda *args, **kwargs: {
-            "hits": [{"chunk": CHUNK_AAPL, "score": 0.9, "dense_sim": 0.8}],
-            "queries_run": [],
-            "events": [],
-            "notes": "",
-        },
     )
     monkeypatch.setattr(
         "ragfilings.pipeline.orchestrator.synthesize",

@@ -69,3 +69,89 @@ def test_engine_answer_low_confidence_refuses():
     assert res["refused"]
     assert "low retrieval confidence" in res["refusal_reason"]
     assert not client.calls
+
+
+def test_multi_agent_orchestrator_grounded_flow(monkeypatch):
+    from ragfilings.pipeline.orchestrator import MultiAgentOrchestrator
+    from ragfilings.schemas import QueryPlan, SynthesisResponse, AuditResult, AuditClaim
+
+    # Mock planner
+    def mock_plan(*args, **kwargs):
+        return QueryPlan(
+            intent="lookup",
+            ticker="AAPL",
+            fiscal_year=2025,
+            sub_questions=["What was Apple net sales in FY2025?"],
+            needs_math=False,
+            reasoning="Apple net sales lookup",
+        ), {"input_tokens": 50, "output_tokens": 20, "cost_usd": 0.0001}
+
+    # Mock synthesize
+    def mock_synth(*args, **kwargs):
+        return SynthesisResponse(
+            status="answered",
+            answer="Apple's total net sales in FY2025 were $416,161 million.",
+            citations=["AAPL_2025_10K:Item8:c007"],
+            reason=None,
+        )
+
+    # Mock audit
+    def mock_audit(*args, **kwargs):
+        return AuditResult(
+            verified=True,
+            refuse=False,
+            audit_claims=[
+                AuditClaim(figure="$416,161", found_in_chunk="AAPL_2025_10K:Item8:c007", status="VERIFIED")
+            ],
+        )
+
+    from ragfilings.pipeline import orchestrator
+    monkeypatch.setattr(orchestrator, "plan_query", mock_plan)
+    monkeypatch.setattr(orchestrator, "synthesize", mock_synth)
+    monkeypatch.setattr(orchestrator, "audit_answer", mock_audit)
+
+    class MockIndex:
+        def __init__(self):
+            self.chunks = [CHUNK]
+        def search(self, *args, **kwargs):
+            return [{"chunk": CHUNK, "score": 0.95, "dense_sim": 0.95}]
+
+    orch = MultiAgentOrchestrator(CFG)
+    res = orch.run("What was Apple's total net sales in FY2025?", MockIndex())
+
+    assert not res["refused"]
+    assert res["verified"]
+    assert res["answer"] == "Apple's total net sales in FY2025 were $416,161 million."
+    assert res["citations"] == ["AAPL_2025_10K:Item8:c007"]
+    assert len(res["agent_history"]) >= 4  # plan, retrieve, synthesize, audit
+
+
+def test_multi_agent_orchestrator_early_exit_out_of_corpus(monkeypatch):
+    from ragfilings.pipeline.orchestrator import MultiAgentOrchestrator
+    from ragfilings.schemas import QueryPlan
+
+    def mock_plan(*args, **kwargs):
+        return QueryPlan(
+            intent="not_in_corpus",
+            ticker="XYZ",
+            fiscal_year=2015,
+            sub_questions=[],
+            needs_math=False,
+            reasoning="Company XYZ is not in corpus",
+        ), {"input_tokens": 30, "output_tokens": 10, "cost_usd": 0.00005}
+
+    from ragfilings.pipeline import orchestrator
+    monkeypatch.setattr(orchestrator, "plan_query", mock_plan)
+
+    class MockIndex:
+        def __init__(self):
+            self.chunks = [CHUNK]
+        def search(self, *args, **kwargs):
+            return []
+
+    orch = MultiAgentOrchestrator(CFG)
+    res = orch.run("What was XYZ's revenue in 2015?", MockIndex())
+
+    assert res["refused"]
+    assert "outside corpus scope" in res["refusal_reason"]
+    assert res["answer"] is None

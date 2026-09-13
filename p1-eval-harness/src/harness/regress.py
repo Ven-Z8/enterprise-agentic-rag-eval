@@ -46,7 +46,7 @@ def _aggregate_view(rows: list[dict[str, Any]]) -> dict[str, Any]:
         c["correct"] += bool(r["correct"])
     for c in by_cat.values():
         c["accuracy"] = c["correct"] / c["n"]
-    cost = [r.get("cost_usd", 0.0) for r in rows]
+    cost = [(r.get("cost_usd") or 0.0) for r in rows]
     return {
         "n": len(rows),
         "accuracy": sum(bool(r["correct"]) for r in rows) / len(rows) if rows else None,

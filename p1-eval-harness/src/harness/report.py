@@ -166,9 +166,11 @@ def _write_png(all_results: dict[str, dict[str, Any]], path: Path) -> None:
     for i, s in enumerate(strategies):
         m = all_results[s]["metrics"]
         vals = [
-            m.get(k)
-            if m.get(k) is not None
-            else (m.get("citation_faithfulness") if k == "citation_reference_hit" else 0.0)
+            float(
+                m.get(k)
+                if m.get(k) is not None
+                else (m.get("citation_faithfulness") or 0.0 if k == "citation_reference_hit" else 0.0)
+            )
             for k, _ in _PCT_METRICS
         ]
         bars = ax.bar(x + i * width, vals, width, label=s, color=colors[i % len(colors)])

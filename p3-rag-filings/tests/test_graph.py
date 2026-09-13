@@ -1,7 +1,8 @@
 """Tests for the fact graph: deterministic multi-year table extraction,
 provenance, community detection, and the query engine."""
 
-from ragfilings.graph import FinancialGraphBuilder, GraphQueryEngine
+from ragfilings.domains.financial.builder import FinancialGraphBuilder
+from ragfilings.domains.financial.query import GraphQueryEngine
 
 STATEMENT_CHUNK = {
     "id": "AAPL_2025_10K:Item8:c007",

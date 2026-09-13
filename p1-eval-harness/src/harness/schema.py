@@ -8,7 +8,7 @@ Defines schemas for:
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -61,64 +61,3 @@ class GoldenCase(BaseModel):
             if self.failure_category not in ("unanswerable", "ambiguous"):
                 raise ValueError(f"type {self.expected.type!r} requires a non-null expected.answer")
         return self
-
-
-class TrajectoryStep(BaseModel):
-    """[DEPRECATED] Individual execution step within an agent run trajectory.
-    Kept for backward compatibility with external consumers; active harness uses harness.traces.
-    """
-
-    step_number: int = Field(description="1-based sequence index.")
-    agent: str = Field(description="Name of the sub-agent or node.")
-    action: str = Field(description="Action name or tool invoked.")
-    input_payload: Any | None = Field(default=None, description="Input parameters passed to step.")
-    output_payload: Any | None = Field(default=None, description="Output returned from step.")
-    latency_ms: float = Field(default=0.0, description="Step latency in milliseconds.")
-
-
-class AgentRunTrace(BaseModel):
-    """[DEPRECATED] Structured JSON trajectory trace of a full agent run.
-    Kept for backward compatibility with external consumers; active harness uses harness.traces.
-    """
-
-    case_id: str = Field(description="ID of the executed golden case.")
-    domain: str = Field(description="Domain of the test case.")
-    strategy: str = Field(description="Agent strategy executed.")
-    query: str = Field(description="Query string.")
-    answer: str | None = Field(default=None, description="Generated answer.")
-    citations: list[str] = Field(default_factory=list, description="Citations produced.")
-    refused: bool = Field(default=False, description="Whether agent refused to answer.")
-    refusal_reason: str | None = Field(default=None, description="Reason for refusal.")
-    steps: list[TrajectoryStep] = Field(default_factory=list, description="Trajectory steps.")
-    latency_ms: float = Field(default=0.0, description="Total run latency in milliseconds.")
-    cost_usd: float = Field(default=0.0, description="Estimated total run cost in USD.")
-    raw_response: dict[str, Any] = Field(
-        default_factory=dict, description="Raw agent output dictionary."
-    )
-
-
-class MetricScore(BaseModel):
-    """[DEPRECATED] Individual metric score result.
-    Kept for backward compatibility with external consumers; active engine uses dict metrics.
-    """
-
-    name: str = Field(description="Metric name.")
-    score: float = Field(description="Metric score (0.0 to 1.0 or raw scalar).")
-    tier: str = Field(description="Metric tier: deterministic, telemetry, judge.")
-    details: dict[str, Any] = Field(default_factory=dict, description="Metric execution metadata.")
-
-
-class CaseEvalResult(BaseModel):
-    """[DEPRECATED] Complete evaluation result for a single case execution.
-    Kept for backward compatibility with external consumers; active engine aggregates dictionary rows.
-    """
-
-    case_id: str = Field(description="Case ID.")
-    correct: bool = Field(description="Overall pass/fail result.")
-    outcome: str = Field(
-        description="Outcome tag: correct_answer, incorrect_answer, correct_refusal, incorrect_refusal."
-    )
-    metrics: dict[str, float] = Field(
-        default_factory=dict, description="Map of metric names to numeric scores."
-    )
-    trace: AgentRunTrace = Field(description="Recorded agent run trajectory.")

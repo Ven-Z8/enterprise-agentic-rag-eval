@@ -14,6 +14,7 @@ from harness import config as cfg_mod
 
 P1_ROOT = Path(__file__).resolve().parents[2]
 STRATEGIES = [
+    "langgraph",
     "dense",
     "hybrid",
     "hybrid_rerank",
@@ -106,9 +107,9 @@ def main() -> None:
     run.add_argument("--domain", default="financial", choices=list(DOMAIN_DATA))
     run.add_argument(
         "--strategy",
-        default="hybrid_rerank",
+        default="langgraph",
         choices=STRATEGIES,
-        help="*_graph adds deterministic fact-graph augmentation",
+        help="Pipeline strategy (langgraph is the unified multi-agent orchestrator using hybrid_rerank)",
     )
     run.add_argument(
         "--golden-set",

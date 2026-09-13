@@ -26,6 +26,7 @@ class Expected:
 
 @dataclass
 class TestCase:
+    __test__ = False
     id: str  # e.g. "fin-0001" — stable forever once assigned
     input: str
     expected: Expected

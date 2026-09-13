@@ -28,6 +28,9 @@ _TERM_RE = re.compile(r"['\"]([^'\"\n]{2,90}?)['\"]")
 _DEFINITION_INTENT_RE = re.compile(
     r"\bdefin(?:ed|ition)\b|\bmeans?\b|\bwhat is meant by\b", re.IGNORECASE
 )
+_DOC_NAME_QUERY_RE = re.compile(
+    r"\b(?:document\s+name|title\s+of\s+contract|contract\s+title)\b", re.IGNORECASE
+)
 
 
 @dataclass
@@ -96,6 +99,34 @@ class LegalRescue:
         if len(contracts) != 1:
             return None
         code = contracts[0]
+
+        # 1. Document name / contract title lookup
+        if _DOC_NAME_QUERY_RE.search(query):
+            raw_title = self.contract_titles.get(code)
+            if raw_title:
+                m_title = re.search(
+                    r"(?:EX-[0-9.]+[_-])?(?:[0-9]+_)?(?:EX-[0-9.]+[_-])?([A-Za-z0-9\s,._]+(?:Agreement|AGREEMENT|Contract|CONTRACT)[^.]*)$",
+                    raw_title,
+                )
+                clean_title = m_title.group(1).strip() if m_title else raw_title.split("-")[-1].strip()
+                chunk_id = f"{code}:S1:c000"
+                chunk = self.chunks_by_id.get(chunk_id)
+                block = (
+                    "[CONTRACT_FACTS — deterministic extractions from the contract]\n"
+                    "Each line carries the source chunk ID it was parsed from. If you "
+                    "use one of these, cite that source chunk ID, not this block.\n"
+                    f'- {code} document name: "{clean_title}" '
+                    f"(source chunk: {chunk_id if chunk else code}; agreement: {raw_title})"
+                )
+                return LegalRescueOutcome(
+                    queries=[{"contract": code, "field": "document_name"}],
+                    facts=[{"contract": code, "field": "document_name", "value": clean_title}],
+                    chunk_ids=[chunk_id] if chunk else [],
+                    chunks=[chunk] if chunk else [],
+                    facts_block=block,
+                )
+
+        # 2. Defined term lookup: quoted term + one named contract that defines it
         terms = self.defined_terms.get(code, {})
         if not terms:
             return None

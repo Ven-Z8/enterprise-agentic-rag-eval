@@ -35,6 +35,19 @@ def complete_structured(
     instructor retries, so cost accounting never undercounts.
     """
     import instructor
+    from instructor.v2.providers.openai import handlers
+
+    if not getattr(handlers, "_safe_reask_patched", False):
+        _orig_reask = handlers.reask_tools
+
+        def _safe_reask(kwargs: dict[str, Any], response: Any, exception: Exception) -> dict[str, Any]:
+            msg = response.choices[0].message if getattr(response, "choices", None) else None
+            if not msg or not getattr(msg, "tool_calls", None):
+                return handlers.reask_md_json(kwargs, response, exception)
+            return _orig_reask(kwargs, response, exception)
+
+        handlers.reask_tools = _safe_reask
+        handlers._safe_reask_patched = True
 
     from .. import config as cfg_mod
 

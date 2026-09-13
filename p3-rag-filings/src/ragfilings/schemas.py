@@ -6,7 +6,76 @@ nothing is scraped out of free text.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from typing import Any, Literal
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+
+class SynthesisResponse(BaseModel):
+    """Output schema for the grounded synthesis stage."""
+
+    status: Literal["answered", "refused", "clarification_needed"] = Field(
+        default="answered",
+        description="Whether the question is answered from context, refused due to lack of evidence, or needs clarification.",
+    )
+    answer: str | None = Field(
+        default=None,
+        description="Concise answer with exact figures or text as stated in the chunks or derived from calculations.",
+    )
+    citations: list[str] = Field(
+        default_factory=list,
+        description="IDs of source chunks directly supporting the answer.",
+    )
+    reason: str | None = Field(
+        default=None,
+        description="Refusal explanation if answer is null, or clarification reasoning.",
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            # Normalize alternative answer keys
+            if "answer" not in data:
+                for k in ("result", "final_answer", "response", "output", "value", "percentage_change", "change"):
+                    if k in data:
+                        data["answer"] = data[k]
+                        break
+            if "status" not in data:
+                ans = data.get("answer")
+                data["status"] = "refused" if ans is None else "answered"
+        return data
+
+
+# Canonical synthesis response contract (aliased for unified agent contracts)
+SynthesizedAnswer = SynthesisResponse
+
+
+class DecompositionPlan(BaseModel):
+    """Output schema for query decomposition and retrieval planning."""
+
+    needs_decomposition: bool = Field(
+        description="True if the query requires multi-part, multi-year, or comparative retrieval.",
+    )
+    sub_queries: list[str] = Field(
+        default_factory=list,
+        description="List of 2-3 focused single-point retrieval sub-queries.",
+    )
+    reasoning: str = Field(
+        default="",
+        description="Brief rationale for decomposition decision.",
+    )
+
+
+class RewrittenQuery(BaseModel):
+    """Output schema for conversational follow-up rewriting."""
+
+    rewritten_query: str = Field(
+        description="One fully self-contained question resolving all pronouns, ellipses, and chained arithmetic values.",
+    )
+    reasoning: str = Field(
+        default="",
+        description="Brief note on resolved entities or substituted values.",
+    )
 
 
 class QueryPlan(BaseModel):
@@ -33,25 +102,6 @@ class QueryPlan(BaseModel):
     reasoning: str = Field(default="", description="One sentence of planning rationale.")
 
 
-class DecomposedQueries(BaseModel):
-    """Output schema for Financial Analyst Sub-Agent query decomposition."""
-
-    sub_queries: list[str] = Field(
-        description="List of 2-3 focused single-point retrieval sub-queries targeting SEC 10-K tables."
-    )
-
-
-class MathExpression(BaseModel):
-    """Output schema for Quantitative Math Specialist Sub-Agent calculation formulation."""
-
-    expression: str = Field(
-        description="A single Python mathematical expression using literal numbers and arithmetic operators (+, -, *, /, **)."
-    )
-    explanation: str = Field(
-        description="Brief financial explanation of the calculation (e.g. Growth rate from FY2023 to FY2025)."
-    )
-
-
 class AuditClaim(BaseModel):
     """Audit detail for a single numerical claim."""
 
@@ -75,14 +125,21 @@ class AuditResult(BaseModel):
         default_factory=list, description="Detailed audit per figure."
     )
 
-
-class SynthesizedAnswer(BaseModel):
-    """Output schema for RAG Synthesis pass."""
-
-    answer: str | None = Field(
-        description="Concise, cited answer to user question or null if unanswerable."
-    )
-    citations: list[str] = Field(
-        default_factory=list, description="List of cited chunk IDs (e.g. AAPL_2025_10K:Item8:c015)."
-    )
-    reason: str | None = Field(default=None, description="Refusal reason if answer is null.")
+    @field_validator("audit_claims", mode="before")
+    @classmethod
+    def _coerce_audit_claims(cls, v: Any) -> list[Any]:
+        if isinstance(v, list):
+            coerced: list[Any] = []
+            for item in v:
+                if isinstance(item, str):
+                    coerced.append({
+                        "figure": item,
+                        "found_in_chunk": None,
+                        "status": "UNVERIFIED" if "unverified" in item.lower() else "VERIFIED",
+                    })
+                elif isinstance(item, dict):
+                    coerced.append(item)
+                else:
+                    coerced.append({"figure": str(item), "found_in_chunk": None, "status": "UNVERIFIED"})
+            return coerced
+        return v

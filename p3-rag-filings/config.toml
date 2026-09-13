@@ -30,13 +30,13 @@ index_dir = "corpus/index"
 # the guard rails.
 strategy = "hybrid_rerank"
 top_k = 8
-reranker = "BAAI/bge-reranker-v2-m3"
+reranker = "cohere/rerank-v3.5"
 rerank_candidates = 25
 
 [generation]
 # New profile: historical scores predate this configuration.
 model = "google/gemini-3.8-flash"
-max_tokens = 1500
+max_tokens = 8192
 verify_retries = 1
 
 [planning]

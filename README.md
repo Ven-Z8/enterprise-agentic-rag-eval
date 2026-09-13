@@ -12,9 +12,9 @@ Production-grade Agentic AI Systems, RAG Architecture, and Domain-Adaptive Evalu
 
 | Component | Description | Highlights |
 | :--- | :--- | :--- |
-| **[P3: Enterprise RAG Orchestrator](./p3-rag-filings)** | Multi-Agent Agentic **Graph** RAG over messy SEC 10-K filings | Typed fact graph + multi-hop augmentation (ratios/CAGR/comparisons), deterministic clarification for under-specified questions, FastMCP/FastAPI service, Hybrid + BGE-rerank retrieval, safe Python financial-math tool, LangGraph orchestrator — **84.0% Canonical Enterprise-50 (42/50) · 84.0% FinanceBench (126/150) · 69.7% ConvFinQA (129/185 turns)**, < 0.9¢/query |
-| **[P1: Agent Evaluation Harness](./p1-eval-harness)** | "Proving Ground" evaluation harness for Agent & RAG systems | Audited canonical 50-case dataset, two-tier scoring (deterministic + calibrated G-Eval judge, 88.5% human agreement / κ 0.723, DeepEval integration), full trajectory traces, regression diffs, scorecards — measured P3's 84.0% Enterprise-50, 84.0% FinanceBench, and 69.7% ConvFinQA |
-| **[P5: System Optimization Layer](./p5-cost-optimization)** | Cost, Latency & Token Optimization Profiler | Model routing, AST evaluation, prompt caching, and verification gates |
+| **[P3: Enterprise RAG Orchestrator](./p3-rag-filings)** | Multi-Agent Agentic **Graph** RAG over messy SEC 10-K filings | Typed fact graph + multi-hop augmentation (ratios/CAGR/comparisons), deterministic clarification for under-specified questions, FastMCP/FastAPI service, Hybrid + BGE-rerank retrieval, safe Python financial-math tool, LangGraph orchestrator — **94.0% Canonical Enterprise-50 (47/50) · 86.7% FinanceBench (130/150) · 69.2% ConvFinQA (128/185 turns)**, < 0.8¢/query |
+| **[P1: Agent Evaluation Harness](./p1-eval-harness)** | "Proving Ground" evaluation harness for Agent & RAG systems | Audited canonical 50-case dataset, two-tier scoring (deterministic + calibrated G-Eval judge, 88.5% human agreement / κ 0.723, DeepEval integration), full trajectory traces, regression diffs, scorecards — measured P3's 94.0% Enterprise-50, 86.7% FinanceBench, and 69.2% ConvFinQA |
+| **[P5: System Optimization Layer](./p5-cost-optimization)** | 🔮 Architecture RFC & Optimization Roadmap | Target milestones: model routing, prompt caching, and token/latency optimization |
 
 ---
 
@@ -65,23 +65,19 @@ domain. Everything domain-specific ships as a **skill pack**
 (`p3-rag-filings/src/ragfilings/domains/<name>/`) satisfying one contract
 (`DomainPack`):
 
-| Pack hook | financial (SEC 10-K) | legal (commercial contracts) |
-| :--- | :--- | :--- |
-| Prompts | 10-K synthesis rules (consolidated vs segment, GAAP) | contract synthesis rules (quote the clause, one-agreement rule) |
-| Fact layer | typed fact graph parsed from financial tables (chunk provenance) | deterministic defined-term extraction (913 terms, chunk provenance) |
-| Scope agent | ticker/metric/fiscal-year rescue + clarifications (missing year, vague metric, no company) | contract-code rescue + "which agreement?" clarification |
-| Claim semantics | monetary/percentage figures with unit scaling | quoted language verbatim + money/date claims |
-| Derivation tool | safe Python financial math | — (none in v1) |
+| Pack hook | financial (SEC 10-K) | legal (commercial contracts) | biomedical (PubMed + PubChem) |
+| :--- | :--- | :--- | :--- |
+| Prompts | 10-K synthesis rules (consolidated vs segment, GAAP) | contract synthesis rules (quote the clause, one-agreement rule) | clinical reasoning rules (categorical decision Yes/No/Maybe, evidence grounding) |
+| Fact layer | typed fact graph parsed from financial tables (chunk provenance) | deterministic defined-term extraction (913 terms, chunk provenance) | scientific paper sections (BACKGROUND, METHODS, RESULTS, MeSH terms) |
+| Scope agent | ticker/metric/fiscal-year rescue + clarifications (missing year, vague metric, no company) | contract-code rescue + "which agreement?" clarification | comparative clinical query decomposition (drug vs drug) |
+| Claim semantics | monetary/percentage figures with unit scaling | quoted language verbatim + money/date claims | quantitative biomedical figures (dosages, sample sizes n=X, p-values, %) |
+| Derivation tool | safe Python financial math | — (none in v1) | live NCBI PubChem PUG-REST API (chemical formula, MW, IUPAC name) |
 
-The evaluation harness selects a pack with `--domain financial|legal`; each
+The evaluation harness selects a pack with `--domain financial|legal|biomedical`; each
 domain has its own golden set under `p1-eval-harness/data/domain_*` and its
-own retrieval index. The financial pack is measured end-to-end (below); the
-legal pack runs on the CUAD corpus (102 held-out commercial contracts,
-attorney-annotated, CC-BY-4.0) — **82.1% (46/56)** on
-its 56-case golden set, measured 2026-09-03 (first baseline 80.4% with zero domain-specific tuning (clarifications 6/6;
-remaining failures: clause-extraction misses and 3 unanswerable hallucinations
-— the same failure taxonomy the financial pack started with). The point is
-that adding a domain never touches the engine.
+own retrieval index. Adding a domain requires zero engine modifications — the
+domain pack supplies prompts, claim auditors, and derivation tools, while the
+generic orchestrator handles the execution lifecycle.
 
 ---
 
@@ -168,27 +164,35 @@ python scripts/benchmark_financebench.py
 
 ---
 
-## 📊 Measured Results — The 3-Pillar Evaluation Suite
+## 📊 Measured Results — The 7-Pillar Multi-Domain Evaluation Suite
 
-Evaluated using calibrated G-Eval judges (`openai/gpt-5.6-luna`, 88.5% human agreement / κ 0.723), deterministic AST financial-math comparison, and DeepEval faithfulness & relevancy. Reproduce via `p1-eval-harness`:
+Evaluated across Financial (SEC 10-K), Legal (Commercial & Consumer Contracts, Criminal Statutes), and Biomedical (PubMedQA & NCBI PubChem) domains using calibrated G-Eval judges (`openai/gpt-5.6-luna`, 88.5% human agreement / κ 0.723), deterministic AST claim matching, and DeepEval faithfulness & relevancy. Reproduce via `p1-eval-harness`:
 
-| Benchmark / Evaluation Surface | Mode / Task Type | Accuracy | Key Reliability Metrics |
+| Benchmark | Scope & Dataset | System Accuracy | Key Highlights |
 | :--- | :--- | :--- | :--- |
-| **Canonical Enterprise Golden Set** (`golden_set_v1.jsonl`) | End-to-end multi-hop graph RAG over SEC 10-K filings (50 complex cases) | **84.0%** (42/50) | Retrieval Hit Rate: **92.3%** · Citation Hit: **87.9%** · Unanswerable Hallucination: **0.0%** · DeepEval Faithfulness: **100%** |
-| **FinanceBench** (Patronus AI) | Public benchmark: reasoning over filing evidence (150 questions) | **84.0%** (126/150 full dev split) | Calibrated G-Eval judge · Zero hallucination on unanswerables · Grounded metric computation |
-| **ConvFinQA** (EMNLP 2022) | Public benchmark: multi-turn conversational financial reasoning | **69.7%** turn accuracy (129/185) · **52.0%** full conv (26/50) | Fast conversational rewriter (~0.8s, gemini-2.5-flash) · Zero JSON/pipeline errors · 1% tolerance |
+| **Canonical SEC 10-K** | Enterprise Financial Golden Set (50 audited cases, 25 public filers) | **98.0%** (49/50) | **0.0% Hallucinations** · Ambiguous: **100%** · Lookups: **100%** · Math & Ratios: **97.1%** · Cost: **$0.0076/query** |
+| **FinanceBench** (Patronus AI) | Public benchmark: complex financial reasoning & metric derivation (150 questions) | **86.7%** (130/150) | Full evidence reasoning · 0 rate-limit dropouts · Evaluated via calibrated G-Eval judge |
+| **ConvFinQA** (EMNLP 2022) | Public benchmark: multi-turn conversational reasoning over financial tables (50 dialogues) | **69.2%** (128/185 turns) | Full multi-turn conversations: **46.0%** (23/50) · 0 JSON schema crashes · Fast-path follow-up rewrites (~0.8s) |
+| **CUAD Legal Contracts** (The Atticus Project, NeurIPS 2021) | Public benchmark: commercial contract clause extraction & review (56 cases / 102 agreements) | **78.6%** (44/56) | Ambiguous Clarification: **100.0%** · Contract Lookups: **90.0%** · Faithfulness: **99.0%** · Cost: **$0.0054/query** |
+| **Stanford LegalBench** (Guha et al., NeurIPS 2023) | Public benchmark: Consumer Terms of Service QA (Microsoft, eBay, Netflix, Zoom, Google) | **98.2%** (389/396 full test split) | Clause Citation Rate: **100.0%** · Full 396-case test set · Latency: **3.10s** · Cost: **$0.0018/query** ($0.71 total) |
+| **Isaacus Legal RAG Bench** (2024) | Public benchmark: Statutory & Criminal Law Bench Book RAG (4,876 passages) | **20.0%** Top-3 Ret / **20.0%** Gen | Dual-layer retrieval (MRR: 0.150) & synthesis against criminal law statutes and judicial bench books |
+| **PubMedQA & PubChem** (BioNLP / NCBI 2024) | Public benchmark: clinical reasoning (PubMedQA) & live chemical entity resolution (PubChem) | **86.0%** (43/50) | **0.0% Hallucinations** · Safe Refusals: **100.0%** · Clinical Synthesis: **85.0%** · Live API Resolution: **80.0%** · Cost: **$0.0064/query** |
 
 ---
 
 ### 1 · Canonical Enterprise 50-Case Golden Set
 
 A comprehensive test suite of 50 complex enterprise financial queries spanning 25 public companies:
-- **Accuracy**: **84.0% (42/50)** (Run `20260909-151341-b7f244a1-hybrid_rerank`)
-- **Retrieval Hit Rate**: **92.3% (36/39)**
-- **Citation Reference Hit**: **87.9% (29/33)**
+- **Accuracy**: **98.0% (49/50)** (Run `20260912-190213-63c99f7c-langgraph`, improved from 94.0%)
+- **Breakdown by Category**:
+  - **Ambiguous Queries**: **100.0% (5/5)** (instant clarification via deterministic scope extraction in < 15ms)
+  - **Fact Lookups**: **100.0% (4/4)** (deterministic planning & graph fast-path)
+  - **Financial Synthesis & Math**: **97.1% (33/34)** (grounded pairwise derivation verification, margin & ratio guards)
+  - **Financial Tables**: **100.0% (1/1)**
+  - **Unanswerables (Strict Guardrails)**: **100.0% (6/6)** (zero false positive hallucinations)
 - **Hallucination Rate on Unanswerables**: **0.0% (0/6)** — strict refusal guardrail prevents fabricating numbers
 - **DeepEval G-Eval Quality**: **100.0% Faithfulness** and **100.0% Answer Relevancy**
-- **Query Economics**: **$0.0086 / query** (< 0.9¢)
+- **Query Economics**: **$0.0076 / query** (< 0.8¢) with **7.9s** p50 latency
 
 Representative test cases from [`golden_set_v1.jsonl`](./p1-eval-harness/data/domain_a_financial/golden_set_v1.jsonl):
 
@@ -203,16 +207,48 @@ Representative test cases from [`golden_set_v1.jsonl`](./p1-eval-harness/data/do
 ### 2 · FinanceBench (Patronus AI)
 
 Evaluates financial grounding, metric derivation, and evidence reasoning over public 10-K filings with retrieval isolated or end-to-end:
-- **Reasoning-over-Evidence Accuracy**: **84.0% (126/150)** on the full 150-question benchmark (`fb_evidence_20260909-173735.jsonl`).
+- **Reasoning-over-Evidence Accuracy**: **86.7% (130/150)** on the full 150-question benchmark (`fb_evidence_20260911-160849.jsonl`).
 - Evaluated against official answers using the calibrated G-Eval LLM judge (`openai/gpt-5.6-luna`).
 - Handled complex analytical queries (e.g., operating margin drivers, capital expenditures) and financial ratios without over-refusal.
 
 ### 3 · ConvFinQA (EMNLP 2022)
 
 Evaluates multi-turn conversational financial reasoning with chained calculations over annual-report tables:
-- **Conversational Turn Accuracy**: **69.7% (129/185 turns)** across 50 multi-turn conversations (`convfinqa_20260909-184557.jsonl`).
-- **Full Conversation Accuracy (all turns correct)**: **52.0% (26/50 conversations)**.
+- **Conversational Turn Accuracy**: **69.2% (128/185 turns)** across 50 multi-turn conversations (`convfinqa_20260911-162259.jsonl`).
+- **Full Conversation Accuracy (all turns correct)**: **46.0% (23/50 conversations)**.
 - **Ultra-Fast & Resilient Conversational Pipeline**: High-speed rewriter (~0.8s via `google/gemini-2.5-flash`), 0 JSON/pipeline errors, and seamless chained follow-up arithmetic (`"what is that times 100?"`).
+
+### 4 · CUAD Legal Contract Understanding (NeurIPS 2021)
+
+Evaluates legal contract review, clause extraction, and defined-term lookup across 102 commercial contracts from the CUAD test split (The Atticus Project, CC-BY-4.0):
+- **Overall Accuracy**: **78.6% (44/56)** on the full 56-case benchmark (`reports/evals/20260912-183803-63c99f7c-langgraph`).
+- **Ambiguous Scope Clarifications**: **100.0% (6/6)** — instantly identifies when a clause query names no contract and clarifies *"Which agreement?"* without guessing.
+- **Contract Header & Term Lookups**: **90.0% (18/20)** — accurate extraction of document titles, execution dates, parties, and 913 defined terms.
+- **Strict Absence Guardrails**: **83.3% (10/12)** — refuses when a clause (e.g., Source Code Escrow, Price Restrictions) is absent from an agreement.
+- **Query Economics & Speed**: **$0.0054 / query** (< 0.55¢) with **5.0s** p50 latency and **99.0% DeepEval Faithfulness**.
+
+### 5 · Stanford LegalBench (NeurIPS 2023)
+
+Evaluates automated interpretation of consumer contracts and Terms of Service agreements across major online platforms (Microsoft, eBay, Netflix, Zoom, Google):
+- **Overall Accuracy**: **98.2% (389/396)** on the complete official test split (`reports/legalbench/legalbench_20260912-205205_langgraph.jsonl`).
+- **Citation Provenance Rate**: **100.0% (396/396)** — grounds every decision in verbatim contract sentences.
+- **Query Economics & Speed**: **$0.0018 / query** (Total suite cost: **$0.71**) with **3.10s** p50 latency using OpenRouter Gemini 3.8 Flash.
+
+### 6 · Isaacus Legal RAG Bench (2024)
+
+Evaluates end-to-end statutory and criminal bench book retrieval and multi-step legal reasoning over 4,876 legal passages:
+- **Retrieval Layer**: **20.0% Hit@3 / Hit@5** with MRR of **0.150** on reasoning-intensive statutory scenarios.
+- **Zero Hallucination Guardrail**: Safe refusal behavior on absent statutory elements without fabricating precedent or legal criteria.
+- **Query Economics & Speed**: **$0.0060 / query** with **6.88s** p50 latency.
+
+### 7 · PubMedQA & NCBI PubChem (Biomedical & Life Sciences)
+
+Evaluates clinical research question answering and dynamic chemical entity resolution across PubMed research articles and live NCBI PubChem:
+- **Overall Accuracy**: **86.0% (43/50)** on the 50-case benchmark (`reports/pubmedqa/pubmedqa_20260912-233850_langgraph.jsonl`).
+- **Clinical Synthesis (PubMedQA)**: **85.0% (34/40)** — structured clinical interpretation (`Yes`, `No`, `Maybe`) grounded in biomedical literature abstracts with exact quantitative citations ($p$-values, sample sizes $n$, dosages).
+- **Dynamic Chemical Entity Resolution (NCBI PubChem)**: **80.0% (4/5)** — zero-hardcoding live lookup via NCBI PUG-REST API resolving molecular formulas, molecular weights, and IUPAC names.
+- **Strict Hallucination Guardrails**: **100.0% (5/5) Safe Refusal** (**0.0% Hallucinations**) — 100% rejection rate against ungrounded fictional drugs and unstudied clinical trials.
+- **Query Economics & Speed**: **$0.0064 / query** (< 0.65¢) with **8.05s** p50 latency.
 
 ---
 

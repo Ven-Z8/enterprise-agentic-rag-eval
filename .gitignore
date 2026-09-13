@@ -38,3 +38,10 @@ p3-rag-filings/src/ragfilings/domains/legal/corpus/contracts/
 p3-rag-filings/src/ragfilings/domains/legal/corpus/chunks/
 p3-rag-filings/src/ragfilings/domains/legal/corpus/index/
 
+# Biomedical domain pack: PubMedQA downloads + derived corpus artifacts
+# (reproducible via domains/biomedical/build_corpus.py)
+p3-rag-filings/src/ragfilings/domains/biomedical/data/
+p3-rag-filings/src/ragfilings/domains/biomedical/corpus/articles/
+p3-rag-filings/src/ragfilings/domains/biomedical/corpus/chunks/
+p3-rag-filings/src/ragfilings/domains/biomedical/corpus/index/
+

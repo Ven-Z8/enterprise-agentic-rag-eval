@@ -80,8 +80,7 @@ published numbers.
   80, 2026-09-03), every expected answer proven against filing
   text — `../p1-eval-harness/data/domain_a_financial/golden_set_v1.jsonl`
   (audit evidence `audit_v1.json` alongside it; drafts `candidates_v1.jsonl` /
-  `handcrafted_v1.jsonl` stay in `golden/` here, retired-set audit
-  `audit_v0_retired.json`). Never edit expected answers without re-running
+  `handcrafted_v1.jsonl` stay in `golden/` here). Never edit expected answers without re-running
   `scripts/audit_golden.py`.
 - **Eval**: evaluation lives in the sibling `p1-eval-harness` project —
   `eval-harness run --strategy hybrid_rerank_graph [--skip-judge-metrics]`
