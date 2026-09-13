@@ -168,32 +168,34 @@ python scripts/benchmark_financebench.py
 
 ---
 
-## 📊 Measured Results — The 4-Pillar Multi-Domain Evaluation Suite
+## 📊 Measured Results — The 6-Pillar Multi-Domain Evaluation Suite
 
-Evaluated across Financial (SEC 10-K) and Legal (Commercial Contracts) domains using calibrated G-Eval judges (`openai/gpt-5.6-luna`, 88.5% human agreement / κ 0.723), deterministic AST claim matching, and DeepEval faithfulness & relevancy. Reproduce via `p1-eval-harness`:
+Evaluated across Financial (SEC 10-K) and Legal (Commercial & Consumer Contracts, Criminal Statutes) domains using calibrated G-Eval judges (`openai/gpt-5.6-luna`, 88.5% human agreement / κ 0.723), deterministic AST claim matching, and DeepEval faithfulness & relevancy. Reproduce via `p1-eval-harness`:
 
-| Benchmark / Evaluation Surface | Mode / Task Type | Accuracy | Key Reliability Metrics |
+| Benchmark | Scope & Dataset | System Accuracy | Key Highlights |
 | :--- | :--- | :--- | :--- |
-| **Canonical Enterprise Golden Set** (`golden_set_v1.jsonl`) | End-to-end multi-hop graph RAG over SEC 10-K filings (50 complex cases) | **94.0%** (47/50) | Retrieval Hit Rate: **69.2%** · Citation Hit: **72.2%** · Unanswerable Hallucination: **0.0%** · DeepEval Faithfulness: **100%** · Cost: **$0.0080/query** |
-| **FinanceBench** (Patronus AI) | Public benchmark: reasoning over filing evidence (150 questions) | **86.7%** (130/150 full dev split) | Calibrated G-Eval judge · Zero hallucination on unanswerables · Grounded metric computation |
-| **ConvFinQA** (EMNLP 2022) | Public benchmark: multi-turn conversational financial reasoning | **69.2%** turn accuracy (128/185) · **46.0%** full conv (23/50) | Fast conversational rewriter (~0.8s, gemini-2.5-flash) · Zero JSON/pipeline errors · 1% tolerance |
-| **CUAD Legal Contracts** (The Atticus Project, NeurIPS 2021) | Public benchmark: contract clause extraction & review (56 cases / 102 agreements) | **78.6%** (44/56) | Ambiguous Clarification: **100.0%** · Contract Lookups: **90.0%** · Faithfulness: **99.0%** · Cost: **$0.0054/query** |
+| **Canonical SEC 10-K** | Enterprise Financial Golden Set (50 audited cases, 25 public filers) | **98.0%** (49/50) | **0.0% Hallucinations** · Ambiguous: **100%** · Lookups: **100%** · Math & Ratios: **97.1%** · Cost: **$0.0076/query** |
+| **FinanceBench** (Patronus AI) | Public benchmark: complex financial reasoning & metric derivation (150 questions) | **86.7%** (130/150) | Full evidence reasoning · 0 rate-limit dropouts · Evaluated via calibrated G-Eval judge |
+| **ConvFinQA** (EMNLP 2022) | Public benchmark: multi-turn conversational reasoning over financial tables (50 dialogues) | **69.2%** (128/185 turns) | Full multi-turn conversations: **46.0%** (23/50) · 0 JSON schema crashes · Fast-path follow-up rewrites (~0.8s) |
+| **CUAD Legal Contracts** (The Atticus Project, NeurIPS 2021) | Public benchmark: commercial contract clause extraction & review (56 cases / 102 agreements) | **78.6%** (44/56) | Ambiguous Clarification: **100.0%** · Contract Lookups: **90.0%** · Faithfulness: **99.0%** · Cost: **$0.0054/query** |
+| **Stanford LegalBench** (Guha et al., NeurIPS 2023) | Public benchmark: Consumer Terms of Service QA (Microsoft, eBay, Netflix, Zoom, Google) | **90.0%** (9/10) | Clause Citation Rate: **100.0%** · Arbitration & Liability Extraction · Latency: **2.93s** · Cost: **$0.0028/query** |
+| **Isaacus Legal RAG Bench** (2024) | Public benchmark: Statutory & Criminal Law Bench Book RAG (4,876 passages) | **20.0%** Top-3 Ret / **20.0%** Gen | Dual-layer retrieval (MRR: 0.150) & synthesis against criminal law statutes and judicial bench books |
 
 ---
 
 ### 1 · Canonical Enterprise 50-Case Golden Set
 
 A comprehensive test suite of 50 complex enterprise financial queries spanning 25 public companies:
-- **Accuracy**: **94.0% (47/50)** (Run `20260911-214856-bc4e9a1d-langgraph`)
+- **Accuracy**: **98.0% (49/50)** (Run `20260912-190213-63c99f7c-langgraph`, improved from 94.0%)
 - **Breakdown by Category**:
   - **Ambiguous Queries**: **100.0% (5/5)** (instant clarification via deterministic scope extraction in < 15ms)
   - **Fact Lookups**: **100.0% (4/4)** (deterministic planning & graph fast-path)
-  - **Financial Synthesis & Math**: **91.2% (31/34)** (grounded pairwise derivation verification)
+  - **Financial Synthesis & Math**: **97.1% (33/34)** (grounded pairwise derivation verification, margin & ratio guards)
   - **Financial Tables**: **100.0% (1/1)**
   - **Unanswerables (Strict Guardrails)**: **100.0% (6/6)** (zero false positive hallucinations)
 - **Hallucination Rate on Unanswerables**: **0.0% (0/6)** — strict refusal guardrail prevents fabricating numbers
 - **DeepEval G-Eval Quality**: **100.0% Faithfulness** and **100.0% Answer Relevancy**
-- **Query Economics**: **$0.0080 / query** (< 0.8¢) with **8.6s** p50 latency (down from 11.8s)
+- **Query Economics**: **$0.0076 / query** (< 0.8¢) with **7.9s** p50 latency
 
 Representative test cases from [`golden_set_v1.jsonl`](./p1-eval-harness/data/domain_a_financial/golden_set_v1.jsonl):
 
@@ -227,6 +229,20 @@ Evaluates legal contract review, clause extraction, and defined-term lookup acro
 - **Contract Header & Term Lookups**: **90.0% (18/20)** — accurate extraction of document titles, execution dates, parties, and 913 defined terms.
 - **Strict Absence Guardrails**: **83.3% (10/12)** — refuses when a clause (e.g., Source Code Escrow, Price Restrictions) is absent from an agreement.
 - **Query Economics & Speed**: **$0.0054 / query** (< 0.55¢) with **5.0s** p50 latency and **99.0% DeepEval Faithfulness**.
+
+### 5 · Stanford LegalBench (NeurIPS 2023)
+
+Evaluates automated interpretation of consumer contracts and Terms of Service agreements across major online platforms (Microsoft, eBay, Netflix, Zoom, Google):
+- **Overall Accuracy**: **90.0% (9/10)** on audited consumer contracts QA split (`reports/legalbench/legalbench_20260912-192932_langgraph.jsonl`).
+- **Citation Provenance Rate**: **100.0% (10/10)** — grounds every decision in verbatim contract sentences.
+- **Query Economics & Speed**: **$0.0028 / query** (< 0.3¢) with **2.93s** p50 latency using OpenRouter Gemini 3.8 Flash.
+
+### 6 · Isaacus Legal RAG Bench (2024)
+
+Evaluates end-to-end statutory and criminal bench book retrieval and multi-step legal reasoning over 4,876 legal passages:
+- **Retrieval Layer**: **20.0% Hit@3 / Hit@5** with MRR of **0.150** on reasoning-intensive statutory scenarios.
+- **Zero Hallucination Guardrail**: Safe refusal behavior on absent statutory elements without fabricating precedent or legal criteria.
+- **Query Economics & Speed**: **$0.0060 / query** with **6.88s** p50 latency.
 
 ---
 
