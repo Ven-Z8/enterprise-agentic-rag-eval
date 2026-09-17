@@ -17,9 +17,9 @@ A production-grade, **Neuro-Symbolic Agentic RAG System** engineered for high-pr
 
 ---
 
-## 💥 The Problem: Why Vanilla RAG Fails on SEC 10-K Filings
+## 💥 The Problem: Why Naive / Baseline RAG Fails on SEC 10-K Filings
 
-| Challenge | Why Vanilla Vector RAG Fails | How This System Solves It |
+| Challenge | Why Naive / Baseline RAG Fails | How This System Solves It |
 | :--- | :--- | :--- |
 | **Tabular Financial Data** | Naive text chunking cuts multi-column tables arbitrarily, separating numeric cells from year headers. | **Table-Aware Parser:** Reconstructs financial statements into aligned grids and maps them to a typed **Fact Graph** with chunk provenance. |
 | **Mental Math Hallucination** | LLMs cannot reliably calculate YoY changes, CAGR, or margins in freeform text without arithmetic errors. | **Safe Python AST Math Tool:** Mathematical expressions are extracted and executed in an isolated, sandboxed Python runtime. |

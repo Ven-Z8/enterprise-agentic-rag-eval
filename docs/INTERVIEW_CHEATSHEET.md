@@ -40,7 +40,7 @@
 
 ### Q3: "Why did you choose LangGraph over standard LangChain or LlamaIndex?"
 **Winning Answer:**
-> *"Linear DAGs (like vanilla LangChain chains) cannot handle real-world failures. If an LLM hallucinates a number or generates a citation to a chunk it didn't use, a linear chain returns bad data to the client.  
+> *"Linear DAGs (like standard naive LangChain chains) cannot handle real-world failures. If an LLM hallucinates a number or generates a citation to a chunk it didn't use, a linear chain returns bad data to the client.  
 > 
 > LangGraph gave us three critical enterprise primitives:  
 > 1. **Cyclic State Loops:** Our `audit` node verifies candidate figures against cited chunks. If verification fails, a conditional edge routes back to `synthesize` with targeted error feedback up to a bounded retry limit.  

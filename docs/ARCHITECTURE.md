@@ -12,7 +12,7 @@ Standard Retrieval-Augmented Generation (RAG) architectures—consisting of naiv
 
 ```
 +-----------------------------------------------------------------------------------+
-|                           Why Vanilla RAG Fails on 10-Ks                          |
+|                       Why Naive / Baseline RAG Fails on 10-Ks                      |
 +-----------------------------------------------------------------------------------+
 | 1. Tabular Blindness: Financial statements (Balance Sheet, Income Statement, Cash |
 |    Flows) span multi-column grids. Arbitrary chunking cuts rows from headers.      |
