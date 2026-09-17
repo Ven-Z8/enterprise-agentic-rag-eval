@@ -13,8 +13,7 @@ A production-grade, **Neuro-Symbolic Agentic RAG System** engineered for high-pr
 ## ⚡ Quick Navigation
 
 - 📖 **[System Architecture Specification](docs/ARCHITECTURE.md)** — Deep dive into the LangGraph state machine, typed fact graph, and enterprise scaling blueprint.
-- 🎯 **[Interview Master Cheatsheet](docs/INTERVIEW_CHEATSHEET.md)** — 60-second pitch, technical Q&A defenses, and neuro-symbolic design rationale.
-- 🖥️ **[Universal Agentic Cockpit UI](cockpit-ui/)** — Interactive dark-mode visual studio with real-time knowledge graph rendering.
+- 🔬 **[Evaluation Harness & Proving Ground](eval-harness/)** — Enterprise evaluation framework, audited golden sets, and calibrated G-Eval judge ($\kappa = 0.723$).
 
 ---
 
@@ -181,9 +180,8 @@ python scripts/benchmark_financebench.py
 ```text
 enterprise-agentic-rag-eval/
 ├── README.md                      # Global executive overview & quickstart
-├── docs/                          # Architectural documentation & interview guides
+├── docs/                          # Architectural documentation & technical specifications
 │   ├── ARCHITECTURE.md            # Deep-dive system architecture specification
-│   ├── INTERVIEW_CHEATSHEET.md    # Technical interview questions, answers & scaling guide
 │   └── PORTFOLIO_V0.2_SPEC.md     # Production release requirements & design log
 ├── rag-engine/                    # Core deliverable: Multi-Agent RAG Orchestrator
 │   ├── src/ragfilings/            # Ingestion, hybrid retrieval, LangGraph agents, fact graph
