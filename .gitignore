@@ -11,37 +11,36 @@ __pycache__/
 node_modules/
 
 # Derived artifacts & raw corpus files (reproducible via scripts)
-p3-rag-filings/corpus/*.htm
-!p3-rag-filings/corpus/manifest.csv
-p3-rag-filings/corpus/parsed/
-p3-rag-filings/corpus/chunks/
-p3-rag-filings/corpus/index/
+rag-engine/corpus/*.htm
+!rag-engine/corpus/manifest.csv
+rag-engine/corpus/parsed/
+rag-engine/corpus/chunks/
+rag-engine/corpus/index/
 # Eval runs are reproducible via `eval-harness run` — keep them out of git
 reports/
-p3-rag-filings/reports/
-p1-eval-harness/reports/
+rag-engine/reports/
+eval-harness/reports/
 *.db
 
 # Internal development detail — not part of the public portfolio
 /.dev-notes/
 
 # Third-party benchmark datasets (licensed, downloaded at runtime)
-p3-rag-filings/data/
-p1-eval-harness/data/financebench/
-p1-eval-harness/data/convfinqa/
-p1-eval-harness/data/archive/
+rag-engine/data/
+eval-harness/data/financebench/
+eval-harness/data/convfinqa/
+eval-harness/data/archive/
 
 # Legal domain pack: CUAD downloads + derived corpus artifacts
 # (reproducible via domains/legal/build_corpus.py)
-p3-rag-filings/src/ragfilings/domains/legal/data/
-p3-rag-filings/src/ragfilings/domains/legal/corpus/contracts/
-p3-rag-filings/src/ragfilings/domains/legal/corpus/chunks/
-p3-rag-filings/src/ragfilings/domains/legal/corpus/index/
+rag-engine/src/ragfilings/domains/legal/data/
+rag-engine/src/ragfilings/domains/legal/corpus/contracts/
+rag-engine/src/ragfilings/domains/legal/corpus/chunks/
+rag-engine/src/ragfilings/domains/legal/corpus/index/
 
 # Biomedical domain pack: PubMedQA downloads + derived corpus artifacts
 # (reproducible via domains/biomedical/build_corpus.py)
-p3-rag-filings/src/ragfilings/domains/biomedical/data/
-p3-rag-filings/src/ragfilings/domains/biomedical/corpus/articles/
-p3-rag-filings/src/ragfilings/domains/biomedical/corpus/chunks/
-p3-rag-filings/src/ragfilings/domains/biomedical/corpus/index/
-
+rag-engine/src/ragfilings/domains/biomedical/data/
+rag-engine/src/ragfilings/domains/biomedical/corpus/articles/
+rag-engine/src/ragfilings/domains/biomedical/corpus/chunks/
+rag-engine/src/ragfilings/domains/biomedical/corpus/index/

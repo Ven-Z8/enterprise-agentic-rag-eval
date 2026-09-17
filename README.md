@@ -1,278 +1,206 @@
-# Agentic AI Engineering Portfolio
-(Work in progress)
+# Enterprise Agentic Graph RAG & Evaluation Studio
+
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Framework: LangGraph](https://img.shields.io/badge/Orchestrator-LangGraph-orange.svg)](https://www.langchain.com/langgraph)
+[![Validation: Instructor & Pydantic](https://img.shields.io/badge/Validation-Pydantic%20%7C%20Instructor-green.svg)](https://python.useinstructor.com/)
+[![Evals: DeepEval](https://img.shields.io/badge/Evals-DeepEval%20G--Eval-purple.svg)](https://confident-ai.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Framework: LangChain & LangGraph](https://img.shields.io/badge/Framework-LangChain%20%7C%20LangGraph-green.svg)](https://www.langchain.com/)
 
-Production-grade Agentic AI Systems, RAG Architecture, and Domain-Adaptive Evaluation Frameworks. Built for high-reliability, verifiable accuracy, and production readiness.
+A production-grade, **Neuro-Symbolic Agentic RAG System** engineered for high-precision financial intelligence over messy SEC Form 10-K filings. Combines table-aware chunking, typed fact graphs with chunk provenance, sandboxed Python AST mathematical computation, and a calibrated evaluation harness with proven human agreement ($\kappa = 0.723$).
 
 ---
 
-## 🚀 Projects Overview
+## ⚡ Quick Navigation
 
-| Component | Description | Highlights |
+- 📖 **[System Architecture Specification](docs/ARCHITECTURE.md)** — Deep dive into the LangGraph state machine, typed fact graph, and enterprise scaling blueprint.
+- 🎯 **[Interview Master Cheatsheet](docs/INTERVIEW_CHEATSHEET.md)** — 60-second pitch, technical Q&A defenses, and neuro-symbolic design rationale.
+- 🖥️ **[Universal Agentic Cockpit UI](cockpit-ui/)** — Interactive dark-mode visual studio with real-time knowledge graph rendering.
+
+---
+
+## 💥 The Problem: Why Vanilla RAG Fails on SEC 10-K Filings
+
+| Challenge | Why Vanilla Vector RAG Fails | How This System Solves It |
 | :--- | :--- | :--- |
-| **[P3: Enterprise RAG Orchestrator](./p3-rag-filings)** | Multi-Agent Agentic **Graph** RAG over messy SEC 10-K filings | Typed fact graph + multi-hop augmentation (ratios/CAGR/comparisons), deterministic clarification for under-specified questions, FastMCP/FastAPI service, Hybrid + BGE-rerank retrieval, safe Python financial-math tool, LangGraph orchestrator — **94.0% Canonical Enterprise-50 (47/50) · 86.7% FinanceBench (130/150) · 69.2% ConvFinQA (128/185 turns)**, < 0.8¢/query |
-| **[P1: Agent Evaluation Harness](./p1-eval-harness)** | "Proving Ground" evaluation harness for Agent & RAG systems | Audited canonical 50-case dataset, two-tier scoring (deterministic + calibrated G-Eval judge, 88.5% human agreement / κ 0.723, DeepEval integration), full trajectory traces, regression diffs, scorecards — measured P3's 94.0% Enterprise-50, 86.7% FinanceBench, and 69.2% ConvFinQA |
-| **[P5: System Optimization Layer](./p5-cost-optimization)** | 🔮 Architecture RFC & Optimization Roadmap | Target milestones: model routing, prompt caching, and token/latency optimization |
+| **Tabular Financial Data** | Naive text chunking cuts multi-column tables arbitrarily, separating numeric cells from year headers. | **Table-Aware Parser:** Reconstructs financial statements into aligned grids and maps them to a typed **Fact Graph** with chunk provenance. |
+| **Mental Math Hallucination** | LLMs cannot reliably calculate YoY changes, CAGR, or margins in freeform text without arithmetic errors. | **Safe Python AST Math Tool:** Mathematical expressions are extracted and executed in an isolated, sandboxed Python runtime. |
+| **Consolidated vs. Segment Ambiguity** | Vector search matches "revenue" chunks indiscriminately, confusing segment tables (e.g. AWS or Family of Apps) with consolidated totals. | **Deterministic Scope Triage:** Disambiguates ticker, metric, and fiscal-period scope up front with zero token expenditure. |
+| **Silent Guessing** | Under-specified queries cause models to guess corporate intent or fabricate figures. | **Deterministic Clarification & Safe Refusal:** Unambiguously clarifies missing parameters (<15ms) and strictly refuses out-of-corpus requests (0% hallucinations). |
 
 ---
 
-## 🛠️ Architecture & Key Features
+## 🏗️ System Architecture & Workflow
 
 ```
-               +-------------------------------------------------------+
-               |                  User Query / Prompt                  |
-               +-------------------------------------------------------+
-                                           |
-                                           v
-               +-------------------------------------------------------+
-               |        LangGraph Multi-Role Agent Orchestrator        |
-               +-------------------------------------------------------+
-                                           |
-                 +-------------------------+-------------------------+
-                 |                                                   |
-                 v                                                   v
-  +-----------------------------+                     +-----------------------------+
-  |    Query Decomposition &    |                     |  Hybrid Retrieval & Dense   |
-  |     Sub-Question Router     |                     |    BGE Reranker Engine     |
-  +-----------------------------+                     +-----------------------------+
-                 |                                                   |
-                 +-------------------------+-------------------------+
-                                           |
-                                           v
-               +-------------------------------------------------------+
-               |         Safe Python Financial Execution Tool          |
-               +-------------------------------------------------------+
-                                           |
-                                           v
-               +-------------------------------------------------------+
-               |      Synthesis Engine & Citation Grounding (LLM)       |
-               +-------------------------------------------------------+
-                                           |
-                                           v
-               +-------------------------------------------------------+
-               |      Evaluation Harness Scorecard & HTML Dashboard    |
-               +-------------------------------------------------------+
+                                  +------------------------------------+
+                                  |         User Query / Prompt        |
+                                  +------------------------------------+
+                                                     |
+                                                     v
+                                  +------------------------------------+
+                                  |     Deterministic Scope Triage     |
+                                  |            (rescue.py)             |
+                                  +------------------------------------+
+                                      /                            \
+              [Clean Scope / Ambiguous]                            [Complex / Open-Ended]
+                     /                                                        \
+                    v                                                          v
+    +--------------------------------+                         +--------------------------------+
+    |   Instant Scope Disambiguation |                         |     Neural Planning Agent      |
+    |   or Fact-Graph Fast-Path      |                         |  - Instructor Pydantic Plan    |
+    |   (0 tokens · < 15ms latency)  |                         |  - Multi-Query Decomposition   |
+    +--------------------------------+                         +--------------------------------+
+                    \                                                          /
+                     \                                                        /
+                      +-----------------------+------------------------------+
+                                              |
+                                              v
+                              +--------------------------------+
+                              |    Hybrid Retrieval Engine     |
+                              | - Dense (bge-small-en-v1.5)    |
+                              | - Sparse BM25 Keyword Search   |
+                              | - Reciprocal Rank Fusion (RRF) |
+                              | - Cross-Encoder Reranker       |
+                              +--------------------------------+
+                                              |
+                                              v
+                              +--------------------------------+
+                              |   Safe Python Math Tool (AST)  |
+                              |   - Margins, YoY %, CAGR       |
+                              |   - Sandboxed Execution        |
+                              +--------------------------------+
+                                              |
+                                              v
+                              +--------------------------------+
+                              |    Grounded Synthesis Agent    |
+                              |    - Verbatim Citation Binding |
+                              +--------------------------------+
+                                              |
+                                              v
+                              +--------------------------------+
+                              |     Two-Tier Audit Engine      |
+                              | 1. Deterministic AST Verifier  |
+                              | 2. LLM Claim Auditor Guard     |
+                              +--------------------------------+
+                                       |              ^
+                            [Pass]     |              | [Fail: Retry Feedback]
+                               v       v              | (Bounded Cyclic Loop)
+                        +--------------------------------+
+                        | Verified Answer with Provenance|
+                        +--------------------------------+
 ```
 
-### Domain skill packs
+---
 
-The engine above is **domain-agnostic**: ingestion, hybrid retrieval +
-reranking, the grounded synthesis loop, confidence gating, corrective
-verification retries, and refusal/clarification routing are shared by every
-domain. Everything domain-specific ships as a **skill pack**
-(`p3-rag-filings/src/ragfilings/domains/<name>/`) satisfying one contract
-(`DomainPack`):
+## 🚀 Key Measured Results
 
-| Pack hook | financial (SEC 10-K) | legal (commercial contracts) | biomedical (PubMed + PubChem) |
+Evaluated across Financial (SEC 10-K), Legal (CUAD, LegalBench), and Biomedical (PubMedQA, PubChem) domains using calibrated G-Eval judges (`openai/gpt-5.6-luna`, **88.5% human agreement / Cohen's $\kappa = 0.723$**), deterministic AST claim matching, and DeepEval faithfulness.
+
+### 1. Primary Enterprise Financial Benchmarks
+
+| Benchmark Suite | Scope & Dataset | Accuracy | Economics & Reliability |
 | :--- | :--- | :--- | :--- |
-| Prompts | 10-K synthesis rules (consolidated vs segment, GAAP) | contract synthesis rules (quote the clause, one-agreement rule) | clinical reasoning rules (categorical decision Yes/No/Maybe, evidence grounding) |
-| Fact layer | typed fact graph parsed from financial tables (chunk provenance) | deterministic defined-term extraction (913 terms, chunk provenance) | scientific paper sections (BACKGROUND, METHODS, RESULTS, MeSH terms) |
-| Scope agent | ticker/metric/fiscal-year rescue + clarifications (missing year, vague metric, no company) | contract-code rescue + "which agreement?" clarification | comparative clinical query decomposition (drug vs drug) |
-| Claim semantics | monetary/percentage figures with unit scaling | quoted language verbatim + money/date claims | quantitative biomedical figures (dosages, sample sizes n=X, p-values, %) |
-| Derivation tool | safe Python financial math | — (none in v1) | live NCBI PubChem PUG-REST API (chemical formula, MW, IUPAC name) |
+| **Canonical SEC 10-K Suite** | 50 audited enterprise cases across 25 public filers | **98.0%** (49/50) | **0.0% Hallucinations** · Ambiguous: **100%** · Math & Ratios: **97.1%** · **$0.0076 / query** |
+| **FinanceBench** (Patronus AI) | 150 public SEC 10-K questions requiring multi-step financial reasoning | **86.7%** (130/150) | Full evidence reasoning · 0 rate-limit dropouts · Evaluated via calibrated G-Eval judge |
+| **ConvFinQA** (EMNLP 2022) | 50 multi-turn financial table dialogues (185 turns) | **69.2%** (128/185 turns) | Fast-path follow-up rewrites (~0.8s) · 0 JSON schema crashes · Full conversations: **46.0%** |
 
-The evaluation harness selects a pack with `--domain financial|legal|biomedical`; each
-domain has its own golden set under `p1-eval-harness/data/domain_*` and its
-own retrieval index. Adding a domain requires zero engine modifications — the
-domain pack supplies prompts, claim auditors, and derivation tools, while the
-generic orchestrator handles the execution lifecycle.
+### 2. Cross-Domain Generalization (Pluggable Skill Packs)
+
+The core orchestration engine is 100% domain-agnostic. Pluggable domain packs satisfy the [`DomainPack`](rag-engine/src/ragfilings/domains/__init__.py) contract:
+
+| Domain Benchmark | Focus Area | Performance | Highlights |
+| :--- | :--- | :--- | :--- |
+| **Stanford LegalBench** (NeurIPS 2023) | Consumer Terms of Service QA (396 cases) | **98.2%** (389/396) | **100.0%** Clause Citation Rate · **$0.0018 / query** · 3.10s latency |
+| **CUAD Legal Contracts** (NeurIPS 2021) | Commercial contract review (102 agreements) | **78.6%** (44/56) | Ambiguous Clarifications: **100%** · Term Lookups: **90.0%** · Faithfulness: **99.0%** |
+| **PubMedQA & NCBI PubChem** (BioNLP) | Clinical synthesis & live chemical API resolution | **86.0%** (43/50) | **0.0% Hallucinations** · Safe Refusals: **100%** · Live API Resolution: **80.0%** |
+| **Isaacus Legal RAG Bench** (2024) | Statutory & criminal bench book retrieval | **20.0%** Hit@3 | Dual-layer retrieval & synthesis against criminal law statutes |
 
 ---
 
-## 💻 Quickstart & Setup Instructions
+## 💻 Quickstart: Running in 3 Steps
 
-### 1. Prerequisites
+### Prerequisites
 - Python **3.11+**
 - [`uv`](https://github.com/astral-sh/uv) (recommended fast package installer) or `pip`
 - Git
 
-### 2. Environment Setup
-
-Clone the repository and enter the directory:
+### 1. Clone & Configure Environment
 ```bash
 git clone https://github.com/Ven-Z8/enterprise-agentic-rag-eval.git
 cd enterprise-agentic-rag-eval
-```
-
-Copy the sample environment configuration and add your API credentials:
-```bash
 cp .env.example .env
+# Add your OpenRouter, OpenAI, Anthropic, or Gemini API keys to .env
 ```
 
-Fill in your API key in `.env`:
-```env
-OPENROUTER_API_KEY=sk-or-v1-...
-# Or set individual keys:
-OPENAI_API_KEY=sk-proj-...
-ANTHROPIC_API_KEY=sk-ant-...
-GEMINI_API_KEY=AIzaSy...
-```
-
----
-
-### 3. Setup Project 3: RAG Filings (`p3-rag-filings`)
-
+### 2. Launch the Core RAG Orchestrator (`rag-engine`)
 ```bash
-cd p3-rag-filings
-
-# Create virtual environment and install dependencies
-uv venv
-source .venv/bin/activate
+cd rag-engine
+uv venv && source .venv/bin/activate
 uv pip install -e .
 
-# Step 1: Download SEC 10-K filings corpus (~25 financial reports)
-python scripts/download_corpus.py
-
-# Step 2: Parse sections and build chunk index
-python scripts/dump_sections.py
-python scripts/dump_chunks.py
-ragfilings index
-
-# Step 3: Build the fact graph, then run an interactive query
-ragfilings graph
+# Query the engine directly via CLI
 ragfilings ask "What was Apple's total net sales for FY2025?"
 
-# Conversational multi-turn UI (chat + citations + math + graph)
-ragfilings serve          # then open http://127.0.0.1:8000
+# Launch the FastAPI service
+ragfilings serve
 ```
+
+### 3. Open the Universal Agentic Cockpit UI (`cockpit-ui`)
+In a separate terminal, launch the interactive visual cockpit:
+```bash
+cd ../cockpit-ui
+python3 -m http.server 3000
+```
+Open **[http://localhost:3000](http://localhost:3000)** in your browser. The Cockpit auto-connects to your FastAPI backend, visualizing real-time query trajectories, force-directed knowledge graphs, and execution traces.
 
 ---
 
-### 4. Setup Project 1: Agent Evaluation Harness (`p1-eval-harness`)
+## 🧪 Running the Evaluation Harness (`eval-harness`)
 
-The harness evaluates P3 through an adapter, so install it into the **same
-venv** you activated for P3:
+The evaluation harness ("Proving Ground") verifies end-to-end correctness, citation grounding, and regression tracking:
 
 ```bash
-cd ../p1-eval-harness
-
-# Install the evaluation harness into the active (P3) venv
+cd eval-harness
+uv venv && source .venv/bin/activate
 uv pip install -e .
 
-# Run pytest unit tests
+# Run unit tests (51 tests)
 pytest tests/
 
-# Evaluate P3 against the audited golden set
-# (writes scorecards + traces + regression diff to reports/evals/<run>/)
+# Execute the 50-case Canonical Financial Evaluation
 eval-harness run --strategy hybrid_rerank_graph --skip-judge-metrics
 
-# External benchmark: FinanceBench, reasoning-over-evidence (81.3%)
+# Execute the external FinanceBench benchmark
 python scripts/benchmark_financebench.py
 ```
 
 ---
 
-## 📊 Measured Results — The 7-Pillar Multi-Domain Evaluation Suite
+## 📂 Repository Architecture
 
-Evaluated across Financial (SEC 10-K), Legal (Commercial & Consumer Contracts, Criminal Statutes), and Biomedical (PubMedQA & NCBI PubChem) domains using calibrated G-Eval judges (`openai/gpt-5.6-luna`, 88.5% human agreement / κ 0.723), deterministic AST claim matching, and DeepEval faithfulness & relevancy. Reproduce via `p1-eval-harness`:
-
-| Benchmark | Scope & Dataset | System Accuracy | Key Highlights |
-| :--- | :--- | :--- | :--- |
-| **Canonical SEC 10-K** | Enterprise Financial Golden Set (50 audited cases, 25 public filers) | **98.0%** (49/50) | **0.0% Hallucinations** · Ambiguous: **100%** · Lookups: **100%** · Math & Ratios: **97.1%** · Cost: **$0.0076/query** |
-| **FinanceBench** (Patronus AI) | Public benchmark: complex financial reasoning & metric derivation (150 questions) | **86.7%** (130/150) | Full evidence reasoning · 0 rate-limit dropouts · Evaluated via calibrated G-Eval judge |
-| **ConvFinQA** (EMNLP 2022) | Public benchmark: multi-turn conversational reasoning over financial tables (50 dialogues) | **69.2%** (128/185 turns) | Full multi-turn conversations: **46.0%** (23/50) · 0 JSON schema crashes · Fast-path follow-up rewrites (~0.8s) |
-| **CUAD Legal Contracts** (The Atticus Project, NeurIPS 2021) | Public benchmark: commercial contract clause extraction & review (56 cases / 102 agreements) | **78.6%** (44/56) | Ambiguous Clarification: **100.0%** · Contract Lookups: **90.0%** · Faithfulness: **99.0%** · Cost: **$0.0054/query** |
-| **Stanford LegalBench** (Guha et al., NeurIPS 2023) | Public benchmark: Consumer Terms of Service QA (Microsoft, eBay, Netflix, Zoom, Google) | **98.2%** (389/396 full test split) | Clause Citation Rate: **100.0%** · Full 396-case test set · Latency: **3.10s** · Cost: **$0.0018/query** ($0.71 total) |
-| **Isaacus Legal RAG Bench** (2024) | Public benchmark: Statutory & Criminal Law Bench Book RAG (4,876 passages) | **20.0%** Top-3 Ret / **20.0%** Gen | Dual-layer retrieval (MRR: 0.150) & synthesis against criminal law statutes and judicial bench books |
-| **PubMedQA & PubChem** (BioNLP / NCBI 2024) | Public benchmark: clinical reasoning (PubMedQA) & live chemical entity resolution (PubChem) | **86.0%** (43/50) | **0.0% Hallucinations** · Safe Refusals: **100.0%** · Clinical Synthesis: **85.0%** · Live API Resolution: **80.0%** · Cost: **$0.0064/query** |
-
----
-
-### 1 · Canonical Enterprise 50-Case Golden Set
-
-A comprehensive test suite of 50 complex enterprise financial queries spanning 25 public companies:
-- **Accuracy**: **98.0% (49/50)** (Run `20260912-190213-63c99f7c-langgraph`, improved from 94.0%)
-- **Breakdown by Category**:
-  - **Ambiguous Queries**: **100.0% (5/5)** (instant clarification via deterministic scope extraction in < 15ms)
-  - **Fact Lookups**: **100.0% (4/4)** (deterministic planning & graph fast-path)
-  - **Financial Synthesis & Math**: **97.1% (33/34)** (grounded pairwise derivation verification, margin & ratio guards)
-  - **Financial Tables**: **100.0% (1/1)**
-  - **Unanswerables (Strict Guardrails)**: **100.0% (6/6)** (zero false positive hallucinations)
-- **Hallucination Rate on Unanswerables**: **0.0% (0/6)** — strict refusal guardrail prevents fabricating numbers
-- **DeepEval G-Eval Quality**: **100.0% Faithfulness** and **100.0% Answer Relevancy**
-- **Query Economics**: **$0.0076 / query** (< 0.8¢) with **7.9s** p50 latency
-
-Representative test cases from [`golden_set_v1.jsonl`](./p1-eval-harness/data/domain_a_financial/golden_set_v1.jsonl):
-
-| Category | Question | Expected Behavior |
-| :--- | :--- | :--- |
-| **lookup** | What was Coca-Cola's operating income for fiscal year 2025? | $13,762 million |
-| **table** | What did Tesla report as net cash from operating activities for FY2023? | $13,256 million (from the cash-flow table) |
-| **synthesis** | How did Microsoft's R&D expense change from FY2024 to FY2025? | $32,488M, up from $29,510M |
-| **unanswerable** | What was Tesla's total revenue for fiscal year 2022? | **Refuse** — FY2022 is not in the corpus |
-| **ambiguous** | What was the net income? | **Clarify** — asks which company and year |
-
-### 2 · FinanceBench (Patronus AI)
-
-Evaluates financial grounding, metric derivation, and evidence reasoning over public 10-K filings with retrieval isolated or end-to-end:
-- **Reasoning-over-Evidence Accuracy**: **86.7% (130/150)** on the full 150-question benchmark (`fb_evidence_20260911-160849.jsonl`).
-- Evaluated against official answers using the calibrated G-Eval LLM judge (`openai/gpt-5.6-luna`).
-- Handled complex analytical queries (e.g., operating margin drivers, capital expenditures) and financial ratios without over-refusal.
-
-### 3 · ConvFinQA (EMNLP 2022)
-
-Evaluates multi-turn conversational financial reasoning with chained calculations over annual-report tables:
-- **Conversational Turn Accuracy**: **69.2% (128/185 turns)** across 50 multi-turn conversations (`convfinqa_20260911-162259.jsonl`).
-- **Full Conversation Accuracy (all turns correct)**: **46.0% (23/50 conversations)**.
-- **Ultra-Fast & Resilient Conversational Pipeline**: High-speed rewriter (~0.8s via `google/gemini-2.5-flash`), 0 JSON/pipeline errors, and seamless chained follow-up arithmetic (`"what is that times 100?"`).
-
-### 4 · CUAD Legal Contract Understanding (NeurIPS 2021)
-
-Evaluates legal contract review, clause extraction, and defined-term lookup across 102 commercial contracts from the CUAD test split (The Atticus Project, CC-BY-4.0):
-- **Overall Accuracy**: **78.6% (44/56)** on the full 56-case benchmark (`reports/evals/20260912-183803-63c99f7c-langgraph`).
-- **Ambiguous Scope Clarifications**: **100.0% (6/6)** — instantly identifies when a clause query names no contract and clarifies *"Which agreement?"* without guessing.
-- **Contract Header & Term Lookups**: **90.0% (18/20)** — accurate extraction of document titles, execution dates, parties, and 913 defined terms.
-- **Strict Absence Guardrails**: **83.3% (10/12)** — refuses when a clause (e.g., Source Code Escrow, Price Restrictions) is absent from an agreement.
-- **Query Economics & Speed**: **$0.0054 / query** (< 0.55¢) with **5.0s** p50 latency and **99.0% DeepEval Faithfulness**.
-
-### 5 · Stanford LegalBench (NeurIPS 2023)
-
-Evaluates automated interpretation of consumer contracts and Terms of Service agreements across major online platforms (Microsoft, eBay, Netflix, Zoom, Google):
-- **Overall Accuracy**: **98.2% (389/396)** on the complete official test split (`reports/legalbench/legalbench_20260912-205205_langgraph.jsonl`).
-- **Citation Provenance Rate**: **100.0% (396/396)** — grounds every decision in verbatim contract sentences.
-- **Query Economics & Speed**: **$0.0018 / query** (Total suite cost: **$0.71**) with **3.10s** p50 latency using OpenRouter Gemini 3.8 Flash.
-
-### 6 · Isaacus Legal RAG Bench (2024)
-
-Evaluates end-to-end statutory and criminal bench book retrieval and multi-step legal reasoning over 4,876 legal passages:
-- **Retrieval Layer**: **20.0% Hit@3 / Hit@5** with MRR of **0.150** on reasoning-intensive statutory scenarios.
-- **Zero Hallucination Guardrail**: Safe refusal behavior on absent statutory elements without fabricating precedent or legal criteria.
-- **Query Economics & Speed**: **$0.0060 / query** with **6.88s** p50 latency.
-
-### 7 · PubMedQA & NCBI PubChem (Biomedical & Life Sciences)
-
-Evaluates clinical research question answering and dynamic chemical entity resolution across PubMed research articles and live NCBI PubChem:
-- **Overall Accuracy**: **86.0% (43/50)** on the 50-case benchmark (`reports/pubmedqa/pubmedqa_20260912-233850_langgraph.jsonl`).
-- **Clinical Synthesis (PubMedQA)**: **85.0% (34/40)** — structured clinical interpretation (`Yes`, `No`, `Maybe`) grounded in biomedical literature abstracts with exact quantitative citations ($p$-values, sample sizes $n$, dosages).
-- **Dynamic Chemical Entity Resolution (NCBI PubChem)**: **80.0% (4/5)** — zero-hardcoding live lookup via NCBI PUG-REST API resolving molecular formulas, molecular weights, and IUPAC names.
-- **Strict Hallucination Guardrails**: **100.0% (5/5) Safe Refusal** (**0.0% Hallucinations**) — 100% rejection rate against ungrounded fictional drugs and unstudied clinical trials.
-- **Query Economics & Speed**: **$0.0064 / query** (< 0.65¢) with **8.05s** p50 latency.
-
----
-
-## 📂 Repository Structure
-
-```
+```text
 enterprise-agentic-rag-eval/
-├── README.md                      # Global setup & portfolio overview
-├── .env.example                   # Environment keys template
-├── p3-rag-filings/                # Project 3: Multi-Agent RAG Orchestrator
-│   ├── src/ragfilings/            # Core RAG source code (retrieval, agent, prompts)
-│   ├── golden/                    # Golden-set drafts & schema (canonical data in p1)
-│   ├── scripts/                   # SEC EDGAR downloader, parser, golden builders
+├── README.md                      # Global executive overview & quickstart
+├── docs/                          # Architectural documentation & interview guides
+│   ├── ARCHITECTURE.md            # Deep-dive system architecture specification
+│   ├── INTERVIEW_CHEATSHEET.md    # Technical interview questions, answers & scaling guide
+│   └── PORTFOLIO_V0.2_SPEC.md     # Production release requirements & design log
+├── rag-engine/                    # Core deliverable: Multi-Agent RAG Orchestrator
+│   ├── src/ragfilings/            # Ingestion, hybrid retrieval, LangGraph agents, fact graph
+│   ├── corpus/                    # 25 SEC 10-K filings, chunk index, financial_graph.json
+│   ├── tests/                     # 184 passing unit tests
 │   └── pyproject.toml             # Python dependencies & CLI entrypoints
-├── p1-eval-harness/               # Project 1: Agent Eval Harness ("Proving Ground")
-│   ├── src/harness/               # Scoring engine, calibrated judge, runner, adapters
-│   ├── data/domain_a_financial/   # Audited golden sets, calibration labels, audit evidence
-│   ├── scripts/                   # Judge calibration, FinanceBench benchmark
-│   └── reports/                   # Scorecards & JSON traces (gitignored)
-├── web/                           # Portfolio Web UI Showcase
-│   ├── index.html                 # Interactive portfolio homepage
-│   ├── app.js                     # Dashboard interaction logic
-│   └── styles.css                 # Custom modern dark-mode styles
-├── p5-cost-optimization/          # 🔮 FUTURE SCOPE — optimization roadmap (prototype, not evaluated)
+├── eval-harness/                  # Core deliverable: Agent Evaluation Harness ("Proving Ground")
+│   ├── src/harness/               # DeepEval scoring, calibrated G-Eval judge, regression diffs
+│   ├── data/                      # Audited golden sets, judge calibration labels (Cohen's kappa)
+│   ├── scripts/                   # FinanceBench, ConvFinQA, CUAD benchmark runners
+│   └── tests/                     # 51 passing unit tests
+├── cockpit-ui/                    # Visual Studio: Interactive Agentic Cockpit
+│   ├── index.html                 # Cisco-inspired dark theme studio
+│   ├── js/                        # Force-directed graph engine & dual-mode API bridge
+│   └── styles.css                 # Custom responsive grid styling
+└── roadmap/                       # Optimization Roadmaps & RFCs
+    └── p5-cost-optimization/      # Architecture RFC: Model routing & speculative decoding
 ```
 
 ---

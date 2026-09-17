@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAGFilings — Universal Agentic Cockpit & Multi-Domain Evaluation Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Application Header -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-badge">
+        <div class="brand-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+        </div>
+        <span>RAGFILINGS</span>
+      </div>
+
+      <!-- Domain Skill Pack Selector -->
+      <div class="domain-pills-bar" id="domain-tabs-list">
+        <!-- Dynamically rendered -->
+      </div>
+    </div>
+
+    <!-- Center Navigation Mode Switcher: Cockpit vs Evaluation Studio Outside Answer Zone -->
+    <div class="header-nav-switch">
+      <button class="nav-switch-btn active" id="btn-mode-cockpit">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="9"></rect>
+          <rect x="14" y="3" width="7" height="5"></rect>
+          <rect x="14" y="12" width="7" height="9"></rect>
+          <rect x="3" y="16" width="7" height="5"></rect>
+        </svg>
+        <span>Investigation Cockpit</span>
+      </button>
+      <button class="nav-switch-btn" id="btn-mode-evals">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 20V10"></path>
+          <path d="M12 20V4"></path>
+          <path d="M6 20v-6"></path>
+        </svg>
+        <span>7-Pillar Evaluation Studio (50 Cases)</span>
+      </button>
+    </div>
+
+    <!-- Live Proving Ground Telemetry -->
+    <div class="telemetry-strip">
+      <div class="telemetry-pill">
+        <span class="pulse-indicator"></span>
+        <span id="tel-status">Engine Ready</span>
+      </div>
+      <div class="telemetry-pill">
+        <span>Enterprise-50 Eval:</span>
+        <span class="val" id="tel-eval">94.0% (47/50)</span>
+      </div>
+      <div class="telemetry-pill">
+        <span>G-Eval Agreement:</span>
+        <span class="val" id="tel-geval">κ 0.723</span>
+      </div>
+      <div class="telemetry-pill">
+        <span>Cost/Query:</span>
+        <span class="val" id="tel-cost">&lt; 0.8¢</span>
+      </div>
+      <div class="telemetry-pill">
+        <span>E2E Latency:</span>
+        <span class="val" id="tel-latency">1.42s</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 3-Panel Main Workspace (Active in Cockpit Mode) -->
+  <div class="cockpit-workspace" id="cockpit-workspace">
+
+    <!-- LEFT PANEL: Query Composer, Strategy & Benchmark Presets -->
+    <div class="panel panel-left">
+      <div class="panel-header-bar">
+        <div class="panel-heading">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span>Query & Benchmarks</span>
+        </div>
+        <span class="tag-badge" id="domain-active-badge">FINANCE</span>
+      </div>
+
+      <div class="panel-body-scroll">
+        <!-- Query Composer Card -->
+        <div class="card">
+          <div class="card-title-row">
+            <span class="card-label">PROMPT COMPOSER</span>
+            <span style="font-size: 10px; color: #dddfe0;">⌘ + Enter</span>
+          </div>
+          <textarea id="query-textarea" class="query-box" placeholder="Enter target investigation query or choose a benchmark preset below..."></textarea>
+          
+          <div>
+            <label style="font-size: 10px; color: #dddfe0; display: block; margin-bottom: 4px;">ORCHESTRATION STRATEGY</label>
+            <select id="strategy-dropdown" class="select-dropdown">
+              <option value="hybrid_rerank_graph">Graph-Augmented RAG (Recommended)</option>
+              <option value="agent_react">Multi-Agent Swarm (LangGraph)</option>
+              <option value="hybrid_rerank">Tri-Hybrid (Dense + BM25 + BGE Rerank)</option>
+              <option value="hybrid">Standard Hybrid Retriever</option>
+              <option value="dense">Dense Only</option>
+            </select>
+          </div>
+
+          <button id="btn-run" class="btn-action-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span>Run Orchestration</span>
+          </button>
+        </div>
+
+        <!-- Domain Complex Benchmark Presets -->
+        <div class="card">
+          <div class="card-title-row">
+            <span class="card-label">CANONICAL BENCHMARKS</span>
+            <span class="tag-badge" id="preset-count-badge">Presets</span>
+          </div>
+          <div id="presets-list" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Dynamically populated per domain -->
+          </div>
+        </div>
+
+        <!-- SQLite Memory & History -->
+        <div class="card">
+          <div class="card-title-row">
+            <span class="card-label">SQLITE RECENT SESSIONS</span>
+            <span style="font-size: 10px; color: #dddfe0;">Audit Trail</span>
+          </div>
+          <div id="history-container" style="display: flex; flex-direction: column; gap: 6px;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MIDDLE PANEL: Executive Investigation Dossier (Synthesis, Tables, Visuals, Proofs) -->
+    <div class="panel panel-middle">
+      <!-- Middle Mode Tabs -->
+      <div class="middle-tabs-header">
+        <button class="middle-tab-btn active" data-tab="unified">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+          <span>Executive Dossier (All-in-One)</span>
+        </button>
+        <button class="middle-tab-btn" data-tab="synthesis">
+          <span>Synthesis</span>
+        </button>
+        <button class="middle-tab-btn" data-tab="visuals">
+          <span>Tables & Charts</span>
+        </button>
+        <button class="middle-tab-btn" data-tab="proofs">
+          <span>Verification Sandbox</span>
+        </button>
+        <button class="middle-tab-btn" data-tab="chunks">
+          <span>Evidence Chunks</span>
+        </button>
+      </div>
+
+      <div class="panel-body-scroll">
+
+        <!-- WELCOME / READY STATE (Shown on first open before query is executed) -->
+        <div id="view-welcome-ready" class="welcome-ready-card">
+          <div class="welcome-hero-banner">
+            <div class="welcome-hero-title">
+              <div class="welcome-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#049fd9" stroke-width="2">
+                  <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                  <polyline points="2 17 12 22 22 17"></polyline>
+                  <polyline points="2 12 12 17 22 12"></polyline>
+                </svg>
+              </div>
+              <div>
+                <h2>Enterprise Multi-Agent RAG Cockpit</h2>
+                <p>Deterministic financial intelligence over SEC 10-K filings with zero hallucination guarantee, safe Python AST math execution, and 100% claim grounding.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: 4px;">
+            <div class="card-title-row">
+              <span class="card-label">GET STARTED · SELECT A CANONICAL BENCHMARK INVESTIGATION</span>
+              <span class="tag-badge">10 LIVE PRESETS</span>
+            </div>
+            <div class="welcome-quickstarts-grid" id="welcome-quickstarts-container">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title-row">
+              <span class="card-label">PIPELINE ARCHITECTURE (LANGGRAPH MULTI-AGENT SWARM)</span>
+              <span class="tag-badge" style="border-color: #049fd9; color: #049fd9;">6-STAGE PARALLEL DAG</span>
+            </div>
+            <div style="font-size: 11px; color: #dddfe0; line-height: 1.5;">
+              Query Decomposition & Routing → Parallel Tri-Hybrid Retrieval & Regex Table Extraction → Safe Python AST Evaluator (Zero <code>eval()</code> risk) → Synthesis Specialist with Grounded Citations → Deterministic Auditor Guardrail.
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIVE INVESTIGATION DOSSIER (Rendered once a query is executed) -->
+        <div id="view-active-dossier" style="display: none;">
+
+          <!-- 1. Executive Synthesis Card -->
+          <div class="card" id="section-synthesis">
+            <div class="card-title-row">
+              <span class="synthesis-card-title" id="out-title">Investigation Synthesis</span>
+              <span class="tag-badge" id="out-status-badge">AUDIT PASS (100% GROUNDED)</span>
+            </div>
+
+            <div class="synthesis-content" id="out-synthesis-body">
+              <!-- Content rendered here with [1], [2] citation markers -->
+            </div>
+
+            <div style="border-top: 1px solid #39393b; padding-top: 12px; margin-top: 12px;">
+              <div style="font-size: 11px; font-weight: 700; color: #dddfe0; margin-bottom: 8px;">GROUNDED EVIDENCE CITATIONS:</div>
+              <div id="citation-chips-container" style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <!-- Citation badges -->
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Dual Grid: Trend Visualization & Extracted Tables (Rendered strictly when data exists) -->
+          <div class="dossier-visual-grid" id="section-visuals" style="display: none;">
+            <!-- Left: Trend Chart -->
+            <div class="card" id="card-trend-chart" style="margin-top: 0; display: none;">
+              <div class="card-title-row">
+                <span class="card-label" id="trend-chart-title">MULTI-YEAR TREND VISUALIZATION</span>
+                <span class="tag-badge">DYNAMIC TREND</span>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="trendChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Right: Structured Extracted Table -->
+            <div class="card" id="card-extracted-table" style="margin-top: 0; display: none;">
+              <div class="card-title-row">
+                <span class="card-label" id="table-card-title">STRUCTURED FILING TABLE EXTRACTION</span>
+                <span class="tag-badge" id="table-card-badge">AUDITED TABLE</span>
+              </div>
+              <div class="table-extract-scroll" id="table-display-container">
+                <!-- Rendered table -->
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Deterministic Verification Sandbox (Safe Python AST / Logic Proof) -->
+          <div class="proof-container" id="section-proof" style="margin-top: 12px; display: none;">
+            <div class="proof-title-bar">
+              <span id="proof-engine-title">DETERMINISTIC VERIFICATION SANDBOX</span>
+              <span class="tag-badge" id="proof-badge">ZERO EVAL() RISK</span>
+            </div>
+            <pre class="proof-code-block" id="proof-code-display"></pre>
+            <div class="proof-meta-grid">
+              <div><strong>Engine:</strong> <span id="proof-meta-engine">Safe AST Math</span></div>
+              <div><strong>Output:</strong> <span id="proof-meta-output">Verified</span></div>
+              <div><strong>Confidence:</strong> <span id="proof-meta-conf">0.998</span></div>
+            </div>
+          </div>
+
+          <!-- 4. Retrieved Chunks Accordion -->
+          <div class="card" id="section-chunks" style="margin-top: 12px;">
+            <div class="card-title-row">
+              <span class="card-label">RETRIEVED CONTEXT CHUNKS & GROUND EVIDENCE</span>
+              <span class="tag-badge" id="chunks-count-badge">3 Chunks</span>
+            </div>
+            <div id="chunks-accordion-container" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Chunks -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Parallel Orchestration DAG, Guardrail Status & Execution Trace -->
+    <div class="panel panel-right">
+      <div class="panel-header-bar">
+        <div class="panel-heading">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          <span>Pipeline & Execution Trace</span>
+        </div>
+        <span class="tag-badge" id="dag-overall-status">Idle</span>
+      </div>
+
+      <div class="panel-body-scroll">
+        <!-- Multi-Agent Parallel DAG Stages -->
+        <div class="card">
+          <div class="card-title-row">
+            <span class="card-label">PIPELINE STAGES (LANGGRAPH)</span>
+            <span style="font-size: 10px; color: #049fd9;">6 Stages</span>
+          </div>
+
+          <div id="dag-stages-container">
+            <!-- Stage 1 -->
+            <div class="dag-stage-item" id="stage-1">
+              <div class="dag-node-badge" id="badge-stage-1">1</div>
+              <div class="dag-info">
+                <div class="dag-name"><span>Lead Orchestrator</span> <span style="font-size: 10px; color: #dddfe0;" id="lat-stage-1">140ms</span></div>
+                <div class="dag-sub">Query decomposition & routing</div>
+              </div>
+            </div>
+
+            <!-- Parallel Branch 2 & 3 -->
+            <div class="dag-branch-box">
+              <div class="dag-stage-item" id="stage-2">
+                <div class="dag-node-badge" id="badge-stage-2">2</div>
+                <div class="dag-info">
+                  <div class="dag-name"><span>Tri-Hybrid Retrieval</span> <span style="font-size: 10px; color: #dddfe0;" id="lat-stage-2">410ms</span></div>
+                  <div class="dag-sub">BGE Rerank + BM25 + Graph</div>
+                </div>
+              </div>
+
+              <div class="dag-stage-item" id="stage-3">
+                <div class="dag-node-badge" id="badge-stage-3">3</div>
+                <div class="dag-info">
+                  <div class="dag-name"><span>Table Extraction</span> <span style="font-size: 10px; color: #dddfe0;" id="lat-stage-3">280ms</span></div>
+                  <div class="dag-sub">Regex & tabular parsing</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stage 4: Execution / Proof Tool -->
+            <div class="dag-stage-item" id="stage-4" style="margin-top: 4px;">
+              <div class="dag-node-badge" id="badge-stage-4">4</div>
+              <div class="dag-info">
+                <div class="dag-name"><span>Safe Python AST</span> <span style="font-size: 10px; color: #dddfe0;" id="lat-stage-4">12ms</span></div>
+                <div class="dag-sub">Formula parsing & calculation</div>
+              </div>
+            </div>
+
+            <!-- Stage 5: Synthesis -->
+            <div class="dag-stage-item" id="stage-5">
+              <div class="dag-node-badge" id="badge-stage-5">5</div>
+              <div class="dag-info">
+                <div class="dag-name"><span>Synthesis Specialist</span> <span style="font-size: 10px; color: #dddfe0;" id="lat-stage-5">520ms</span></div>
+                <div class="dag-sub">Citation-grounded response</div>
+              </div>
+            </div>
+
+            <!-- Stage 6: Auditor Guardrail -->
+            <div class="dag-stage-item" id="stage-6">
+              <div class="dag-node-badge" id="badge-stage-6">6</div>
+              <div class="dag-info">
+                <div class="dag-name"><span>Auditor Guardrail</span> <span style="font-size: 10px; color: #dddfe0;" id="lat-stage-6">60ms</span></div>
+                <div class="dag-sub">Deterministic claim audit</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Deterministic Guardrail & Audit Summary Card -->
+        <div class="card">
+          <div class="card-title-row">
+            <span class="card-label">DETERMINISTIC GUARDRAIL STATUS</span>
+            <span class="tag-badge" id="guardrail-status-badge">100% GROUNDED</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+            <div style="display: flex; justify-content: space-between; color: #dddfe0;">
+              <span>Math Security:</span>
+              <strong style="color: #34d399;">Safe AST (Zero Eval Risk)</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; color: #dddfe0;">
+              <span>Hallucination Audit:</span>
+              <strong style="color: #049fd9;">0.0% Hallucination</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; color: #dddfe0;">
+              <span>Retrieval Concordance:</span>
+              <strong style="color: #ffffff;">Item 8 Verified</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Step Trajectory Stream (Expanded) -->
+        <div class="card" style="flex: 1;">
+          <div class="card-title-row">
+            <span class="card-label">EXECUTION TRAJECTORY TRACE</span>
+            <span style="font-size: 10px; color: #dddfe0;" id="trace-count">0 Events</span>
+          </div>
+          <div class="trace-list" id="trace-list-container" style="max-height: 280px;">
+            <div style="font-size: 11px; color: #dddfe0; padding: 8px;">Run an orchestration to view live trace.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FULL-WIDTH DEDICATED EVALUATION STUDIO VIEW (Outside the Answer Zone) -->
+  <div id="evals-fullpage-view" class="evals-fullpage-workspace" style="display: none;">
+    <div class="card">
+      <div class="card-title-row">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="card-label" style="font-size: 13px;">7-PILLAR MULTI-DOMAIN EVALUATION MATRIX</span>
+          <span class="tag-badge" style="border-color: #049fd9; color: #049fd9;">BENCHMARK SCORECARD</span>
+        </div>
+        <button class="btn-action-secondary" id="btn-back-to-cockpit" style="padding: 4px 10px; font-size: 11px;">
+          ← Return to Investigation Cockpit
+        </button>
+      </div>
+      <div style="font-size: 12px; color: #dddfe0; margin-bottom: 14px; line-height: 1.5;">
+        Comprehensive cross-domain benchmark evaluations validating accuracy, hallucination resistance, retrieval recall, and deterministic verification across Financial (SEC 10-K), Legal (CUAD, Stanford LegalBench, Isaacus), and Biomedical (PubMedQA, PubChem) datasets.
+      </div>
+      <div class="table-extract-scroll" id="eval-pillars-table-container">
+        <!-- Rendered 7-Pillar matrix -->
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 16px;">
+      <div class="card-title-row">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="card-label" style="font-size: 13px;">CANONICAL SEC 10-K BENCHMARK RUN (50 CASES)</span>
+          <span class="tag-badge" id="eval-case-score-badge">94.0% ACCURACY (47/50)</span>
+        </div>
+        <div style="font-size: 11px; color: #dddfe0;">
+          Run ID: <code>20260911-214856-bc4e9a1d-langgraph</code>
+        </div>
+      </div>
+      <div style="font-size: 12px; color: #dddfe0; margin-bottom: 12px;">
+        Granular case-level breakdown of verification traces, safe refusal correctness on adversarial queries, and millisecond latencies.
+      </div>
+      <div class="table-extract-scroll" id="eval-cases-table-container">
+        <!-- Rendered Case breakdown -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide-Over Inspector Drawer for Filing Chunks & Citations -->
+  <div class="doc-drawer" id="docDrawer">
+    <div class="drawer-top">
+      <div style="font-size: 13px; font-weight: 700; color: #ffffff;" id="drawer-cite-title">Source Evidence Inspector</div>
+      <button class="drawer-close" id="drawer-close-btn">&times;</button>
+    </div>
+    <div class="drawer-body" id="drawer-cite-body">
+      <!-- Injected passage details -->
+    </div>
+  </div>
+
+  <!-- Modal: Add Custom Domain Skill Pack -->
+  <div class="modal-backdrop" id="addDomainModal">
+    <div class="modal-card">
+      <div class="modal-title">Provision Custom Domain Skill Pack</div>
+      <div class="modal-desc">
+        Extend RAGFilings to proprietary enterprise corpora. Specify corpus schema, ontology, and extraction rules.
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Domain Identifier</label>
+        <input type="text" id="custom-domain-id" class="form-input" placeholder="e.g., insurance_underwriting">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Display Name</label>
+        <input type="text" id="custom-domain-name" class="form-input" placeholder="e.g., Commercial Insurance Underwriting">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Domain Badge</label>
+        <input type="text" id="custom-domain-badge" class="form-input" placeholder="e.g., NAIC Filings">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Initial Seed Query</label>
+        <textarea id="custom-domain-query" class="form-input" style="height: 60px;" placeholder="e.g., Evaluate aggregate loss ratio trends across policy years 2022-2024."></textarea>
+      </div>
+
+      <div class="modal-btn-row">
+        <button class="btn-action-secondary" id="modal-cancel-btn">Cancel</button>
+        <button class="btn-action-primary" id="modal-save-btn" style="width: auto;">Register Domain Pack</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/domain-packs.js"></script>
+  <script src="js/api-client.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

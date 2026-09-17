@@ -1,0 +1,60 @@
+# P3 RAG config. Loaded by ragfilings.config.load(). Nothing hardcoded in modules.
+
+[corpus]
+dir = "corpus"
+manifest = "corpus/manifest.csv"
+
+[ingestion]
+# Minimum characters for a detected section to count as real content (filters TOC stubs).
+min_section_chars = 200
+# Item 7/8 bodies under this are pointer stubs ("incorporated by reference") —
+# the parser resolves them to the real block elsewhere in the document.
+pointer_chars = 5000
+
+[chunking]
+# Target chunk size; tables split at row boundaries with column headers repeated.
+max_chars = 1800
+
+[embedding]
+# Local model — zero API keys, exact reproducibility. See retrieval.py docstring.
+model = "BAAI/bge-small-en-v1.5"
+index_dir = "corpus/index"
+
+[retrieval]
+# "dense" (baseline), "hybrid" (dense + BM25 reciprocal-rank fusion), or
+# "hybrid_rerank" (hybrid + cross-encoder rerank of the top candidates).
+# hybrid_rerank is the production default; dense is kept for ablation runs.
+# Any of these accepts a "_graph" suffix (e.g. "hybrid_rerank_graph"): same
+# retrieval, plus deterministic fact-graph augmentation of the synthesis
+# context for clean-scope questions — see src/ragfilings/graph/rescue.py for
+# the guard rails.
+strategy = "hybrid_rerank"
+top_k = 8
+reranker = "cohere/rerank-v3.5"
+rerank_candidates = 25
+
+[generation]
+# New profile: historical scores predate this configuration.
+model = "google/gemini-3.8-flash"
+max_tokens = 8192
+verify_retries = 1
+
+[planning]
+model = "openai/gpt-5.6-luna"
+
+[runtime]
+model = "google/gemini-2.5-flash"
+
+[extraction]
+model = "google/gemini-2.5-flash"
+
+[converse]
+model = "google/gemini-2.5-flash"
+
+[eval]
+# Keep aligned with ../eval-harness/config.toml. Recalibrate before scoring.
+judge_model = "openai/gpt-5.6-luna"
+
+[verification]
+# Refuse to answer below this retrieval confidence (top dense cosine).
+min_confidence = 0.35
